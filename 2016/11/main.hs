@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 import Control.Monad
 import Debug.Trace
 import Data.Monoid
@@ -8,6 +9,8 @@ import Data.IntSet (IntSet)
 import qualified Data.IntSet as IntSet
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
+import Data.Heap (MinPrioHeap)
+import qualified Data.Heap as H
 
 type Fuel = Int
 
@@ -22,6 +25,16 @@ data Carry = One !Item | Two !Item !Item deriving (Show, Eq, Ord)
 data Action = Action !Direction !Carry deriving (Show, Eq, Ord)
 
 type ItemSet = IntSet
+
+type State = Facility
+
+distance :: State -> Int
+distance (Facility items _) = go 0 (map IntSet.size items)
+  where
+    go d [_] = d
+    go d (0:xs) = go d xs
+    go d (n:m:xs) = let trips = (n + 1) `div` 2
+                    in go (d + trips * 2 - 1) ((n+m) : xs)
 
 itemsList :: ItemSet -> [Item]
 itemsList items = map go (IntSet.toList items)
@@ -109,6 +122,24 @@ move (Action d c) (Facility items floor)
 facilityGoal :: Facility -> Bool
 facilityGoal (Facility items _) = all IntSet.null (take 3 items)
 
+astar :: forall s. Ord s => s -> (s -> [s]) -> (s -> Int) -> Int
+astar initial options distance = go (H.singleton (distance initial, (0, initial))) Set.empty
+  where
+    go :: MinPrioHeap Int (Int, s) -> Set s -> Int
+    go frontier visited = case H.view frontier of
+      Just ((_, (path, s)), frontier') -> case Set.member s visited of
+        True -> go frontier' visited
+        False -> go' frontier' visited path s
+      Nothing -> error "out of frontier"
+
+    go' frontier visited path s
+      | distance s == 0 = path
+      | otherwise = (if H.size frontier `mod` 100 == 0 then traceShow (H.size frontier, Set.size visited) else id) $ go frontier' visited'
+      where
+        next = [(path + 1 + distance s', (path + 1, s')) | s' <- options s]
+        frontier' = frontier `H.union` H.fromList next
+        visited' = Set.insert s visited
+
 -- solve :: Ord s => s -> (s -> [s]) -> (s -> Bool) -> [s]
 -- solve initial options goal = go (Seq.singleton ([], initial)) Set.empty
 --   where
@@ -144,4 +175,4 @@ solve initial options goal = go (Seq.singleton (0, initial)) Set.empty
               else id
 
 main :: IO ()
-main = print $ solve initial nextStates facilityGoal
+main = print $ astar initial nextStates distance
