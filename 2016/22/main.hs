@@ -80,71 +80,15 @@ neighbors cmap (P x y) = filter exists [P (x+1) y,
   where
     exists p = Map.member p cmap
 
-constrained :: Capacity -> Int -> P -> [P]
-constrained cmap gsize p = filter go (neighbors cmap p)
-  where
-    go q = case Map.lookup q cmap of
-             Just cap -> gsize <= cap
-
-options :: Capacity -> Step -> [Step]
-options cmap (Step used g) = [Step (movemap p1 p2)
-                               (if p1 == g then p2 else g)
-                             | p1 <- to_move, p2 <- neighbors cmap p1, allowed p1 p2]
-  where
-    to_move = [p | (p, u) <- Map.toList used, u > 0]
-    movemap p1 p2 = case Map.lookup p1 used of
-                      Just size -> Map.insert p1 0 $ Map.adjust (+size) p2 used
-    allowed p1 p2 = let used1 = used Map.! p1
-                        used2 = used Map.! p2
-                        cap2 = cmap Map.! p2
-                    in used1 + used2 <= cap2
+-- constrained :: Capacity -> Int -> P -> [P]
+-- constrained cmap gsize p = filter go (neighbors cmap p)
+--   where
+--     go q = case Map.lookup q cmap of
+--              Just cap -> gsize <= cap
 
 load :: String -> (Capacity, Step)
 load text = let nodes = input text
             in (capacity nodes, initial nodes)
-
--- astar :: forall a s. s -> (s -> [a]) -> (s -> a -> s) -> (s -> Int) -> [a]
--- astar initial actions next distance = go (H.singleton (distance initial, (0, [], initial)))
---   where
---     go :: MinPrioHeap Int (Int, [a], s) -> [a]
---     go frontier = case H.view frontier of
---       Just ((_, s), frontier') -> go' frontier' s
---       Nothing -> error "out of frontier"
-
---     go' frontier (pathsize, path, s)
---       | distance s == 0 = reverse path
---       | otherwise = go frontier'
---       where
---         nexts = [(pathsize + 1 + distance s', (pathsize + 1, a : path, s'))
---                 | a <- actions s, let s' = next s a]
---         frontier' = frontier `H.union` H.fromList nexts
---         !_ = if H.size frontier `mod` 10 == 0 then
---                traceShow (H.size frontier) ()
---              else ()
-
-astar :: forall a s. Ord s => s -> (s -> [a]) -> (s -> a -> s) -> (s -> Int) -> (s -> Int) -> (s -> String) -> [a]
-astar initial actions next distance heuristic tr = go (H.singleton ((distance initial, heuristic initial), (0, [], initial))) Set.empty
-  where
-    go :: MinPrioHeap (Int,Int) (Int, [a], s) -> Set s -> [a]
-    go frontier visited = case H.view frontier of
-      Just ((_, s), frontier') -> let (_, _, ss) = s in
-                                    case Set.member ss visited of
-                                      True -> go frontier' visited
-                                      False -> go' frontier' (Set.insert ss visited) s
-      Nothing -> error "out of frontier"
-
-    go' frontier visited (pathsize, path, s)
-      | distance s == 0 = reverse path
-      | otherwise = go frontier' visited
-      where
-        nexts = [((pathsize + 1 + distance s', heuristic s'), (pathsize + 1, a : path, s'))
-                | a <- actions s, let s' = next s a]
-        frontier' = frontier `H.union` H.fromList nexts
-        !_ = if H.size frontier `mod` 10 == 0 then
-               trace (show (pathsize, distance s, heuristic s, H.size frontier, Set.size visited,
-                            fromIntegral (H.size frontier) / fromIntegral (Set.size visited))
-                       ++ " " ++ tr s) ()
-             else ()
 
 data Action = Move P P deriving (Show, Eq, Ord)
 
@@ -187,26 +131,6 @@ astar' initial actions asize next distance log = go (H.singleton (distance initi
                                       fromIntegral (H.size frontier) / fromIntegral (Set.size visited), t) ()
                  Nothing -> ()
              else ()
-
-sub_actions :: Capacity -> P -> [Action]
-sub_actions cmap g = [Move g p2 | p2 <- neighbors cmap g]
-
-sub_apply :: P -> Action -> P
-sub_apply g (Move p1 p2) = p2
-
-sub_asize :: Capacity -> Step -> P -> Action -> Int
-sub_asize cmap (Step used g) _ (Move _ p2) = if used_g <= avail_p2 then
-                                               1 else 2
-  where
-    used_g = used Map.! g
-    cap_p2 = cmap Map.! p2
-    used_p2 = used Map.! p2
-    avail_p2 = cap_p2 - used_p2
-
-distance3 :: Capacity -> Step -> Int
-distance3 cmap s0 = astar' p0 (sub_actions cmap) (sub_asize cmap s0) sub_apply (taxicab (P 0 0)) (const Nothing)
-  where
-    Step used0 p0 = s0
 
 distance4 :: Capacity -> Step -> Int
 distance4 cmap s0
