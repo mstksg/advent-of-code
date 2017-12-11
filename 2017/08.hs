@@ -9,11 +9,13 @@ import           Data.List
 import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
+import           Data.Monoid
 import           Data.Ord
+import           Data.Semigroup
 import           Data.Set (Set)
 import qualified Data.Set as Set
--- import qualified Data.Vector.Generic as V
--- import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Generic as V
+import qualified Data.Vector.Unboxed as U
 
 type Memory = Map String Int
 type Instruction = Memory -> Memory
@@ -49,5 +51,5 @@ parseText text = map parseLine (lines text)
 main :: IO ()
 main = do
   ins <- parseText <$> readFile "input/08"
-  print $ maximum $ foldr (\f fs -> fs . f) id ins Map.empty
-  print $ maximum $ map maximum $ tail $ scanl (\m f -> f m) Map.empty ins
+  print $ foldMap Max $ foldr (\f fs -> fs . f) id ins Map.empty
+  print $ foldMap (foldMap Max) $ scanl (\m f -> f m) Map.empty ins
