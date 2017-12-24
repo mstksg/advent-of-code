@@ -25,25 +25,35 @@ import qualified Text.Parsec as Parsec
 import           Text.Parser.Char
 import           Text.Parser.Combinators
 
+data Layer = Layer Int Int
+  deriving (Show, Eq, Ord)
+
 parse :: Parsec.Parsec String () c -> String -> c
 parse p t = either (error . show) id (Parsec.parse p "" t)
 
-parseDoor :: (Monad m, CharParsing m) => m (Int, [Int])
-parseDoor = do a <- read <$> many digit
-               string " <-> "
-               bs <- map read <$> sepBy (many digit) (string ", ")
-               return (a, bs)
+parseLayer :: (Monad m, CharParsing m) => m Layer
+parseLayer = do a <- read <$> many digit
+                string ": "
+                b <- read <$> many digit
+                return (Layer a b)
 
--- parseInput :: (Monad m, CharParsing m) => m [(Int, [Int])]
--- parseInput = sepBy parseDoor (char '\n')
+parseInput :: (Monad m, CharParsing m) => m [Layer]
+parseInput = sepBy parseLayer (char '\n')
 
-parseInput :: (Monad m, CharParsing m) => m (Gr () ())
-parseInput = do links <- sepBy parseDoor (char '\n')
-                return $ mkGraph [(n, ()) | (n, _) <- links] [(n, m, ()) | (n, ms) <- links, m <- ms]
+caught :: Int -> Layer -> Bool
+caught t (Layer d r) = mod (t + d) ((r-1)*2) == 0
+
+severity :: Int -> Layer -> Int
+severity _ (Layer d 1) = d
+severity t (Layer d r) = case mod (t + d) ((r-1)*2) of
+                           0 -> d * r
+                           _ -> 0
 
 main :: IO ()
 main = do
-  text <- readFile "input/12"
-  let gr = parse parseInput text
-  print $ length $ dfs [0] gr
-  print $ length $ components gr
+  text <- readFile "input/13"
+  let gates = parse parseInput text
+  print $ foldMap (Sum . severity 0) gates
+  print $ head [t | t <- [0..], not (any (caught t) gates)]
+  let t = head [t | t <- [0..], not (any (caught t) gates)]
+  print $ map (severity t) gates

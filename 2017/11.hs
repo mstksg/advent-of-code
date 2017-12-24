@@ -4,10 +4,7 @@
 import           Control.Applicative
 import           Control.Monad
 import           Data.Foldable
-import           Data.Functor.Identity
-import           Data.Graph.Inductive.Graph
-import           Data.Graph.Inductive.PatriciaTree (Gr)
-import           Data.Graph.Inductive.Query.DFS
+import           Data.Functor
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import           Data.List
@@ -25,25 +22,38 @@ import qualified Text.Parsec as Parsec
 import           Text.Parser.Char
 import           Text.Parser.Combinators
 
-parse :: Parsec.Parsec String () c -> String -> c
-parse p t = either (error . show) id (Parsec.parse p "" t)
+data Step = Step Int Int
+  deriving (Show, Eq, Ord)
 
-parseDoor :: (Monad m, CharParsing m) => m (Int, [Int])
-parseDoor = do a <- read <$> many digit
-               string " <-> "
-               bs <- map read <$> sepBy (many digit) (string ", ")
-               return (a, bs)
+instance Monoid Step where
+  mempty = Step 0 0
+  mappend (Step x y) (Step w z) = Step (x + w) (y + z)
 
--- parseInput :: (Monad m, CharParsing m) => m [(Int, [Int])]
--- parseInput = sepBy parseDoor (char '\n')
 
-parseInput :: (Monad m, CharParsing m) => m (Gr () ())
-parseInput = do links <- sepBy parseDoor (char '\n')
-                return $ mkGraph [(n, ()) | (n, _) <- links] [(n, m, ()) | (n, ms) <- links, m <- ms]
+parseStep :: CharParsing m => m Step
+parseStep = choice [try $ Step 1 1 <$ string "ne",
+                    try $ Step 1 (-1) <$ string "se",
+                    try $ Step (-1) 1 <$ string "nw",
+                    try $ Step (-1) (-1) <$ string "sw",
+                    try $ Step 0 (-2) <$ string "s",
+                    try $ Step 0 2 <$ string "n"]
+
+parsePath :: CharParsing m => m [Step]
+parsePath = sepBy parseStep (char ',')
+
+distance :: Step -> Int
+distance (Step x y)
+  | a == 0    = b `div` 2
+  | b == 0    = a
+  | otherwise = 1 + distance (Step (a-1) (b-1))
+  where
+    a = abs x
+    b = abs y
 
 main :: IO ()
 main = do
   text <- readFile "input/11"
-  let gr = parse parseInput text
-  print $ length $ dfs [0] gr
-  print $ length $ components gr
+  -- let text = "se,sw,se,sw,sw"
+  let Right g = Parsec.parse parsePath "input/10" text
+  print $ distance (fold g)
+  print $ maximum $ map distance $ scanl mappend mempty g
