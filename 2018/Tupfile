@@ -1,0 +1,5 @@
+HS_LDFLAGS=-package containers -package parsers -package split -package charset -package vector
+
+: Util/Util.hs |> stack exec -- ghc -O2 %f -c |> Util/Util.o Util/Util.hi {util}
+: foreach *.hs | {util} |> stack exec -- ghc -i. -O2 %f -c |> %B.o %B.hi
+: foreach *.o | {util} |> stack exec -- ghc $(HS_LDFLAGS) -O2 %f Util/Util.o -o %B |> %B

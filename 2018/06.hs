@@ -86,3 +86,8 @@ within10000 = [(x,y) |
 
 solve2 :: Int
 solve2 = length within10000
+
+main :: IO ()
+main = do
+  print solve1
+  print solve2

@@ -1,5 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc
+{-# LANGUAGE FlexibleContexts #-}
 
 import           Control.Applicative
 import           Control.Monad

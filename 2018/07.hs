@@ -1,5 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc
+{-# LANGUAGE FlexibleContexts #-}
 
 import           Control.Applicative
 import           Control.Monad
@@ -72,3 +73,8 @@ solve2 = sum $ go Set.empty [] steps
         t1 = minimum [t | (c, t) <- workers]
         cfinished = [c | (c, t) <- workers, t == t1]
         workers' = [(c, t - t1) | (c, t) <- workers, t > t1]
+
+main :: IO ()
+main = do
+  putStrLn solve1
+  print solve2

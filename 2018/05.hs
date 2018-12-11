@@ -46,3 +46,6 @@ solve2 :: Int
 solve2 = minimum [removed c | c <- nub $ map toUpper input]
   where
     removed c = length $ react $ filter (\x -> not (elem x [c, toLower c])) input
+
+main :: IO ()
+main = print solve1 >> print solve2

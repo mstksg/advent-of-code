@@ -1,5 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc
+{-# LANGUAGE FlexibleContexts #-}
 
 import           Control.Applicative
 import           Control.Monad
@@ -58,3 +59,6 @@ value (Tree children meta)
 solve1 = sumMetadata tree
 
 solve2 = value tree
+
+main :: IO ()
+main = print solve1 >> print solve2
