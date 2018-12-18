@@ -70,7 +70,7 @@ gensym = do (next, large, small) <- readIORef cache
             writeIORef cache (next+1, large, small)
             return next
 
-lookupSmall :: String -> IO (Maybe Cell)
+lookupSmall :: String -> Cell -> IO (Maybe Cell)
 lookupSmall xs = do (next, large, small) <- readIORef cache
                     return (Map.lookup xs small)
 
