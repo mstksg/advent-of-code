@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 
 import           Control.Applicative
+import           Control.DeepSeq
 import           Control.Monad
 import           Data.Char
 import           Data.Foldable
@@ -11,7 +12,7 @@ import           Data.IORef
 import           Data.List
 import           Data.List.Split (splitOn)
 import           Data.Map (Map)
-import qualified Data.Map.Strict as Map
+import qualified Data.Map.Lazy as Map
 import           Data.Monoid
 import           Data.Ord
 import           Data.Set (Set)
@@ -58,64 +59,46 @@ solve2 = sum $ iterate step initial !! 50000
 data Cell = Small Int String | Large Int Cell Cell Cell
   deriving (Show, Eq)
 
+
+
 hash :: Cell -> Int
 hash (Small n _) = n
 hash (Large n _ _ _) = n
 
-cache :: IORef (Int, Map (Int,Int) Cell, Map String Cell)
-cache = unsafePerformIO (newIORef (1, Map.empty, Map.empty))
+cache :: IORef (Int, Map (Either String (Int,Int)) Cell)
+cache = unsafePerformIO (newIORef (1, Map.empty))
 
-gensym :: IO Int
-gensym = do (next, large, small) <- readIORef cache
-            writeIORef cache (next+1, large, small)
-            return next
-
-lookupSmall :: String -> IO (Maybe Cell)
-lookupSmall xs = do (next, large, small) <- readIORef cache
-                    return (Map.lookup xs small)
-
-insertSmall :: String -> IO Cell
-insertSmall xs = do a <- gensym
-                    (next, large, small) <- readIORef cache
-                    let cell = Small a xs
-                    let small' = Map.insert xs cell small
-                    writeIORef cache (next, large, small')
-                    return cell
-
-lookupLarge :: (Int,Int) -> IO (Maybe Cell)
-lookupLarge ab = do (next, large, small) <- readIORef cache
-                    return (Map.lookup ab large)
-
-insertLarge :: Cell -> Cell -> IO Cell
-insertLarge x y = do a <- gensym
-                     (next, large, small) <- readIORef cache
-                     let cell = Large a x y (run x y)
-                     let large' = Map.insert (hash x, hash y) cell large
-                     writeIORef cache (next, large', small)
-                     return cell
+lookupCell :: Either String (Int,Int) -> Cell -> IO Cell
+lookupCell key (Small _ str) = do deepseq key (return ())
+                                  (next, cells) <- readIORef cache
+                                  case Map.lookup key cells of
+                                    Just c -> return c
+                                    Nothing -> do
+                                      let cell = Small next str
+                                          cells' = Map.insert key cell cells
+                                      writeIORef cache (next + 1, cells')
+                                      return cell
+lookupCell key (Large _ l r x) = do deepseq key (return ())
+                                    (next, cells) <- readIORef cache
+                                    case Map.lookup key cells of
+                                      Just c -> return c
+                                      Nothing -> do
+                                        let cell = Large next l r x
+                                            cells' = Map.insert key cell cells
+                                        writeIORef cache (next + 1, cells')
+                                        return cell
 
 findSmall :: String -> Cell
-findSmall xs = unsafePerformIO $ do
-  (next, large, small) <- readIORef cache
-  case Map.lookup xs small of
-    Just cell -> return cell
-    Nothing -> do
-      let cell = Small next xs
-          next' = next + 1
-          small' = Map.insert xs cell small
-      writeIORef cache (next', large, small')
-      return cell
+findSmall xs = unsafePerformIO $ lookupCell (Left xs) (Small undefined xs)
 
 findCell :: Cell -> Cell -> Cell
-findCell (Small a xs) (Small b ys)
+findCell (Small _ xs) (Small _ ys)
   | length (xs ++ ys) < 8  =  findSmall (xs ++ ys)
-findCell cell1 cell2 = unsafePerformIO $ do
-  found <- lookupLarge (hash cell1, hash cell2)
-  case found of
-    Just cell -> return cell
-    Nothing -> insertLarge cell1 cell2
+findCell cell1 cell2 = unsafePerformIO $ lookupCell (Right (hash cell1, hash cell2)) (Large undefined cell1 cell2 (run cell1 cell2))
 
 result :: Cell -> Cell
+result (Small _ xs)
+  | length xs /= 8 = error "not 8"
 result (Small _ xs) = let set = step $ Set.fromList [i | (i, c) <- zip [0..] xs, c == '#']
                           str' = [if Set.member i set then '#' else '.'
                                  | i <- [2..5]]
@@ -155,12 +138,15 @@ convert xs
     x1 = (take m xs)
     x2 = (drop m xs)
 
+-- stepN :: Int -> Cell -> Cell
+-- stepN
+
 main :: IO ()
 main = do print solve1
           let start = splitOn ": " (head (lines input)) !! 1
               padded = start ++ replicate (128 - length start) '.'
           print padded
-          print (display $ convert padded)
+          print (display $ result $ convert $ padded)
           -- Set.fromList [findSmall [c] | c <- start]
           -- let x = findCell zero one
           --     x2 = findCell x x
