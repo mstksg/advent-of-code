@@ -8,6 +8,8 @@ import           Control.Monad
 import           Data.Char
 import           Data.Foldable
 import           Data.Functor.Identity
+import qualified Data.HashTable.IO as H
+import           Data.Hashable
 import           Data.IORef
 import           Data.List
 import           Data.List.Split (splitOn)
@@ -17,17 +19,22 @@ import           Data.Monoid
 import           Data.Ord
 import           Data.Set (Set)
 import qualified Data.Set as Set
+import           Data.Text (Text)
+import qualified Data.Text as T
 import           Data.Time.Calendar
 import           Data.Time.Format
+import           Data.Traversable
 import           Data.Vector (Vector)
 import qualified Data.Vector as V
 import           Debug.Trace
 import           System.IO.Unsafe
+import           System.Mem.StableName
 import qualified Text.Parsec as Parsec
 import           Text.Parser.Char
 import           Text.Parser.Combinators
-
 import           Util.Util
+
+
 
 input :: String
 input = unsafePerformIO (readFile "input/12.txt")
@@ -56,100 +63,215 @@ solve1 = sum $ iterate step initial !! 20
 solve2 :: Int
 solve2 = sum $ iterate step initial !! 50000
 
-data Cell = Small Int String | Large Int Cell Cell Cell
+data Cell = Zero | One | Cell !Int !Cell !Cell
   deriving (Show, Eq)
 
+type MemoTable k v = H.CuckooHashTable k v
 
+{-# NOINLINE zero #-}
+zero :: Cell
+zero = Zero
 
-hash :: Cell -> Int
-hash (Small n _) = n
-hash (Large n _ _ _) = n
+{-# NOINLINE one #-}
+one :: Cell
+one = One
 
-cache :: IORef (Int, Map (Either String (Int,Int)) Cell)
-cache = unsafePerformIO (newIORef (1, Map.empty))
+{-# NOINLINE consTable #-}
+consTable :: MemoTable (StableName Cell, StableName Cell) Cell
+consTable = unsafePerformIO H.new
 
-lookupCell :: Either String (Int,Int) -> Cell -> IO Cell
-lookupCell key (Small _ str) = do deepseq key (return ())
-                                  (next, cells) <- readIORef cache
-                                  case Map.lookup key cells of
-                                    Just c -> return c
-                                    Nothing -> do
-                                      let cell = Small next str
-                                          cells' = Map.insert key cell cells
-                                      writeIORef cache (next + 1, cells')
-                                      return cell
-lookupCell key (Large _ l r x) = do deepseq key (return ())
-                                    (next, cells) <- readIORef cache
-                                    case Map.lookup key cells of
-                                      Just c -> return c
-                                      Nothing -> do
-                                        let cell = Large next l r x
-                                            cells' = Map.insert key cell cells
-                                        writeIORef cache (next + 1, cells')
-                                        return cell
+{-# NOINLINE calcTable #-}
+calcTable :: MemoTable (StableName Cell) Cell
+calcTable = unsafePerformIO H.new
 
-findSmall :: String -> Cell
-findSmall xs = unsafePerformIO $ lookupCell (Left xs) (Small undefined xs)
+memoize :: (Eq name, Hashable name)
+        => MemoTable name val
+        -> (key -> IO name)
+        -> (key -> IO val)
+        -> key -> IO val
+memoize tbl mkname mkval key = do
+    sn <- mkname key
+    found <- H.lookup tbl sn
+    case found of
+      Nothing -> do
+        val <- mkval key
+        H.insert tbl sn val
+        return val
+      Just v -> return v
 
-findCell :: Cell -> Cell -> Cell
-findCell (Small _ xs) (Small _ ys)
-  | length (xs ++ ys) < 8  =  findSmall (xs ++ ys)
-findCell cell1 cell2 = unsafePerformIO $ lookupCell (Right (hash cell1, hash cell2)) (Large undefined cell1 cell2 (run cell1 cell2))
+level :: Cell -> Int
+level Zero = 0
+level One = 0
+level (Cell n _ _) = n
 
-result :: Cell -> Cell
-result (Small _ xs)
-  | length xs /= 8 = error "not 8"
-result (Small _ xs) = let set = step $ Set.fromList [i | (i, c) <- zip [0..] xs, c == '#']
-                          str' = [if Set.member i set then '#' else '.'
-                                 | i <- [2..5]]
-                      in findSmall str'
-result (Large _ _ _ r) = r
+combine :: Cell -> Cell -> IO Cell
+combine = curry (memoize consTable (\(l,r) -> (,) <$> makeStableName l <*> makeStableName r) make)
+  where
+    make (l,r)
+      | level l == level r = pure (Cell (level l + 1) l r)
+      | otherwise          = error "level mismatch"
 
 slice :: Cell -> (Cell, Cell)
-slice (Large _ x y _) = (x, y)
-slice (Small _ xs) = (findSmall $ take (length xs `div` 2) xs,
-                      findSmall $ drop (length xs `div` 2) xs)
+slice (Cell n l r) = (l, r)
 
-run :: Cell -> Cell -> Cell
-run (Small _ xs) (Small _ ys)
-  | length (xs ++ ys) == 8 = let str = xs ++ ys
-                                 set = step $ Set.fromList [i | (i, c) <- zip [0..] str, c == '#']
-                                 str' = [if Set.member i set then '#' else '.'
-                                        | i <- [2..5]]
-                             in findSmall str'
-  | otherwise = undefined
-run (Large _ a b x1) (Large _ c d x3) = let x2 = result (findCell b c)
-                                            y1 = findCell x1 x2
-                                            y2 = findCell x2 x3
-                                        in findCell (result y1) (result y2)
+cellToString :: Cell -> String
+cellToString Zero = "."
+cellToString One = "#"
+cellToString (Cell _ l r) = cellToString l <> cellToString r
 
-display :: Cell -> String
-display (Small _ xs) = xs
-display (Large _ a b _) = display a <> display b
-
-convert :: String -> Cell
-convert xs
-  | 2 ^ round (logBase 2 (fromIntegral n)) /= n = error "not power of 2"
-  | n >= 8    = findCell (convert x1) (convert x2)
-  | otherwise = findSmall xs
+stringToCell :: String -> IO Cell
+stringToCell "." = pure zero
+stringToCell "#" = pure one
+stringToCell xs
+  | n == 2^level = do l <- stringToCell (take m xs)
+                      r <- stringToCell (drop m xs)
+                      combine l r
   where
     n = length xs
     m = n `div` 2
-    x1 = (take m xs)
-    x2 = (drop m xs)
+    level = round (logBase 2 (fromIntegral n))
 
--- stepN :: Int -> Cell -> Cell
--- stepN
+-- Result is calculated 2^(l-3) steps in the future
+-- Size of 2^(l-1) (ie. half size of the input).
+calculate :: Cell -> IO Cell
+calculate = memoize calcTable makeStableName calc
+  where
+    calc c@(Cell n l r)
+      | n == 3 = calcFlat c -- 8
+      | n  > 3 = -- 16
+          do let (ll, lr) = slice l
+                 (rl, rr) = slice r
+             mid <- combine lr rl
+             x1 <- calculate l
+             x2 <- calculate mid
+             x3 <- calculate r
+             y1 <- calculate =<< combine x1 x2
+             y2 <- calculate =<< combine x2 x3
+             combine y1 y2
+
+    calcFlat c = let str = cellToString c
+                     set = step $ Set.fromList [i | (i, c) <- zip [0..] str, c == '#']
+                     str' = [if Set.member i set then '#' else '.' | i <- [2..5]]
+                 in stringToCell str'
+
+{-# NOINLINE popTable #-}
+popTable :: MemoTable (StableName Cell) Int
+popTable = unsafePerformIO H.new
+
+-- Result is calculated 2^(l-3) steps in the future
+-- Size of 2^(l-1) (ie. half size of the input).
+population :: Cell -> IO Int
+population = memoize popTable makeStableName pop
+  where
+    pop Zero = pure 0
+    pop One = pure 1
+    pop (Cell n l r) = (+) <$> population l <*> population r
+
+log2 :: Int -> Int
+log2 x
+  | 2^y == x  = y
+  | otherwise = error "not a power of 2"
+  where
+    y = round (logBase 2 (fromIntegral x))
+
+textToCell :: Text -> IO Cell
+textToCell xs
+  | xs == T.pack "." = pure zero
+  | xs == T.pack "#" = pure one
+  | n == 2^level = do l <- textToCell (T.take m xs)
+                      r <- textToCell (T.drop m xs)
+                      combine l r
+  where
+    n = T.length xs
+    m = n `div` 2
+    level = log2 n
+
+setToText :: Int -> Int -> Set Int -> Text
+setToText start end plants = T.pack [if Set.member i plants then '#' else '.' | i <- [start..end-1]]
+
+stringToSet :: Int -> String -> Set Int
+stringToSet start xs = Set.fromList [i | (i, c) <- zip [start..] xs, c == '#']
+
+cellToSet :: Int -> Cell -> IO (Set Int)
+cellToSet x Zero = pure Set.empty
+cellToSet x One = pure (Set.singleton x)
+cellToSet x (Cell n l r) = do pl <- population l
+                              pr <- population r
+                              setl <- if pl > 0 then cellToSet x l else pure Set.empty
+                              setr <- if pr > 0 then cellToSet (x + 2^(n-1)) r else pure Set.empty
+                              return (Set.union setl setr)
+
+zeros :: Int -> IO Cell
+zeros 1 = pure zero
+zeros n
+  | n == 2^log2 n = do x <- zeros (n`div`2)
+                       combine x x
+
+
+setToCell :: Int -> Int -> Set Int -> IO Cell
+setToCell x 1 plants = case Set.member x plants of
+                         True -> pure one
+                         False -> pure zero
+setToCell x size plants
+  | Set.null plants = zeros size
+  | otherwise       = do let lplants = sliceSet x (div size 2) plants
+                             rplants = sliceSet (x + div size 2) (div size 2) plants
+                         lcell <- setToCell x (div size 2) lplants
+                         rcell <- setToCell (x + div size 2) (div size 2) rplants
+                         combine lcell rcell
+
+sliceSet :: Int -> Int -> Set Int -> Set Int
+sliceSet x s set = let (_, gx) = Set.split (x-1) set
+                       (ls, _) = Set.split (x+s) gx
+                   in ls
+
+simulateFast :: Int -> Set Int -> IO (Set Int)
+simulateFast t state
+  | Set.null state = pure state
+  | otherwise = do
+      in_pieces <- for in_indexes $ \x -> do
+        -- let str = setToText x (x + xin) state
+        -- c <- textToCell str
+        c <- setToCell x xin state
+        seq c (return c)
+      out_pieces <- traverse calculate in_pieces
+      out_sets <- traverse (\(x, c) -> cellToSet x c) (zip out_indexes out_pieces)
+      return (Set.unions out_sets)
+  where
+    -- t = 2^(l-3)
+    l = log2 t + 3
+    xout = 2^(l-1)
+    xin = 2^l
+    smin = Set.findMin state
+    smax = Set.findMax state
+    -- Blocks of size xin overlapping the input, separated by distance xout so the results do not overlap
+    in_indexes = [smin - xin + 1, smin - xin + 1 + xout .. smax - 1]
+    out_indexes = [x + div xout 2 | x <- in_indexes]
+
+simulateFast' :: Int -> Set Int -> IO (Set Int)
+simulateFast' 0 state = pure state
+simulateFast' t state = do next <- simulateFast t0 state
+                           simulateFast' (t - t0) next
+  where
+    t0 = maximum (takeWhile (<=t) [2^l | l <- [0..]])
+
+-- zeros :: Int -> IO Cell
+-- zeros 0 = pure zero
+-- zeros n = do x <- zeros (n-1)
+--              combine x x
 
 main :: IO ()
 main = do print solve1
-          let start = splitOn ": " (head (lines input)) !! 1
-              padded = start ++ replicate (128 - length start) '.'
-          print padded
-          print (display $ result $ convert $ padded)
-          -- Set.fromList [findSmall [c] | c <- start]
-          -- let x = findCell zero one
-          --     x2 = findCell x x
-          -- putStrLn (display x2)
-          -- putStrLn ("    " ++ display (result x2))
-          -- putStrLn ("      " ++ display (result (result x2)))
+          -- x <- stringToCell "..#....."
+          -- print (cellToString x)
+          -- print =<< cellToSet 0 x
+          -- print . cellToString =<< calculate x
+          -- print =<< cellToSet 0 =<< calculate x
+          -- traverse_ print . map snd =<< H.toList consTable
+          -- let x = stringToSet 0 "..#....."
+          -- x1 <- simulateFast 8 x
+          -- print x
+          -- print x1
+          -- print =<< simulateFast' 17 x
+          -- print $ iterate step initial !! 20
+          print . sum =<< simulateFast' (50 * 10^9) initial
