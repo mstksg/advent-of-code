@@ -34,7 +34,7 @@ import           Text.Parser.Char
 import           Text.Parser.Combinators
 import           Util.Util
 
-
+-- Naive algorithm
 
 input :: String
 input = unsafePerformIO (readFile "input/12.txt")
@@ -42,11 +42,13 @@ input = unsafePerformIO (readFile "input/12.txt")
 rules :: Map String String
 rules = Map.fromList [(i,o) | [i, o] <- map (splitOn " => ") (lines input)]
 
-initial :: Set Int
-initial = Set.fromList [i | (i, c) <- zip [0..] start, c == '#']
-  where
-    start = splitOn ": " (head (lines input)) !! 1
+stringToSet :: Int -> String -> Set Int
+stringToSet start xs = Set.fromList [i | (i, c) <- zip [start..] xs, c == '#']
 
+initial :: Set Int
+initial = stringToSet 0 (splitOn ": " (head (lines input)) !! 1)
+
+-- Get the neighborhood of each plant.
 extend :: Set Int -> Map Int String
 extend plants
   | Set.null plants = Map.empty
@@ -54,14 +56,14 @@ extend plants
   where
     go i = [if Set.member j plants then '#' else '.' | j <- [i-2 .. i+2]]
 
+-- Step forward the simulation.
 step :: Set Int -> Set Int
 step plants = Map.keysSet $ Map.filter (\v -> rules Map.! v == "#") $ extend plants
 
 solve1 :: Int
 solve1 = sum $ iterate step initial !! 20
 
-solve2 :: Int
-solve2 = sum $ iterate step initial !! 50000
+-- Hashlife
 
 data Cell = Zero | One | Cell !Int !Cell !Cell
   deriving (Show, Eq)
@@ -75,14 +77,6 @@ zero = Zero
 {-# NOINLINE one #-}
 one :: Cell
 one = One
-
-{-# NOINLINE consTable #-}
-consTable :: MemoTable (StableName Cell, StableName Cell) Cell
-consTable = unsafePerformIO H.new
-
-{-# NOINLINE calcTable #-}
-calcTable :: MemoTable (StableName Cell) Cell
-calcTable = unsafePerformIO H.new
 
 memoize :: (Eq name, Hashable name)
         => MemoTable name val
@@ -103,6 +97,10 @@ level :: Cell -> Int
 level Zero = 0
 level One = 0
 level (Cell n _ _) = n
+
+{-# NOINLINE consTable #-}
+consTable :: MemoTable (StableName Cell, StableName Cell) Cell
+consTable = unsafePerformIO H.new
 
 combine :: Cell -> Cell -> IO Cell
 combine = curry (memoize consTable (\(l,r) -> (,) <$> makeStableName l <*> makeStableName r) make)
@@ -131,6 +129,10 @@ stringToCell xs
     m = n `div` 2
     level = round (logBase 2 (fromIntegral n))
 
+{-# NOINLINE calcTable #-}
+calcTable :: MemoTable (StableName Cell) Cell
+calcTable = unsafePerformIO H.new
+
 -- Result is calculated 2^(l-3) steps in the future
 -- Size of 2^(l-1) (ie. half size of the input).
 calculate :: Cell -> IO Cell
@@ -158,8 +160,7 @@ calculate = memoize calcTable makeStableName calc
 popTable :: MemoTable (StableName Cell) Int
 popTable = unsafePerformIO H.new
 
--- Result is calculated 2^(l-3) steps in the future
--- Size of 2^(l-1) (ie. half size of the input).
+-- Memoized population count (mainly care whether pop is nonzero).
 population :: Cell -> IO Int
 population = memoize popTable makeStableName pop
   where
@@ -174,24 +175,6 @@ log2 x
   where
     y = round (logBase 2 (fromIntegral x))
 
-textToCell :: Text -> IO Cell
-textToCell xs
-  | xs == T.pack "." = pure zero
-  | xs == T.pack "#" = pure one
-  | n == 2^level = do l <- textToCell (T.take m xs)
-                      r <- textToCell (T.drop m xs)
-                      combine l r
-  where
-    n = T.length xs
-    m = n `div` 2
-    level = log2 n
-
-setToText :: Int -> Int -> Set Int -> Text
-setToText start end plants = T.pack [if Set.member i plants then '#' else '.' | i <- [start..end-1]]
-
-stringToSet :: Int -> String -> Set Int
-stringToSet start xs = Set.fromList [i | (i, c) <- zip [start..] xs, c == '#']
-
 cellToSet :: Int -> Cell -> IO (Set Int)
 cellToSet x Zero = pure Set.empty
 cellToSet x One = pure (Set.singleton x)
@@ -201,13 +184,15 @@ cellToSet x (Cell n l r) = do pl <- population l
                               setr <- if pr > 0 then cellToSet (x + 2^(n-1)) r else pure Set.empty
                               return (Set.union setl setr)
 
+-- Efficiently produce cells with lots of zeros for padding.
 zeros :: Int -> IO Cell
 zeros 1 = pure zero
 zeros n
   | n == 2^log2 n = do x <- zeros (n`div`2)
                        combine x x
 
-
+-- Build a cell containing this slice of the field
+-- position, length
 setToCell :: Int -> Int -> Set Int -> IO Cell
 setToCell x 1 plants = case Set.member x plants of
                          True -> pure one
@@ -225,13 +210,13 @@ sliceSet x s set = let (_, gx) = Set.split (x-1) set
                        (ls, _) = Set.split (x+s) gx
                    in ls
 
+-- Simulate forward some power-of-two steps in the future.
+-- Builds overlapping cells of the corresponding size, then stitches together the outputs.
 simulateFast :: Int -> Set Int -> IO (Set Int)
 simulateFast t state
   | Set.null state = pure state
   | otherwise = do
       in_pieces <- for in_indexes $ \x -> do
-        -- let str = setToText x (x + xin) state
-        -- c <- textToCell str
         c <- setToCell x xin state
         seq c (return c)
       out_pieces <- traverse calculate in_pieces
@@ -248,6 +233,8 @@ simulateFast t state
     in_indexes = [smin - xin + 1, smin - xin + 1 + xout .. smax - 1]
     out_indexes = [x + div xout 2 | x <- in_indexes]
 
+-- Simulate any arbitrary number of steps into the future by
+-- recursively calling simulateFast.
 simulateFast' :: Int -> Set Int -> IO (Set Int)
 simulateFast' 0 state = pure state
 simulateFast' t state = do next <- simulateFast t0 state
@@ -255,23 +242,6 @@ simulateFast' t state = do next <- simulateFast t0 state
   where
     t0 = maximum (takeWhile (<=t) [2^l | l <- [0..]])
 
--- zeros :: Int -> IO Cell
--- zeros 0 = pure zero
--- zeros n = do x <- zeros (n-1)
---              combine x x
-
 main :: IO ()
 main = do print solve1
-          -- x <- stringToCell "..#....."
-          -- print (cellToString x)
-          -- print =<< cellToSet 0 x
-          -- print . cellToString =<< calculate x
-          -- print =<< cellToSet 0 =<< calculate x
-          -- traverse_ print . map snd =<< H.toList consTable
-          -- let x = stringToSet 0 "..#....."
-          -- x1 <- simulateFast 8 x
-          -- print x
-          -- print x1
-          -- print =<< simulateFast' 17 x
-          -- print $ iterate step initial !! 20
           print . sum =<< simulateFast' (50 * 10^9) initial
