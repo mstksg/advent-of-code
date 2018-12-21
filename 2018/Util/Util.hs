@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Util.Util where
 
 import           Control.Applicative
@@ -23,3 +24,6 @@ import           Text.Parser.Char
 import           Text.Parser.Combinators
 
 maximumOn f = maximumBy (comparing f)
+
+parse :: Parsec.Stream s Identity t => Parsec.Parsec s () c -> s -> c
+parse p s = either (error.show) id (Parsec.parse p "" s)
