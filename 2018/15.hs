@@ -269,10 +269,11 @@ main :: IO ()
 main = do
   txt <- readFile "input/15.txt"
   let g = loadBattlefield txt
-  --     go grid = do
-  --       putStr (display grid)
-  --       threadDelay (100 * 10^3)
-  --       go (snd $ simulate $ elfPower 8 grid)
-  -- go g
   print $ solve1 g
   print $ solve2 g
+  let
+    go grid = do
+        putStr (display grid)
+        threadDelay (100 * 10^3)
+        go (snd $ simulate $ elfPower 19 grid)
+  go g
