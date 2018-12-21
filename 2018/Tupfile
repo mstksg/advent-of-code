@@ -1,4 +1,4 @@
-HS_LDFLAGS=-package containers -package parsers -package split -package charset -package vector -package hashtables
+HS_LDFLAGS=-package containers -package parsers -package split -package charset -package vector -package hashtables -package heap
 
 # GHCFLAGS=-prof
 GHCFLAGS=
