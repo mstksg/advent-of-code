@@ -141,3 +141,57 @@ main = do
 
   print (run input (VM $ V.replicate 6 0))
   print (run input (VM $ V.replicate 6 0 V.// [(0, 1)]))
+
+-- #ip 1
+-- addi 1 16 1 ->
+-- seti 1 4 4 [4] = 1
+-- seti 1 1 2 [2] = 1
+-- mulr 4 2 5 [5] = [4] * [2] \
+-- eqrr 5 3 5 [5] = [5] == [3]|
+-- addr 5 1 1 if ^ add 4 to 0 | if [4] * [2] == [3] { [0] += [4] }
+-- addi 1 1 1                 |
+-- addr 4 0 0                 /
+-- addi 2 1 2 [2] += 1
+-- gtrr 2 3 5 [5] = [2] > [3] \
+-- addr 1 5 1 if ^ skip next  | while ([2] <= [3]) goto #3
+-- seti 2 4 1 goto #3         /
+-- addi 4 1 4 [4] += 4
+-- gtrr 4 3 5 \
+-- addr 5 1 1 | while ([4] <= [3]) goto #2
+-- seti 1 1 1 /
+-- mulr 1 1 1
+-- addi 3 2 3 <-
+-- mulr 3 3 3
+-- mulr 1 3 3
+-- muli 3 11 3
+-- addi 5 7 5
+-- mulr 5 1 5
+-- addi 5 18 5
+-- addr 3 5 3
+-- addr 1 0 1 ->
+-- seti 0 7 1 <0-
+-- setr 1 3 5 <1-
+-- mulr 5 1 5
+-- addr 1 5 5
+-- mulr 1 5 5
+-- muli 5 14 5
+-- mulr 5 1 5
+-- addr 3 5 3
+-- seti 0 7 0
+-- seti 0 6 1
+
+-- for [4] in [1, 1+4 .. [3]+1] {
+--  for [2] in 1..[3]+1 {
+--   if [2] * [4] = [3] {
+--     [0] += [4]
+--   }
+--  }
+-- }
+
+-- equivalently...
+
+-- for [4] in [1, 1+4 .. [3]+1] {
+--  if [3] `mod` [4] == 0 {
+--   [0] += [4]
+--  }
+-- }
