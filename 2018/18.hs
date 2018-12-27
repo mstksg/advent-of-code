@@ -67,7 +67,27 @@ neighbors p = [p + Pos dx dy
 data Square = O | T | L | X
   deriving (Show, Eq, Ord)
 
-type Grid = Map Pos Square
+data Rect = Rect Pos Pos
+  deriving (Show, Eq, Ord)
+
+area :: Rect -> Int
+area (Rect p1 p2) = case p2 - p1 of
+                      Pos dx dy -> dx * dy
+
+instance Monoid Rect where
+  mempty = Rect 0 0
+  mappend r1 r2
+    | area r1 == 0 = r2
+    | area r2 == 0 = r1
+    | otherwise = case (r1, r2) of
+        (Rect p1 q1, Rect p2 q2) -> Rect (minPos p1 p2) (maxPos q1 q2)
+          where
+            minPos p q = Pos (min (x p) (x q)) (min (y p) (y q))
+            maxPos p q = Pos (max (x p) (x q)) (max (y p) (y q))
+
+data Grid = Grid { gridMap :: Map Pos Square,
+                   gridRect :: Rect }
+  deriving (Show, Eq, Ord)
 
 count :: Eq a => a -> [a] -> Int
 count a xs = length [x | x <- xs, x == a]
@@ -85,10 +105,43 @@ stepSquare s neighbors = case s of
     | otherwise              -> O
   X -> X
 
+bbox :: [Pos] -> Rect
+bbox [] = Rect 0 0
+bbox xs = Rect (Pos xmin ymin) (Pos xmax ymax)
+  where
+    xmin = minimum (map x xs)
+    ymin = minimum (map y xs)
+    xmax = maximum (map x xs) + 1
+    ymax = maximum (map y xs) + 1
+
+rectContains :: Rect -> Pos -> Bool
+rectContains (Rect (Pos x1 y1) (Pos x2 y2)) (Pos x y) = (x1 <= x && x < x2) && (y1 <= y && y < y2)
+
+rectIntersection :: Rect -> Rect -> Rect
+rectIntersection (Rect p1 q1) (Rect p2 q2)
+  | x q3 <= x p3 || y q3 <= y p3 = Rect 0 0
+  | otherwise = Rect p3 q3
+  where
+    p3 = Pos (max (x p1) (x p2)) (max (y p1) (y p2))
+    q3 = Pos (min (x q1) (x q2)) (min (y q1) (y q2))
+
+gridFromList :: [(Pos, Square)] -> Grid
+gridFromList xs = Grid (Map.fromList xs) (bbox (map fst xs))
+
+gridToList :: Grid -> [(Pos, Square)]
+gridToList (Grid m _) = Map.toList m
+
+indexGrid :: Pos -> Grid -> Square
+indexGrid p (Grid m _) = Map.findWithDefault X p m
+
+instance Monoid Grid where
+  mempty = Grid mempty mempty
+  mappend (Grid m1 r1) (Grid m2 r2) = Grid (m1 <> m2) (r1 <> r2)
+
 step :: Grid -> Grid
-step grid = Map.fromList $ do
-  (p, s) <- Map.toList grid
-  let xs = [Map.findWithDefault X n grid | n <- neighbors p]
+step grid = gridFromList $ do
+  (p, s) <- gridToList grid
+  let xs = [indexGrid n grid | n <- neighbors p]
   return (p, stepSquare s xs)
 
 -- === HASHLIFE === --
@@ -223,14 +276,17 @@ population = memoize popTable makeStableName pop
 
 
 cellToMap :: Pos -> Cell -> IO Grid
-cellToMap p0 (Zero x) = pure $ if elem x [T,L,O] then Map.singleton p0 x else Map.empty
+cellToMap p0 (Zero x) = pure $ if elem x [T,L,O] then
+                                 gridFromList [(p0, x)]
+                               else
+                                 gridFromList []
 cellToMap p0 cell@(Cell l q) = do
   pop <- population cell
   if pop > 0 then do
     subs <- sequence $ (\cell d -> cellToMap (p0 + d) cell) <$> q <*> dx
     return (fold subs)
     else
-    pure Map.empty
+    pure mempty
   where
     m = 2^(l - 1)
     dx = Quad (Pos 0 0) (Pos m 0) (Pos 0 m) (Pos m m)
@@ -248,9 +304,10 @@ intersectsOrigin (Pos x0 y0) l = True --x0 <= 50 && x1 >= 0 && y0 <= 50 && y1 >=
     n = 2^l
 
 mapToCell :: Pos -> Int -> Grid -> IO Cell
-mapToCell p0 0 grid = pure (canon (Map.findWithDefault X p0 grid))
+mapToCell p0 0 grid = pure (canon (indexGrid p0 grid))
 mapToCell p0 l grid
-  | intersectsOrigin p0 l = combine =<< traverse (\d -> mapToCell (p0+d) (l-1) grid) dx
+  | area (rectIntersection (Rect p0 (p0 + 2^l)) (gridRect grid)) > 0 =
+      combine =<< traverse (\d -> mapToCell (p0+d) (l-1) grid) dx
   | otherwise             = blankCell l
   where
     m = 2^(l - 1)
@@ -305,7 +362,7 @@ simulateFast' t state = do next <- simulateFast t0 state
 
 
 decode :: String -> Grid
-decode txt = Map.fromList [(Pos x y, dec c)
+decode txt = gridFromList [(Pos x y, dec c)
                           | (y, line) <- zip [0..] (lines txt),
                             (x, c) <- zip [0..] line,
                             elem c (".#|" :: String)]
@@ -321,27 +378,34 @@ toChar L = "#"
 toChar X = "\x1b[41m \x1b[m"
 
 display :: Grid -> String
-display grid = unlines [ line y | y <- [ymin..ymax]]
+display grid = unlines [ line y | y <- [ymin..ymax-1]]
   where
-    line y = fold [toChar (Map.findWithDefault X (Pos x y) grid) | x <- [xmin..xmax]]
-    ymin = minimum (map y (Map.keys grid))
-    ymax = maximum (map y (Map.keys grid))
-    xmin = minimum (map x (Map.keys grid))
-    xmax = maximum (map x (Map.keys grid))
+    line y = fold [toChar (indexGrid (Pos x y) grid) | x <- [xmin..xmax-1]]
+    Rect (Pos xmin ymin) (Pos xmax ymax) = gridRect grid
+
+value :: Grid -> Int
+value grid = count T final * count L final
+  where
+    final = Map.elems (gridMap grid)
 
 solve1 :: Grid -> Int
-solve1 grid = count T final * count L final
-  where
-    final = Map.elems (iterate step grid !! 10)
+solve1 grid = value (iterate step grid !! 10)
+
+solve2 :: Grid -> IO Int
+solve2 grid = do
+  grid1 <- simulateFast' 1000000000 grid
+  return (value grid1)
 
 main :: IO ()
 main = do
   txt <- readFile "input/18.txt"
   let grid0 = decode txt
   putStrLn (display $ iterate step grid0 !! 10)
-  print (solve1 grid0)
-  grid1 <- simulateFast' 1000000 grid0
+  grid1 <- simulateFast' 10 grid0
   putStrLn (display grid1)
+
+  print (solve1 grid0)
+  print =<< solve2 grid0
 
   -- putStrLn (display grid0)
   -- cell0 <- mapToCell (Pos (50-16) (50-16)) 4 grid0
