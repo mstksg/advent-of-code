@@ -29,4 +29,4 @@ parse :: Parsec.Stream s Identity t => Parsec.Parsec s () c -> s -> c
 parse p s = either (error.show) id (Parsec.parse p "" s)
 
 number :: CharParsing m => m Int
-number = read <$> some digit
+number = read <$> ((++) <$> many (char '-') <*> some digit)
