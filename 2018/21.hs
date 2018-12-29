@@ -17,6 +17,8 @@ import           Data.Foldable
 import           Data.Functor.Identity
 import           Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
+import           Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HashMap
 import           Data.Hashable
 import           Data.Heap (MinHeap)
 import qualified Data.Heap as H
@@ -101,12 +103,25 @@ data Program = Program {
   }
   deriving (Show, Eq)
 
+-- Instruction pointer -> macro
+hasMacro :: Int -> Bool
+hasMacro 17 = True
+hasMacro _ = False
+
+macro :: Int -> VM -> VM
+macro 17 (VM mem) = VM (mem V.// [(1, ip), (5, out5)])
+  where
+    ip = 26
+    in3 = mem V.! 3
+    out5 = head [o | o <- [0..], 256 * (o + 1) > in3]
+
 step :: Program -> VM -> VM
 step (Program ipp prog) (VM mem)
+  | hasMacro ip = macro ip (VM mem)
   | inRange = let mem' = stepMem (prog V.! ip) mem
                   ip' = mem' V.! ipp + 1
                   mem'' = mem' V.// [(ipp, ip')]
-              in t (VM mem'')
+              in (VM mem'')
   | otherwise = VM mem
   where
     ip = mem V.! ipp
@@ -115,17 +130,38 @@ step (Program ipp prog) (VM mem)
           traceShow mem
         else id
 
-run :: HashSet VM -> Program -> VM -> VM
-run seen prog vm
-  | progCode prog V.! ip == Op Eqrr 4 0 5 =
-    if HashSet.member vm' seen then
-      vm
-    else
-      run (HashSet.insert vm seen) prog vm'
-  | otherwise = run seen prog vm'
+solve1 :: Program -> Int
+solve1 prog = go (VM $ V.replicate 6 0)
   where
-    ip = vmMem vm V.! progIpp prog
-    vm' = step prog vm
+    go vm
+      | progCode prog V.! ip == Op Eqrr 4 0 5 =
+          vmMem vm V.! 4
+      | otherwise = go (step prog vm)
+      where
+        ip = vmMem vm V.! progIpp prog
+
+solve2 :: Program -> Int
+solve2 prog = go HashSet.empty HashSet.empty undefined (VM $ V.replicate 6 0)
+  where
+    go seen fours latest vm
+      | progCode prog V.! ip == Op Eqrr 4 0 5 =
+          if HashSet.member vm seen then
+            latest
+          else
+            go (HashSet.insert vm seen) (HashSet.insert v4 fours) (if HashSet.member v4 fours then latest else v4) (step prog vm)
+      | otherwise = go seen fours latest (step prog vm)
+      where
+        ip = vmMem vm V.! progIpp prog
+        v4 = (vmMem vm V.! 4)
+
+run :: Program -> VM -> (VM, Int)
+run prog = go 0
+  where
+    go i vm
+      | vm' == vm = (vm, i-1)
+      | otherwise = go (i+1) vm'
+      where
+        vm' = step prog vm
 
 pInput :: (Monad m, CharParsing m) => m Program
 pInput = Program <$> pIpp <*> (V.fromList <$> some pOp)
@@ -144,7 +180,10 @@ main = do
   let input = parse pInput txt
   print input
 
-  print (run HashSet.empty input (VM $ V.replicate 6 0))
+  print (solve1 input)
+  print (solve2 input)
+  print (run input (VM $ V.fromList [103548, 0, 0, 0, 0, 0]))
+  print (run input (VM $ V.fromList [14256686, 0, 0, 0, 0, 0]))
 
 -- #ip 1
 -- seti 123 0 4
@@ -164,15 +203,15 @@ main = do
 -- addr 5 1 1   | if 256 > [3] then goto #28
 -- addi 1 1 1   |
 -- seti 27 7 1  /
--- seti 0 1 5
--- addi 5 1 2   <- #18
--- muli 2 256 2
--- gtrr 2 3 2   \
--- addr 2 1 1   | if [2] > [3] then goto #26
--- addi 1 1 1   |
--- seti 25 0 1  /
--- addi 5 1 5
--- seti 17 2 1  -> #18
+-- seti 0 1 5                                \
+-- addi 5 1 2   <- #18                       | for [5] = 0.. {
+-- muli 2 256 2                              |  if 256 * ([5] + 1) > [3] break
+-- gtrr 2 3 2   \                            | }
+-- addr 2 1 1   | if [2] > [3] then goto #26 |
+-- addi 1 1 1   |                            | [5] = [3] / 256 - 1 (ceiling division)
+-- seti 25 0 1  /                            |
+-- addi 5 1 5                                |
+-- seti 17 2 1  -> #18                       /
 -- setr 5 7 3 <- #26
 -- seti 7 8 1   -> #8
 -- eqrr 4 0 5 <- #28  \
