@@ -13,6 +13,12 @@ import qualified Data.Set as Set
 class Ord s => AStar s o where
   astar :: (s -> [s]) -> (s -> s -> Int) -> (s -> Int) -> s -> o
 
+bfs :: AStar s o => (s -> [s]) -> (s -> Bool) -> s -> o
+bfs actions goal s0 = astar actions (\_ _ -> 1) (\s -> if goal s then 0 else 1) s0
+
+dijkstra :: AStar s o => (s -> [s]) -> (s -> s -> Int) -> s -> o
+dijkstra actions cost s0 = astar actions cost (const 0) s0
+
 instance Ord s => AStar s Int where
   astar actions cost goal s0 = fromJust (astar actions cost goal s0)
 
