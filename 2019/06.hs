@@ -1,11 +1,10 @@
 {-# Language ScopedTypeVariables #-}
 {-# Language MultiParamTypeClasses #-}
 
+import           Criterion
 import           Data.List.Split
 import           Data.Map (Map)
 import qualified Data.Map.Lazy as Map
-import           Data.Heap (MinPrioHeap)
-import qualified Data.Heap as H
 import           Data.Set (Set)
 import qualified Data.Set as Set
 
@@ -28,3 +27,9 @@ solve2 txt = astar (\p -> step Map.! p) (\_ _ -> 1) (\p -> if p == (orb Map.! "S
     orb = parseOrbits txt
     rev = Map.fromListWith (++) [(b, [a]) | (a, b) <- Map.toList orb]
     step = Map.unionWith (++) (pure <$> orb) rev
+
+main :: IO ()
+main = do
+  txt <- readFile "input/06.txt"
+  benchmark (nf solve1 txt)
+  benchmark (nf solve2 txt)
