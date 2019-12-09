@@ -74,6 +74,9 @@ area :: Rect -> Int
 area (Rect p1 p2) = case p2 - p1 of
                       Pos dx dy -> dx * dy
 
+instance Semigroup Rect where
+  (<>) = mappend
+
 instance Monoid Rect where
   mempty = Rect 0 0
   mappend r1 r2
@@ -133,6 +136,9 @@ gridToList (Grid m _) = Map.toList m
 
 indexGrid :: Pos -> Grid -> Square
 indexGrid p (Grid m _) = Map.findWithDefault X p m
+
+instance Semigroup Grid where
+  (<>) = mappend
 
 instance Monoid Grid where
   mempty = Grid mempty mempty
