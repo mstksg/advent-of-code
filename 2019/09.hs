@@ -39,7 +39,7 @@ decodeInstruction mem pc = case (mem ? pc) `mod` 100 of
   9 -> (AdjustBase, arity 1)
   n -> error ("Unknown opcode: " ++ show n)
   where
-    modes = [case c of {'0' -> Pos; '1' -> Imm; '2' -> Rel} | (c, i) <- zip (reverse $ show ((mem ? pc) `div` 100)) [1..]] ++ repeat Pos
+    modes = [case c of {'0' -> Pos; '1' -> Imm; '2' -> Rel} | c <- reverse $ show ((mem ? pc) `div` 100)] ++ repeat Pos
     arity n = zipWith id modes [mem ? (pc + i) | i <- [1..n]]
 
 step :: IntCode -> Effect
