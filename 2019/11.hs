@@ -1,12 +1,12 @@
 {-# LANGUAGE RecordWildCards #-}
 
-import           Control.Monad
 import           Control.Lens
+import           Control.Monad
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap.Strict as IntMap
+import           Data.List
 import           Data.Map (Map)
 import qualified Data.Map.Strict as Map
-import           Data.List
 import           Linear.V2
 
 data IntCode = IntCode {
@@ -122,15 +122,3 @@ draw panels = putStrLn $ unlines $ do
     xmax = maximum (map (view _x) (Map.keys panels))
     ymin = minimum (map (view _y) (Map.keys panels))
     ymax = maximum (map (view _y) (Map.keys panels))
-
--- run :: IntCode -> [Int] -> [Int]
--- run mem ins = go (step mem) ins
---   where
---     go (Input f) ins = go (f (head ins)) (tail ins)
---     go (Output o f) ins = o : go f ins
---     go HaltEff ins = []
-
--- main :: IO ()
--- main = do
---   print (run prog [1])
---   print (run prog [2])
