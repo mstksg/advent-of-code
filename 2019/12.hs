@@ -1,11 +1,10 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE BangPatterns #-}
 
-import           Control.Lens
-import           Data.Foldable
 import           Control.Applicative
-import           Debug.Trace
+import           Control.Lens
 import           Control.Monad
+import           Data.Foldable
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap.Strict as IntMap
 import           Data.List
@@ -13,10 +12,10 @@ import           Data.Map (Map)
 import qualified Data.Map.Strict as Map
 import           Data.Set (Set)
 import qualified Data.Set as Set
+import           Debug.Trace
 import           Linear.V2
 import           Linear.V3
 import           Linear.V4
-
 
 data Moons = Moons {
   pos :: !(V4 Int),

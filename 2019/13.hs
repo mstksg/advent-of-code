@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 import           Control.Applicative
+import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Data.Foldable
@@ -12,6 +13,8 @@ import           Data.Map (Map)
 import qualified Data.Map.Strict as Map
 import           Data.Set (Set)
 import qualified Data.Set as Set
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import           Debug.Trace
 import           Linear.V2
 import           Linear.V3
@@ -103,19 +106,19 @@ solve1 prog = go (step prog) Map.empty
 
 draw :: Map (V2 Int) Int -> Int -> IO ()
 draw screen score = do
-  putStrLn ("=== score: " ++ show score ++ " ===")
   let xmin = minimum (map (view _x) (Map.keys screen))
       ymin = minimum (map (view _y) (Map.keys screen))
       xmax = maximum (map (view _x) (Map.keys screen))
       ymax = maximum (map (view _y) (Map.keys screen))
       c 0 = " "
       c 1 = "#"
-      c 2 = "\ESC[41m \ESC[m"
-      c 3 = "\ESC[42m \ESC[m"
+      c 2 = "\ESC[31m▒\ESC[m"
+      c 3 = "\ESC[32m█\ESC[m"
       c 4 = "\ESC[34mo\ESC[m"
-  putStrLn $ unlines [
+  T.putStrLn $ T.pack $ unlines [
     fold [c (Map.findWithDefault 0 (V2 x y) screen) | x <- [xmin..xmax]]
     | y <- [ymin..ymax]]
+  threadDelay (2 * 1000)
 
 solve2 :: IntCode -> IO ()
 solve2 prog = go (step prog { memory = IntMap.insert 0 2 (memory prog)}) Map.empty 0
@@ -134,3 +137,9 @@ solve2 prog = go (step prog { memory = IntMap.insert 0 2 (memory prog)}) Map.emp
           | view _x (ball - paddle) < 0 = -1
           | view _x (ball - paddle) == 0 = 0
       go (k joystick) screen score
+
+main :: IO ()
+main = do
+  p <- prog
+  print (solve1 p)
+  solve2 p
