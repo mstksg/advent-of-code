@@ -64,13 +64,14 @@ calcOre recipes n fuel = go Map.empty 0 [(n, fuel)]
           needed = wanted_el - given_el
           recipe = recipes Map.! el
           times = ceilDiv needed (outq recipe)
-          inputs' = [(times * n, i) | (n, i) <- inputs recipe]
-          leftover = times * outq recipe - needed
+          new_wanteds = [(times * n, i) | (n, i) <- inputs recipe]
+          leftover = times * outq recipe + given_el - wanted_el
       in
         if given_el >= wanted_el then
           go (Map.insert el (given_el - wanted_el) given) ore ws
         else
-          go (Map.insertWith (+) el leftover $ Map.delete el given) ore (inputs' ++ ws)
+          -- needed >= 1
+          go (Map.insert el leftover given) ore (new_wanteds ++ ws)
 
 solve1 :: Map Text Recipe -> Integer
 solve1 recipes = calcOre recipes 1 "FUEL"
