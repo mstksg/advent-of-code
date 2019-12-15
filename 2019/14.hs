@@ -20,7 +20,6 @@ import           Linear.V2
 import           Numeric.Search.Integer
 import           Text.Parser.Char
 import           Text.Parser.Combinators
-import qualified Text.Trifecta as Trifecta
 
 import           Util
 
@@ -31,19 +30,15 @@ data Recipe = Recipe {
   }
   deriving Show
 
-parse :: Trifecta.Parser a -> Text -> a
-parse p txt = case Trifecta.parseString p mempty (T.unpack txt) of
-  Trifecta.Success a -> a
-  Trifecta.Failure e -> error (show e)
-
-lineP :: (CharParsing m, Monad m) => m Recipe
-lineP = do let amt = do n <- read <$> some digit
-                        spaces
-                        el <- T.pack <$> some upper
-                        return (n, el)
-           inputs <- (amt `sepBy` text ", ")
+lineP :: (Parser m) => m Recipe
+lineP = do let amountP = do
+                 n <- read <$> some digit
+                 spaces
+                 el <- T.pack <$> some upper
+                 return (n, el)
+           inputs <- amountP `sepBy` text ", "
            text " => "
-           (ct, o) <- amt
+           (ct, o) <- amountP
            return (Recipe inputs ct o)
 
 parseInput :: Text -> Map Text Recipe
