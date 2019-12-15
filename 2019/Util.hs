@@ -1,7 +1,6 @@
 {-# Language ConstraintKinds #-}
 module Util where
 
-
 import           Data.Char
 import           Data.Constraint
 import           Data.Foldable
