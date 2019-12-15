@@ -28,3 +28,9 @@ parse :: Trifecta.Parser a -> Text -> a
 parse p txt = case Trifecta.parseString p mempty (T.unpack txt) of
   Trifecta.Success a -> a
   Trifecta.Failure e -> error (show (Trifecta._errDoc e))
+
+red :: Text -> Text
+red txt = "\ESC[31m" <> txt <> "\ESC[m"
+
+green :: Text -> Text
+green txt = "\ESC[32m" <> txt <> "\ESC[m"

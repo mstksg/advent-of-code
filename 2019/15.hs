@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 import           Control.Applicative
 import           Control.Concurrent
@@ -43,11 +44,12 @@ dir 3 = (V2 (-1) 0)
 dir 4 = (V2 1    0)
 
 actions :: S -> [S]
-actions (S p _ (InputF k)) = do
+actions (S p f (InputF k)) = do
+  guard (f /= Wall)
   d <- [1..4]
   case k d of
     OutputF 0 k -> -- wall
-      []
+      return (S (p + dir d) Wall k)
     OutputF 1 k -> -- floor
       return (S (p + dir d) Floor k)
     OutputF 2 k -> -- dest
@@ -62,7 +64,6 @@ prog = makeProg . map read . splitOn "," . strip <$> readFile "input/15.txt"
 
 solve1 :: IntCode -> Int
 solve1 prog = bfs actions goal (S 0 Floor (step prog))
-  where
 
 solve2 :: IntCode -> Int
 solve2 prog = maximum (explore o_actions o_start) :: Int
@@ -70,3 +71,25 @@ solve2 prog = maximum (explore o_actions o_start) :: Int
     grid = Map.fromList [(p, f) | S p f _ <- explore actions (S 0 Floor (step prog))]
     o_start = head [p | (p, Target) <- Map.toList grid]
     o_actions p = [q | q <- neighbors p, Map.lookup q grid == Just Floor]
+
+showmap :: IntCode -> IO ()
+showmap prog = T.putStrLn $ T.unlines $ do
+  y <- reverse [ymin..ymax]
+  return $ fold $ do
+    x <- [xmin..xmax]
+    return $ case Map.lookup (V2 x y) grid of
+      Just Floor
+        | (V2 x y == 0) -> red "x"
+        | Set.member (V2 x y) path -> red "."
+        | otherwise -> "."
+      Just Wall -> "#"
+      Just Target -> red "o"
+      Nothing -> "?"
+  where
+    grid = Map.fromList [(p, f) | S p f _ <- explore actions (S 0 Floor (step prog))]
+    path = Set.fromList [p | S p f k <- bfs actions goal (S 0 Floor (step prog))]
+    (V2 xmin ymin, V2 xmax ymax) = bbox (Map.keysSet grid)
+
+bbox :: Set (V2 Int) -> (V2 Int, V2 Int)
+bbox pts = (foldr1 (liftA2 min) pts,
+            foldr1 (liftA2 max) pts)
