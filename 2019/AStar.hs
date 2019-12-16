@@ -10,44 +10,65 @@ import           Data.Maybe
 import           Data.Set (Set)
 import qualified Data.Set as Set
 
-class Ord s => AStar s o where
-  astar :: (s -> [s]) -> (s -> s -> Int) -> (s -> Int) -> s -> o
-  astarAll :: (s -> [s]) -> (s -> s -> Int) -> (s -> Int) -> s -> [o]
+class AStar s o where
+  astarAllOn :: Ord a => (s -> a)
+             -> (s -> [s]) -> (s -> s -> Int)
+             -> (s -> Int) -> s -> [o]
 
-bfs :: AStar s o => (s -> [s]) -> (s -> Bool) -> s -> o
-bfs actions goal s0 = astar actions (\_ _ -> 1) (\s -> if goal s then 0 else 1) s0
+astarOn :: (Ord a, AStar s o)
+        => (s -> a)
+        -> (s -> [s]) -> (s -> s -> Int)
+        -> (s -> Int) -> s -> o
+astarOn f actions cost goal s0 = head (astarAllOn f actions cost goal s0)
 
-dijkstra :: AStar s o => (s -> [s]) -> (s -> s -> Int) -> s -> [o]
+astar :: (Ord s, AStar s o)
+      => (s -> [s]) -> (s -> s -> Int)
+      -> (s -> Int) -> s -> o
+astar = astarOn id
+
+astarAll :: (Ord s, AStar s o)
+         => (s -> [s]) -> (s -> s -> Int)
+         -> (s -> Int) -> s -> [o]
+astarAll = astarAllOn id
+
+bfsOn :: (Ord a, AStar s o) => (s -> a) -> (s -> [s]) -> (s -> Bool) -> s -> o
+bfsOn f actions goal s0 = astarOn f actions (\_ _ -> 1) (\s -> if goal s then 0 else 1) s0
+
+bfs :: (Ord s, AStar s o) => (s -> [s]) -> (s -> Bool) -> s -> o
+bfs actions goal s0 = bfsOn id actions goal s0
+
+dijkstra :: (Ord s, AStar s o) => (s -> [s]) -> (s -> s -> Int) -> s -> [o]
 dijkstra actions cost s0 = astarAll actions cost (const 0) s0
 
+exploreOn :: (Ord a, AStar s o) => (s -> a) -> (s -> [s]) -> s -> [o]
+exploreOn f actions s0 = astarAllOn f actions (\_ _ -> 1) (const 0) s0
+
 -- Returns the distance to the goal
-instance Ord s => AStar s Int where
-  astar actions cost goal s0 = head (astarAll actions cost goal s0)
-  astarAll actions cost goal s0 = astarBase actions cost goal s0 0 (\d s1 s2 -> d + cost s1 s2)
+instance AStar s Int where
+  astarAllOn f actions cost goal s0 =
+    astarBase f actions cost goal s0 0 (\d s1 s2 -> d + cost s1 s2)
 
 -- Returns the final state
-instance Ord s => AStar s s where
-  astar actions cost goal s0 = head (astarAll actions cost goal s0)
-  astarAll actions cost goal s0 = astarBase actions cost goal s0 s0 (\_ s1 s2 -> s2)
+instance AStar s s where
+  astarAllOn f actions cost goal s0 =
+    astarBase f actions cost goal s0 s0 (\_ s1 s2 -> s2)
 
 -- Returns the path to the goal
-instance Ord s => AStar s [s] where
-  astar actions cost goal s0 = head (astarAll actions cost goal s0)
-  astarAll actions cost goal s0 = reverse <$> astarBase actions cost goal s0 [s0] (\path s1 s2 -> s2 : path)
+instance AStar s [s] where
+  astarAllOn f actions cost goal s0
+    = reverse <$> astarBase f actions cost goal s0 [s0] (\path s1 s2 -> s2 : path)
 
-explore :: AStar s o => (s -> [s]) -> s -> [o]
-explore actions s0 = astarAll actions (\_ _ -> 1) (const 0) s0
-
-astarBase :: forall s i. (Ord s)
-          => (s -> [s]) -> (s -> s -> Int) -> (s -> Int) -> s
+astarBase :: forall s i a. (Ord a) => (s -> a)
+          -> (s -> [s]) -> (s -> s -> Int) -> (s -> Int) -> s
           -> i -> (i -> s -> s -> i) -> [i]
-astarBase actions cost goal s0 i0 iex = go Set.empty (H.singleton (goal s0, (s0, 0, i0)))
+astarBase f actions cost goal s0 i0 iex =
+  go Set.empty (H.singleton (goal s0, (s0, 0, i0)))
   where
-    go :: Set s -> MinPrioHeap Int (s, Int, i) -> [i]
+    go :: Set a -> MinPrioHeap Int (s, Int, i) -> [i]
     go visited frontier =
       case H.view frontier of
         Just ((_, (s, d, i)), frontier')
-          | Set.member s visited -> go visited frontier'
+          | Set.member (f s) visited -> go visited frontier'
           | goal s == 0 ->  i : let new = H.fromList [let d' = d + cost s s'
                                                   in (d' + goal s', (s', d', iex i s s'))
                                                  | s' <- actions s]
@@ -57,5 +78,5 @@ astarBase actions cost goal s0 i0 iex = go Set.empty (H.singleton (goal s0, (s0,
                                                  | s' <- actions s]
                             in go visited' (frontier' <> new)
             where
-              visited' = Set.insert s visited
+              visited' = Set.insert (f s) visited
         Nothing -> []

@@ -25,13 +25,9 @@ import           Util
 data Feature = Floor | Wall | Target
   deriving (Show, Eq, Ord)
 
-data S = S (V2 Int) Feature Effect
-
-instance Eq S where
-  (S p _ _) == (S q _ _) = p == q
-
-instance Ord S where
-  (S p _ _) <= (S q _ _) = p <= q
+data S = S { pos :: (V2 Int),
+             feature :: Feature,
+             vmstate :: Effect }
 
 neighbors :: V2 Int -> [V2 Int]
 neighbors p = [p + V2 dx dy | dx <- [-1, 0, 1], dy <- [-1, 0, 1],
@@ -63,12 +59,12 @@ prog :: IO IntCode
 prog = makeProg . map read . splitOn "," . strip <$> readFile "input/15.txt"
 
 solve1 :: IntCode -> Int
-solve1 prog = bfs actions goal (S 0 Floor (step prog))
+solve1 prog = bfsOn pos actions goal (S 0 Floor (step prog))
 
 solve2 :: IntCode -> Int
-solve2 prog = maximum (explore o_actions o_start) :: Int
+solve2 prog = maximum (exploreOn id o_actions o_start) :: Int
   where
-    grid = Map.fromList [(p, f) | S p f _ <- explore actions (S 0 Floor (step prog))]
+    grid = Map.fromList [(p, f) | S p f _ <- exploreOn pos actions (S 0 Floor (step prog))]
     o_start = head [p | (p, Target) <- Map.toList grid]
     o_actions p = [q | q <- neighbors p, Map.lookup q grid == Just Floor]
 
@@ -86,8 +82,8 @@ showmap prog = T.putStrLn $ T.unlines $ do
       Just Target -> red "o"
       Nothing -> "?"
   where
-    grid = Map.fromList [(p, f) | S p f _ <- explore actions (S 0 Floor (step prog))]
-    path = Set.fromList [p | S p f k <- bfs actions goal (S 0 Floor (step prog))]
+    grid = Map.fromList [(p, f) | S p f _ <- exploreOn pos actions (S 0 Floor (step prog))]
+    path = Set.fromList [p | S p f k <- bfsOn pos actions goal (S 0 Floor (step prog))]
     (V2 xmin ymin, V2 xmax ymax) = bbox (Map.keysSet grid)
 
 bbox :: Set (V2 Int) -> (V2 Int, V2 Int)
