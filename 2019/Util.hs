@@ -1,4 +1,5 @@
 {-# Language ConstraintKinds #-}
+{-# Language OverloadedStrings #-}
 module Util where
 
 import           Data.Char
