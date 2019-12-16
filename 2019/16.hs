@@ -15,29 +15,34 @@ import           Data.Set (Set)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import qualified Data.Vector as B
+import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Unboxed as U
 import           Debug.Trace
 import           Linear.V2
 
 import           Util
 
-sums :: U.Vector Int -> U.Vector Int
-sums xs = U.cons 0 (U.scanl1 (+) xs)
+type Vector = U.Vector
 
-sumOf :: Int -> Int -> U.Vector Int -> Int
-sumOf a b ss = ss U.! (min b (U.length ss - 1)) - ss U.! (min a (U.length ss - 1))
+sums :: Vector Int -> Int -> Int -> Int
+sums xs = let ss = V.cons 0 (V.scanl1 (+) xs)
+          in \a b -> sumOf a b ss
 
-fft :: U.Vector Int -> U.Vector Int
-fft xs = trace (show (U.take 8 xs)) $ U.generate (U.length xs) go
+sumOf :: Int -> Int -> Vector Int -> Int
+sumOf a b ss = ss V.! (min b (V.length ss - 1)) - ss V.! (min a (V.length ss - 1))
+
+fft :: Vector Int -> Vector Int
+fft xs = trace (show (V.take 8 xs)) $ V.generate (V.length xs) go
   where
     ss = sums xs
     -- go i = let mask = drop 1 $ cycle $ foldMap (replicate (i+1)) [0, 1, 0, -1]
-    --        in abs (sum (zipWith (*) (U.toList xs) mask)) `mod` 10
+    --        in abs (sum (zipWith (*) (V.toList xs) mask)) `mod` 10
     go i = let c = i + 1
-               total = sum [ sumOf (4*c*j + 1 * c - 1) (4*c*j + 2 * c - 1) ss
-                           | j <- [0..(U.length ss `div` (4*c))+1]]
-                       - sum [ sumOf (4*c*j + 3 * c - 1) (4*c*j + 4 * c - 1) ss
-                             | j <- [0..(U.length ss `div` (4*c))+1]]
+               total = sum [ ss (4*c*j + 1 * c - 1) (4*c*j + 2 * c - 1)
+                           | j <- [0..(V.length xs `div` (4*c))+1]]
+                       - sum [ ss (4*c*j + 3 * c - 1) (4*c*j + 4 * c - 1)
+                             | j <- [0..(V.length xs `div` (4*c))+1]]
            in abs total `mod` 10
 
 input :: Integer
@@ -45,16 +50,24 @@ input = 597756759990832033074603162272395347441967882528109960562673131584157479
 
 
 solve1 :: Integer -> String
-solve1 n = foldMap show $ U.toList $ U.take 8 (iterate fft dat !! 100)
+solve1 n = foldMap show $ V.toList $ V.take 8 (iterate fft dat !! 100)
   where
-    dat = U.fromList $ map (read.pure) $ show n :: U.Vector Int
+    dat = V.fromList $ map (read.pure) $ show n :: Vector Int
 
 solve2 :: Integer -> String
-solve2 n = foldMap show $ U.toList $ U.take 8 $ U.drop offset $ (iterate fft dat !! 100)
+solve2 n = foldMap show $ V.toList $ V.take 8 $ V.drop offset $ (iterate fft dat !! 100)
   where
     real = fold $ replicate 10000 (show n)
-    dat = U.fromList $ map (read.pure) $ real
+    dat = V.fromList $ map (read.pure) $ real
     offset = read (take 7 real) :: Int
+
+solve2Fast :: Integer -> String
+solve2Fast n = foldMap show $ V.toList $ V.take 8 $ (iterate fftFast dat !! 100)
+  where
+    real = fold $ replicate 10000 (show n)
+    dat = V.drop (offset - 100) $ V.fromList $ map (read.pure) $ real :: Vector Int
+    offset = read (take 7 real) :: Int
+    fftFast xs = V.drop 1 $ V.map ((`mod` 10) . abs) $ V.scanr1 (+) xs
 
 main :: IO ()
 main = do
