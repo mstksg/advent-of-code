@@ -77,3 +77,13 @@ makeProg :: [Int] -> IntCode
 makeProg xs = IntCode { memory = IntMap.fromList (zip [0..] xs),
                         pc = 0,
                         relativeBase = 0 }
+
+runProg :: IntCode -> [Int] -> [Int]
+runProg mem ins = go (step mem) ins
+  where
+    go (InputF f) ins = go (f (head ins)) (tail ins)
+    go (OutputF o f) ins = o : go f ins
+    go HaltF ins = []
+
+poke :: Int -> Int -> IntCode -> IntCode
+poke pos val m = m { memory = IntMap.insert pos val (memory m) }
