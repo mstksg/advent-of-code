@@ -17,6 +17,9 @@ import qualified Text.Trifecta as Trifecta
 maximumOn :: (Foldable t, Ord a) => (b -> a) -> t b -> b
 maximumOn f = maximumBy (comparing f)
 
+minimumOn :: (Foldable t, Ord a) => (b -> a) -> t b -> b
+minimumOn f = minimumBy (comparing f)
+
 count :: (Foldable f, Eq a) => a -> f a -> Int
 count x xs = getSum $ foldMap (\y -> if y == x then 1 else 0) xs
 

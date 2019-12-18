@@ -53,6 +53,11 @@ instance AStar s s where
   astarAllOn f actions cost goal s0 =
     astarBase f actions cost goal s0 s0 (\_ s1 s2 -> s2)
 
+-- Returns the final state plus distance
+instance AStar s (s, Int) where
+  astarAllOn f actions cost goal s0 =
+    astarBase f actions cost goal s0 (s0, 0) (\(_,d) s1 s2 -> (s2, d + cost s1 s2))
+
 -- Returns the path to the goal
 instance AStar s [s] where
   astarAllOn f actions cost goal s0
