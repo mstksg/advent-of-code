@@ -36,13 +36,9 @@ solve1 = sum [scan x y | x <- [0..49], y <- [0..49]]
 solve2 :: Int
 solve2 = head [10000 * x + y | x <- [0..],
                let y = tops !! (x + 100 - 1),
-                (bottoms !! x) >= y + 100]
+                scan x (y + 99) == 1]
   where
     tops = let go !x y =
                  let y' = head $ dropWhile (\y' -> scan x y' == 0) [y..]
                  in y' : go (x + 1) y'
            in 0 : 0 : go 2 0
-    bottoms = let go !x y =
-                    let y' = head $ dropWhile (\y' -> scan x y' == 1) [y..]
-                    in y' : go (x + 1) y'
-           in 0 : 0 : go 2 (tops !! 2)
