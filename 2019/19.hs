@@ -34,11 +34,10 @@ solve1 :: Int
 solve1 = sum [scan x y | x <- [0..49], y <- [0..49]]
 
 solve2 :: Int
-solve2 = head [10000 * x + y | x <- [0..],
-               let y = tops !! (x + 100 - 1),
-                scan x (y + 99) == 1]
+solve2 = go 0 0
   where
-    tops = let go !x y =
-                 let y' = head $ dropWhile (\y' -> scan x y' == 0) [y..]
-                 in y' : go (x + 1) y'
-           in 0 : 0 : go 2 0
+    go !x !y
+      | scan x (y' + 99) == 1 = 10000 * x + y'
+      | otherwise = go (x+1) y'
+      where
+        y' = head $ dropWhile (\y' -> scan (x+99) y' == 0) [y..]
