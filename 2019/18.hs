@@ -70,7 +70,9 @@ solve1 grid = astar actions dist goal (Set.empty, origin)
     keyPositions = Map.fromList [(c, p) | (p, Key c) <- Map.toList grid]
     actions (keys, pos) = do
       let reachable = (astarAll
-                       (steps grid keys)
+                       (\p -> case grid Map.! p of
+                           Key c | not (Set.member c keys) -> []
+                           _ -> steps grid keys p)
                        (\_ _ -> 1)
                        (\p -> case grid Map.! p of
                            Key c | not (Set.member c keys) -> 0
@@ -94,10 +96,9 @@ solve1 grid = astar actions dist goal (Set.empty, origin)
 
     goal (keys, pos)
       | Set.null remaining = 0
-      | otherwise = let e = estimate pos rmap in
-                      traceShow (keys, pos, e) e
-        -- minimum [pc Map.! rk Map.! pos | rk <- toList remaining]
-        --            + Set.size remaining - 1
+      | otherwise = let e = estimate False pos rmap
+                        -- part1 isn't necessarily a
+                    in traceShow (keys, pos, e) e
       where
         remaining = Set.difference allKeys keys
         rmap = Map.fromList [(keyPositions Map.! c, pc Map.! c) | c <- Set.toList remaining]
@@ -111,19 +112,22 @@ precompute grid = Map.fromList $ do
   let actions p = steps grid allKeys p
   return (keyc, Map.fromList $ exploreOn id actions keyp)
 
-estimate :: Pos -> Map Pos (Map Pos Int) -> Int
-estimate pos remaining
+-- This seems to overestimate the distance at the start of part2 >:(
+estimate :: Bool -> Pos -> Map Pos (Map Pos Int) -> Int
+estimate isTree pos remaining
   | Map.null remaining = 0
-  | otherwise = sum [head [len | (_, len) <- path] | FGL.LP path <- FGL.msTree gr]
+  | isTree = 2*sum (map head mst) - maximum (map sum mst)
+  | otherwise = sum (map head mst)
   where
     d a b | a == pos = remaining Map.! b Map.! a
     d a b | otherwise = remaining Map.! a Map.! b
     nodes = (pos : Map.keys remaining)
-    posId = Map.fromList (zip nodes [1..])
+    posId = let pmap = Map.fromList (zip nodes [1..]) in (pmap Map.!)
     gr = (FGL.mkGraph
-          [(posId Map.! p, p) | p <- nodes]
-          [(posId Map.! a, posId Map.! b, d a b) | a <- nodes, b <- nodes, a /= b]
+          [(posId p, p) | p <- nodes]
+          [(posId a, posId b, d a b) | a <- nodes, b <- nodes, a /= b]
            :: Gr Pos Int)
+    mst = [map snd path | FGL.LP path <- FGL.msTreeAt (posId pos) gr]
 
 data S = S (Set Char) [Pos]
   deriving (Show, Eq, Ord)
@@ -162,7 +166,7 @@ solve2 grid = (astarOn fst
                                   remaining = Set.difference keySet keys
                                   rmap = Map.fromList [(keyLocation rc, pc Map.! rc)
                                                       | rc <- Set.toList remaining]
-                                  e = estimate pos rmap
+                                  e = estimate True pos rmap
                               return e
                         in traceShow (keys, pos4, ee) ee
 
