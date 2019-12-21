@@ -2,10 +2,13 @@
 
 module IntCode where
 
+import qualified Data.Vector.Generic as V
+import qualified Data.Vector.Unboxed as U
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap.Strict as IntMap
 
 data IntCode = IntCode {
+  baseMem :: U.Vector Int,
   memory :: IntMap Int,
   pc :: Int,
   relativeBase :: Int
@@ -22,10 +25,14 @@ data Param = Imm Int | Pos Int | Rel Int
 data Op = Halt | Add | Mul | In | Out | JNZ | JZ | TestLT | TestEQ | AdjustBase
   deriving Show
 
-(?) :: IntMap Int -> Int -> Int
-mem ? i = IntMap.findWithDefault 0 i mem
+(?) :: IntCode -> Int -> Int
+mem ? i = case IntMap.lookup i (memory mem) of
+  Just x -> x
+  Nothing
+    | i < V.length (baseMem mem) -> baseMem mem V.! i
+    | otherwise -> 0
 
-decodeInstruction :: IntMap Int -> Int -> (Op, [Param])
+decodeInstruction :: IntCode -> Int -> (Op, [Param])
 decodeInstruction mem pc = case (mem ? pc) `mod` 100 of
   99 -> (Halt, [])
   1 -> (Add, arity 3)
@@ -62,11 +69,11 @@ step m@IntCode{..} = case instruction of
   _ -> error ("Bad instruction: " ++ show instruction)
   where
     ind (Imm x) = x
-    ind (Pos x) = memory ? x
-    ind (Rel x) = memory ? (x + relativeBase)
+    ind (Pos x) = m ? x
+    ind (Rel x) = m ? (x + relativeBase)
     loc (Pos x) = x
     loc (Rel x) = x + relativeBase
-    instruction = decodeInstruction memory pc
+    instruction = decodeInstruction m pc
     instructionSize = 1 + length (snd instruction)
     jump pc = step m{pc = pc}
     continue = step m{pc = pc + instructionSize}
@@ -74,7 +81,8 @@ step m@IntCode{..} = case instruction of
                        memory = IntMap.insert (loc i) x memory}
 
 makeProg :: [Int] -> IntCode
-makeProg xs = IntCode { memory = IntMap.fromList (zip [0..] xs),
+makeProg xs = IntCode { baseMem = V.fromList xs,
+                        memory = IntMap.empty,
                         pc = 0,
                         relativeBase = 0 }
 
