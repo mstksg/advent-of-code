@@ -2,6 +2,7 @@
 {-# Language OverloadedStrings #-}
 module Util where
 
+import           Control.Applicative
 import           Data.Char
 import           Data.Constraint
 import           Data.Foldable
@@ -32,6 +33,8 @@ parse :: Trifecta.Parser a -> Text -> a
 parse p txt = case Trifecta.parseString p mempty (T.unpack txt) of
   Trifecta.Success a -> a
   Trifecta.Failure e -> error (show (Trifecta._errDoc e))
+
+(##) a b = liftA2 (<>) a b
 
 red :: Text -> Text
 red txt = "\ESC[31m" <> txt <> "\ESC[m"
