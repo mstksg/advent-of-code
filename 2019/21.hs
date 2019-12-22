@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -36,10 +37,10 @@ prog :: IntCode
 prog = unsafePerformIO $ makeProg . map read . splitOn "," . strip <$> readFile "input/21.txt"
 
 -- Simulate the jump decision on a given piece of terrain.
-simulate :: [Inst] -> String -> Int
+simulate :: [Inst] -> String -> (Int, Int)
 simulate ops terrain = go ops 0 0
   where
-    go [] t j = j
+    go [] t j = (t, j)
     go (op:ops) t j = case op of
       And r T -> go ops (reg r .&. t) j
       And r J -> go ops t (reg r .&. j)
@@ -54,6 +55,9 @@ simulate ops terrain = go ops 0 0
                   '#' -> 1
                   '.' -> 0
 
+simulateJ :: [Inst] -> String -> Int
+simulateJ ops terrain = snd (simulate ops terrain)
+
 -- Solutions
 
 display :: [Int] -> IO ()
@@ -64,70 +68,77 @@ display output
 execute :: [Inst] -> String -> [Int]
 execute p level = runProg prog $ map ord $ unlines (map format p <> [level])
 
--- [Or A J,And C J,And B J,Not J J,And D J]
+data Check a = Check [String] ([Inst] -> Bool) a
+  deriving (Functor)
+
+instance Applicative Check where
+  pure = return
+  (<*>) = ap
+
+instance Monad Check where
+  return a = Check [] (const True) a
+  (>>=) (Check cases1 test1 a) f
+    = let Check cases2 test2 b = f a
+      in Check (cases1++cases2) (liftA2 (&&) test1 test2) b
+
+jump :: String -> Check ()
+jump str = Check [str] (\p -> simulateJ p str == 1) ()
+
+noJump :: String -> Check ()
+noJump str = Check [str] (\p -> simulateJ p str == 0) ()
+
+runCheck :: Check () -> [Inst] -> Bool
+runCheck (Check _ test _) p = test p
+
+viewCases :: Check () -> [Inst] -> [Int]
+viewCases (Check cases _ _) p = [simulateJ p str | str <- cases]
+
+-- [Or A J,And C J,Not J J,And D J]
 solve1 :: IO ()
-solve1 = let solution = bfsOn viewCases actions goal [] :: [Inst]
+solve1 = let solution = bfsOn (viewCases check) actions goal [] :: [Inst]
          in print solution >> display (execute solution "WALK")
   where
     actions p = do f <- [And, Or, Not]
                    r1 <- [A .. D] ++ [T, J]
                    r2 <- [T, J]
                    return (p ++ [f r1 r2])
-
-    doJump = [
-      ".########",
-      "#.##.####",
-      "##.#..###"
-      ]
-
-    noJump = [
-      "####.##.#",
-      "#...#####"
-      ]
-
-    viewCases p = [simulate p cs | cs <- doJump ++ noJump]
-
-    goal p = and [simulate p cs == 1 | cs <- doJump]
-             && and [simulate p cs == 0 | cs <- noJump]
+    goal = runCheck check
+    check = do
+      jump ".########"
+      jump "##.##.###"
+      jump "##.#..###"
+      noJump "####.##.#"
+      noJump "#...#####"
 
 -- [Not H J,Or C J,And B J,And A J,Not J J,And D J]
 solve2 :: IO ()
-solve2 = let solution = bfsOn viewCases actions goal [] :: [Inst]
+solve2 = let solution = bfsOn (viewCases check) actions goal [] :: [Inst]
          in print solution >> display (execute solution "RUN")
   where
     actions p = do f <- [And, Or, Not]
                    r1 <- [A .. J]
                    r2 <- [T, J]
                    return (p ++ [f r1 r2])
+    goal p = runCheck check p
+    check = do
+      jump ".########"
+      jump "#.##.#.##"
+      jump "#.##..###"
+      jump ".#.#.#.#."
+      jump "##.#..###"
 
-    doJump = [
-      ".########",
-      "##.##.###",
-      "..###.#.#",
-      "##.#..###",
-      "#..#.####",
-      "#.##.#.##"
-      ]
+      noJump "####.##.#"
+      noJump "###.##.##"
+      jump   "##.##.###"
 
-    noJump = [
-      "##.#.##.#",
-      "####..#.#",
-      "###..#.##",
-      "##..#.###",
-      "####..##.",
-      "####.##.#",
-      "###.##.##",
-      "###...###",
-      "##...####",
-      "#...#####",
-      "###.#####",
-      "####.####"
-      ]
-
-    viewCases p = [simulate p cs | cs <- doJump ++ noJump]
-
-    goal p = and [simulate p cs == 1 | cs <- doJump]
-             && and [simulate p cs == 0 | cs <- noJump]
+      noJump "####..#.#"
+      noJump "####..###"
+      noJump "##.#.##.#"
+      noJump "##..#.###"
+      noJump "###...###"
+      noJump "##...####"
+      noJump "#...#####"
+      noJump "###.#####"
 
 main :: IO ()
 main = do
