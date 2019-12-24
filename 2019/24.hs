@@ -7,7 +7,6 @@ import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Data.Char
-import           Data.FiniteField.PrimeField
 import           Data.Foldable
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap.Strict as IntMap
@@ -36,8 +35,6 @@ parseInput txt = Set.fromList [V3 x y 0 | (y, line) <- zip [0..] ls,
                                (x, '#') <- zip [0..] line]
   where
     ls = lines txt
-
-
 
 neighbors1 :: V3 Int -> [V3 Int]
 neighbors1 p = filter inBounds [p + V3 dx dy 0 | dx <- [-1, 0, 1], dy <- [-1, 0, 1],
