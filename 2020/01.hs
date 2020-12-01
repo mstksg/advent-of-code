@@ -1,18 +1,20 @@
-import System.IO.Unsafe
 import Control.Monad
+import Data.Foldable
+import System.IO.Unsafe
+import Util
 
 input :: [Integer]
 input = unsafePerformIO (map read . words <$> readFile "input/01.txt")
 
 part1 :: Integer
-part1 = head $ do
+part1 = the $ do
   a <- input
   b <- input
   guard (a + b == 2020)
   return (a * b)
 
 part2 :: Integer
-part2 = head $ do
+part2 = the $ do
   a <- input
   b <- input
   c <- input
