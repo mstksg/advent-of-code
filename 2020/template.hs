@@ -37,6 +37,7 @@ import           Text.Parser.Char
 import           Text.Parser.Combinators hiding (count)
 
 import           Util
+import qualified Util.Text as T
 
 input :: _
 input = unsafePerformIO (parse p <$> T.readFile "input/__.txt")

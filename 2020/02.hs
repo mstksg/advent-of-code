@@ -1,4 +1,4 @@
-{-# Language ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -37,6 +37,7 @@ import           Text.Parser.Char
 import           Text.Parser.Combinators hiding (count)
 
 import           Util
+import qualified Util.Text as T
 
 input :: [(Int, Int, Char, Text)]
 input = unsafePerformIO load
@@ -62,4 +63,5 @@ part1 = sum [1 | x <- input, val x]
 part2 :: Int
 part2 = sum [1 | x <- input, val x]
   where
-    val (a, b, c, msg) = (T.index msg (a-1) == c) `xor` (T.index msg (b-1) == c)
+    val (a, b, c, msg) = count c [msg T.! (a-1),
+                                  msg T.! (b-1)] == 1
