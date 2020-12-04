@@ -50,7 +50,7 @@ input = unsafePerformIO (parse p <$> T.readFile "input/04.txt")
         val <- someText (noneOf " \n")
         optional (oneOf " \n")
         return (name, val)
-      spaces
+      optional (char '\n')
       return (Map.fromList fields)
 
 part1 = sum [1 | pass <- input, val pass]

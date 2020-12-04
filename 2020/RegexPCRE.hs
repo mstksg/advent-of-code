@@ -39,8 +39,21 @@ regex pat = root <?> T.unpack pat
     re = compile execPartialHard pat
     re_final = compile PCRE.execBlank pat
 
+    -- To match regex, we first lookAhead as far as necessary to find
+    -- the longest prefix of the text that could be a match. To do
+    -- this, we advance one character at a time, continuing as long as
+    -- regexec returns PCRE_ERROR_PARTIAL, which indicates that there
+    -- could be a longer match.
+
+    -- When PCRE_PARTIAL_HARD is supplied, regexec always returns
+    -- PCRE_ERROR_PARTIAL if there is a longer possible match, which
+    -- is necessary to ensure we get the longest possible.
+
+    -- When we've found the prefix, we match it one more time with
+    -- normal options, to extract the longest actual match in that
+    -- prefix, and consume and return that text.
     root = do
-      txt <- lookAhead (matching "")
+      txt <- lookAhead (try $ matching "")
       case unsafePerformIO (PCRE.regexec re_final (T.unpack txt)) of
          Left (code, msg) -> error msg
          Right Nothing -> mzero
