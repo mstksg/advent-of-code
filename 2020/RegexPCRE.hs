@@ -33,6 +33,10 @@ compile opt pat = unsafePerformIO $ do
     Right re -> return re
     Left (idx, msg) -> error ("parsing regex " ++ show pat ++ ", " ++ msg)
 
+-- Convert a regex into a Parser that parses it.  The resulting parser
+-- is 'greedy with full backtracking'. It returns the longest prefix
+-- of the input that matches the whole regex, or otherwise fails
+-- without consuming input.
 regex :: Text -> Parser Text
 regex pat = root <?> T.unpack pat
   where
@@ -53,29 +57,45 @@ regex pat = root <?> T.unpack pat
     -- normal options, to extract the longest actual match in that
     -- prefix, and consume and return that text.
     root = do
-      txt <- lookAhead (try $ matching "")
-      case unsafePerformIO (PCRE.regexec re_final (T.unpack txt)) of
+      txt <- lookAhead (try $ search "")
+      case unsafePerformIO (PCRE.regexec re_final txt) of
          Left (code, msg) -> error msg
          Right Nothing -> mzero
-         Right (Just ("", m, "", _)) -> text (T.pack m)
+         Right (Just ("", m, _, _)) -> text (T.pack m)
 
-    matching start = do
+    search prefix = nextChar prefix <|> (eof >> return prefix)
+    nextChar prefix = do
       c <- anyChar
-      let substr = start ++ [c]
-      case unsafePerformIO (PCRE.regexec re substr) of
-        Left (code, msg)
-          | code == retPartial -> (partial substr)
-          | otherwise -> error msg
-        Right Nothing -> mzero
-        Right (Just ("", m, _, _)) -> return (T.pack m)
+      let prefix' = prefix <> [c]
+      case unsafePerformIO (PCRE.regexec re prefix') of
+        Left (code, msg) | code == retPartial -> search prefix'
+        _                                     -> return prefix'
 
-    partial start =
-      (do c <- anyChar
-          let substr = start ++ [c]
-          case unsafePerformIO (PCRE.regexec re substr) of
-            Left (code, msg)
-              | code == retPartial -> (partial substr)
-              | otherwise -> error msg
-            Right Nothing -> return (T.pack start)
-            Right (Just ("", m, _, _)) -> return (T.pack m))
-      <|> (eof >> return (T.pack start))
+
+data EatResult = Full String | Partial String
+
+regex' :: Text -> Parser Text
+regex' pat = root <?> T.unpack pat
+  where
+    re = compile execPartialHard pat
+    re_final = compile PCRE.execBlank pat
+    root = do
+      txt <- search ""
+      case unsafePerformIO (PCRE.regexec re_final txt) of
+         Right (Just ("", m, "", _)) -> return (T.pack m)
+         Right _ -> mzero <?> (T.unpack pat ++ " at " ++ txt)
+         Left (code, msg) -> error msg
+
+    search prefix = nextChar prefix <|> return prefix
+    nextChar prefix = do next <- try (eatChar prefix)
+                         case next of
+                           Partial prefix' -> search prefix'
+                           Full prefix' -> return prefix'
+
+    eatChar prefix = do
+      c <- anyChar
+      let prefix' = prefix <> [c]
+      case unsafePerformIO (PCRE.regexec re prefix') of
+        Left (code, msg) | code == retPartial -> return (Partial prefix')
+        Right (Just ("", m, "", _))           -> return (Full prefix')
+        Right _                               -> mzero
