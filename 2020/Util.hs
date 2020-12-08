@@ -55,6 +55,9 @@ pval p txt = case Trifecta.parseString (p <* eof) mempty (T.unpack txt) of
 p_nat :: (Read a, Integral a) => Parser a
 p_nat = read <$> some digit
 
+p_int :: (Read a, Integral a) => Parser a
+p_int = (char '+' *> p_nat) <|> (char '-' *> fmap negate p_nat) <|> p_nat
+
 someText :: Parser Char -> Parser Text
 someText p = T.pack <$> some p
 
