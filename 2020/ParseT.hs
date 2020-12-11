@@ -13,116 +13,178 @@
 
 module ParseT where
 
-import Data.Symbol.Utils
-import Data.Symbol.Ascii
-import GHC.TypeLits
-import Data.Proxy
+import Data.Singletons
+import Data.Singletons.Prelude.Eq
+import Data.Singletons.Prelude.Bool
+import Data.Singletons.Prelude.Ord
+import Data.Singletons.Prelude.Function
+import Data.Singletons.Prelude.Monoid
+import Data.Kind
 import Data.Monoid
+import Data.Proxy
+import Data.Symbol.Ascii
+import Data.Symbol.Utils
+import GHC.TypeLits (Symbol, AppendSymbol)
 
 -- Generic tools
 
-type family Or (a :: Bool) (b :: Bool) :: Bool where
-  Or True _ = True
-  Or _ True = True
-  Or _ _ = False
+type family (##) (a :: k) (b :: k) :: k
 
-type family (<%>) (a :: k) (b :: k) :: k
+type instance (##) (xs :: Symbol) (ys :: Symbol) = Mappend xs ys
+type instance (##) (xs :: [a]) (ys :: [a]) = Mappend xs ys
 
-type instance (<%>) (xs :: Symbol) (ys :: Symbol) = AppendSymbol xs ys
-type instance (<%>) (xs :: [a]) (ys :: [a]) = AppendList xs ys
+data SFold :: [a] ~> a
+type instance Apply SFold '[] = Mempty
+type instance Apply SFold (x ': xs) = x ## Apply SFold xs
+type Fold xs = Apply SFold xs
 
-type family Mempty :: k
-
-type instance Mempty = ""
-type instance Mempty = '[]
-
-type family AppendList (xs :: [a]) (ys :: [a]) :: [a] where
-  AppendList '[] ys = ys
-  AppendList (x ': xs) ys = x ': (AppendList xs ys)
-
-type family CatSymbols (as :: [Symbol]) :: Symbol where
-  CatSymbols '[] = ""
-  CatSymbols (x ': xs) = x <%> CatSymbols xs
+data SConstR :: a ~> b ~> b
+type instance Apply SConstR a = IdSym0
 
 -- Parser type
 
-data P a where
-  PChar :: Symbol -> P Symbol
-  PApp :: P a -> P a -> P a
-  PTry :: P a -> P a
-  PAlt :: P a -> P a -> P a
-  PLabel :: P a -> Symbol -> P a
-  PNotChar :: Symbol -> P Symbol
-  PSome :: P a -> P [a]
-  PMany :: P a -> P [a]
-  PPure :: a -> P a
-  PAnyOf :: Symbol -> P Symbol
-  PMap :: (a -> F b) -> P a -> P b
+type TChar = Symbol
 
-data F b where
-  FList :: a -> F [a]
-  FCat :: [a] -> F a
+data Parser (a :: *) where
+  PAnyChar :: Parser TChar
+  PChar :: TChar -> Parser TChar
+  PMap :: (a ~> b) -> Parser a -> Parser b
+  PAp :: Parser (a ~> b) -> Parser a -> Parser b
+  PPure :: a -> Parser a
+  PAlt :: Parser a -> Parser a -> Parser a
+  PSome :: Parser a -> Parser [a]
+  PMany :: Parser a -> Parser [a]
+  PTry :: Parser a -> Parser a
+  PLabel :: Parser a -> Symbol -> Parser a
+  PText :: Symbol -> Parser Symbol
+  PSatisfy :: (TChar ~> Bool) -> Parser TChar
+  EOF :: Parser ()
 
-type family RunF (f :: F b) :: b where
-  RunF (FList a) = '[a]
-  RunF (FCat '[]) = Mempty
-  RunF (FCat (x ': xs)) = x <%> RunF (FCat xs)
+data Err = Unknown | Expected Symbol Symbol
+data Result (a :: *) = Success Bool a [TChar] | Fail Bool Err
 
--- Parse result
+type (<$>) = PMap
+type (<*>) = PAp
+type (<|>) = PAlt
+type Pure = PPure
+type instance (##) (p1 :: Parser a) (p2 :: Parser a) = MappendSym0 <$> p1 <*> p2
+type (<*) p1 p2 = ConstSym0 <$> p1 <*> p2
+type (*>) p1 p2 = SConstR <$> p1 <*> p2
 
-data PO a = Success Bool a [Symbol] | Fail Bool Symbol
+type family RunParser (pa :: Parser a) (txt :: [Symbol]) :: Result a where
+  RunParser PAnyChar xs = RunAnyChar xs
+  RunParser (PChar a) xs = RunChar a xs
+  RunParser (PMap f p) xs = RunMap f p xs
+  RunParser (PAp pf pa) xs = RunAp pf pa xs
+  RunParser (PPure a) xs = Success False a xs
+  RunParser (PAlt p1 p2) xs = RunAlt p1 p2 xs
+  RunParser (PSome p) xs = RunParser (TyCon2 '(:) <$> p <*> PMany p) xs
+  RunParser (PMany p) xs = RunParser (PSome p <|> PPure '[]) xs
+  RunParser (PTry f) xs = RunTry (RunParser f xs)
+  RunParser (PLabel p label) xs = RunLabel (RunParser p xs) label xs
+  RunParser (PText txt) xs = RunText txt xs
+  RunParser (PSatisfy f) xs = RunSatisfy f xs
+  RunParser EOF '[] = Success False '() '[]
+  RunParser EOF (x ': xs) = Fail False (Expected "eof" (Fold (x ': xs)))
 
-type family RunP (pa :: P a) (txt :: [Symbol]) :: PO a where
-  RunP (PChar a) '[] = Fail False ("Expected " <%> a <%> " at EOF")
-  RunP (PChar a) (a ': as) = Success True a as
-  RunP (PChar a) as = Fail False ("Expected " <%> a <%> " at '" <%> CatSymbols as <%> "'")
-  RunP (PApp f g) xs = RunApp (RunP f xs) g
-  RunP (PTry f) xs = RunTry (RunP f xs)
-  RunP (PAlt f g) xs = RunAlt (RunP f xs) g xs
-  RunP (PLabel f label) xs = RunLabel (RunP f xs) label xs
-  RunP (PNotChar a) '[] = Fail False ("Unexpected EOF")
-  RunP (PNotChar a) (a ': as) = Fail False ("Unexpected " <%> a <%> " at '" <%> CatSymbols (a ': as) <%> "'")
-  RunP (PNotChar a) (b ': as) = Success True b as
-  RunP (PSome f) xs = RunP (PApp (PMap FList f) (PMany f)) xs
-  RunP (PMany f) xs = RunP (PAlt (PSome f) (PPure '[])) xs
-  RunP (PPure a) xs = Success False a xs
-  RunP (PAnyOf cs) xs = RunLabel (RunAnyOf (ToList cs) xs) ("any of " <%> cs) xs
-  RunP (PMap f g) xs = RunMap f (RunP g xs)
+-- PChar
+type family RunAnyChar xs where
+  RunAnyChar (x ': xs) = Success True x xs
+  RunAnyChar '[] = Fail False (Expected "any char" "")
 
-type family PText (txt :: Symbol) :: P Symbol where
-  PText sym = PTry (PText' (ToList sym)) `PLabel` sym
+-- PChar
+type family RunChar a as where
+  RunChar a (a ': as) = Success True a as
+  RunChar a as = Fail False (Expected a (Fold as))
 
-type family PText' (txt :: [Symbol]) :: P Symbol where
-  PText' '[] = PPure ""
-  PText' (x ': xs) = PApp (PChar x) (PText' xs)
+-- <$>
+type family RunMap f p xs where
+  RunMap f p xs = RunMap' f (RunParser p xs)
 
-type family RunAnyOf (cs :: [Symbol]) (xs :: [Symbol]) where
-  RunAnyOf (c ': cs) (c ': xs) = Success True c xs
-  RunAnyOf (c ': cs) (x ': xs) = RunAnyOf cs (x ': xs)
-  RunAnyOf (c ': cs) '[] = Fail False ""
-  RunAnyOf '[]        xs = Fail False ""
+type family RunMap' f r where
+  RunMap' f (Success e a xs) = Success e (f @@ a) xs
+  RunMap' f (Fail e msg) = Fail e msg
 
-type family RunMap (f :: a -> F b) (pg :: PO a) :: PO b where
-  RunMap f (Success e a xs) = Success e (RunF (f a)) xs
-  RunMap f (Fail e msg) = Fail e msg
+-- <*>
+type family RunAp pf pa xs where
+  RunAp pf pa xs = RunAp1 (RunParser pf xs) pa xs
 
-type family RunApp (pf :: PO t) (g :: P t) :: PO t where
-  RunApp (Success e a xs) g = RunApp' e a (RunP g xs)
-  RunApp (Fail e msg) g = Fail e msg
+type family RunAp1 pf pa xs where
+  RunAp1 (Success e f xs) pa _ = RunAp2 e f (RunParser pa xs)
+  RunAp1 (Fail e msg) _ _ = Fail e msg
 
-type family RunApp' (e :: Bool) (a :: t) (pg :: PO t) where
-  RunApp' e a (Success e2 a2 xs) = Success (Or e e2) (a <%> a2) xs
-  RunApp' e a (Fail e2 msg) = Fail (Or e e2) msg
+type family RunAp2 e f pb where
+  RunAp2 e1 f (Success e2 a xs) = Success (e1 || e2) (f @@ a) xs
+  RunAp2 e1 f (Fail e2 msg) = Fail (e1 || e2) msg
 
-type family RunTry (pf :: PO a) :: PO a where
+-- <|>
+type family RunAlt p1 p2 xs where
+  RunAlt p1 p2 xs = RunAlt1 (RunParser p1 xs) p2 xs
+
+type family RunAlt1 r1 p2 xs where
+  RunAlt1 (Success e a xs) _ _ = Success e a xs
+  RunAlt1 (Fail True msg) _ _ = Fail True msg
+  RunAlt1 (Fail False m1) p2 xs = RunAlt2 m1 (RunParser p2 xs)
+
+type family RunAlt2 m1 r2 where
+  RunAlt2 m1 (Success e a xs) = Success e a xs
+  RunAlt2 m1 (Fail True m2) = Fail True m2
+  RunAlt2 m1 (Fail False m2) = Fail False (CombineErr m1 m2)
+
+type family CombineErr m1 m2 where
+  CombineErr Unknown m2 = m2
+  CombineErr m1 Unknown = m1
+  CombineErr (Expected a1 xs) (Expected a2 xs) = Expected (a1 ## ", " ## a2) xs
+
+-- Try
+type family RunTry r where
   RunTry (Success e a xs) = Success e a xs
-  RunTry (Fail e msg) = Fail False msg
+  RunTry (Fail False msg) = Fail False msg
+  RunTry (Fail True msg) = Fail False Unknown
 
-type family RunAlt (pf :: PO a) (g :: P a) (xs :: [Symbol]) :: PO a where
-  RunAlt (Success e a xs) _ _ = Success e a xs
-  RunAlt (Fail True msg) _ _ = Fail True msg
-  RunAlt (Fail False msg) g xs = RunP g xs
-
-type family RunLabel (pf :: PO a) (label :: Symbol) (xs :: [Symbol]) :: PO a where
+type family RunLabel r label xs where
   RunLabel (Success e a xs) _ _ = Success e a xs
-  RunLabel (Fail e _) label xs = Fail e ("Expected " <%> label <%> " at '" <%> CatSymbols xs <%> "'")
+  RunLabel (Fail e _) label xs = Fail e (Expected label (Fold xs))
+
+type family RunText txt xs where
+  RunText txt xs = RunText' txt xs (ToList txt) xs
+
+type family RunText' pat start as xs where
+  RunText' pat start '[] xs = Success True pat xs
+  RunText' pat start (a ': as) (a ': xs) = RunText' pat start as xs
+  RunText' pat start _ _ = Fail False (Expected pat (Fold start))
+
+type family RunSatisfy f xs where
+  RunSatisfy f '[] = Fail False Unknown
+  RunSatisfy f (x ': xs) = RunSatisfy' (f @@ x) x xs
+
+type family RunSatisfy' b x xs where
+  RunSatisfy' True x xs = Success True x xs
+  RunSatisfy' False x xs = Fail False Unknown
+
+type SomeText p = SFold <$> PSome p
+type ManyText p = SFold <$> PMany p
+
+
+data SRange :: TChar -> TChar -> TChar ~> Bool
+type instance Apply (SRange a b) c = a <= c && c <= b
+
+type PRange a b = PSatisfy (SRange a b) `PLabel` (Fold [a, "-", b])
+
+type Spaces = SFold <$> PMany (PChar " " <|> PChar "\n")
+
+data SAnyOf :: Symbol -> TChar ~> Bool
+type instance Apply (SAnyOf as) x = RunAnyOf (ToList as) x
+type family RunAnyOf as x where
+  RunAnyOf '[] x = False
+  RunAnyOf (x ': as) x = True
+  RunAnyOf (a ': as) x = RunAnyOf as x
+
+type NoneOf xs = PSatisfy (NotSym0 .@#@$$$ SAnyOf xs)
+
+type PNotChar c = PSatisfy (SNotEqual c)
+type SNotEqual a = (/=@#@$$) a
+
+data Specifier = Lit Symbol | Spec Symbol
+
+type PSpecs = PSome ((TyCon1 Lit <$> SomeText (NoneOf "%")) <|> (TyCon1 Spec <$> (PChar "%" ## PRange "a" "z")))
