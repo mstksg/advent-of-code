@@ -71,15 +71,16 @@ part2 = go input
   where
     go grid = let grid' = fmap (stepXY grid) <$> coordinates in
                 if grid == grid' then count '#' (fold grid) else go grid'
-    stepXY grid p = case (index grid p, count '#' [index grid n | n <- neighbors grid p]) of
+    stepXY grid p = case (index grid p, count '#' [index grid n | n <- neighbors p]) of
                       ('L', 0) -> '#'
                       ('#', n) | n >= 5 -> 'L'
                       (s, _) -> s
-    neighbors grid (x,y) = [head [
-                               (x', y')
-                               | n <- [1..], let (x', y') = (x+n*dx, y+n*dy),
-                                 index grid (x', y') /= '.'
-                               ] | (dx, dy) <- directions]
+    neighbors_map = fmap neighbor <$> coordinates
+      where neighbor (x,y) = [head [(x', y')
+                                   | n <- [1..], let (x', y') = (x+n*dx, y+n*dy),
+                                                     index input (x', y') /= '.']
+                             | (dx, dy) <- directions]
+    neighbors (x,y) = neighbors_map V.! y V.! x
 
 main :: IO ()
 main = print part1 >> print part2
