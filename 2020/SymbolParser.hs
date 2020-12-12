@@ -11,7 +11,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module ParseT where
+module SymbolParser where
 
 import Data.Singletons
 import Data.Singletons.Prelude.Eq
@@ -24,7 +24,7 @@ import Data.Monoid
 import Data.Proxy
 import Data.Symbol.Ascii
 import Data.Symbol.Utils
-import GHC.TypeLits (Symbol, AppendSymbol)
+import GHC.TypeLits (Symbol, AppendSymbol, TypeError, ErrorMessage(..))
 
 -- Generic tools
 
@@ -58,9 +58,9 @@ data Parser (a :: *) where
   PLabel :: Parser a -> Symbol -> Parser a
   PText :: Symbol -> Parser Symbol
   PSatisfy :: (TChar ~> Bool) -> Parser TChar
-  EOF :: Parser ()
+  PEOF :: Parser ()
 
-data Err = Unknown | Expected Symbol Symbol
+data Err = Unknown [Symbol] | Expected Symbol [Symbol]
 data Result (a :: *) = Success Bool a [TChar] | Fail Bool Err
 
 type (<$>) = PMap
@@ -70,6 +70,19 @@ type Pure = PPure
 type instance (##) (p1 :: Parser a) (p2 :: Parser a) = MappendSym0 <$> p1 <*> p2
 type (<*) p1 p2 = ConstSym0 <$> p1 <*> p2
 type (*>) p1 p2 = SConstR <$> p1 <*> p2
+type ($>) a p = ConstSym1 a <$> p
+
+type ExecParser p txt = ExecParser' (RunParser p (ToList txt))
+
+type family ShowLocation (xs :: [Symbol]) :: Symbol where
+  ShowLocation '[] = "eof"
+  ShowLocation xs = "'" ## Fold xs ## "'"
+
+type family ExecParser' (r :: Result a) :: a where
+  ExecParser' (Success _ a _) = a
+  ExecParser' (Fail _ (Unknown xs)) = TypeError (Text ("unknown error at " ## ShowLocation xs))
+  ExecParser' (Fail _ (Expected pat xs)) = TypeError (Text ("expected " ## pat ## " at " ## ShowLocation xs))
+
 
 type family RunParser (pa :: Parser a) (txt :: [Symbol]) :: Result a where
   RunParser PAnyChar xs = RunAnyChar xs
@@ -80,22 +93,22 @@ type family RunParser (pa :: Parser a) (txt :: [Symbol]) :: Result a where
   RunParser (PAlt p1 p2) xs = RunAlt p1 p2 xs
   RunParser (PSome p) xs = RunParser (TyCon2 '(:) <$> p <*> PMany p) xs
   RunParser (PMany p) xs = RunParser (PSome p <|> PPure '[]) xs
-  RunParser (PTry f) xs = RunTry (RunParser f xs)
+  RunParser (PTry f) xs = RunTry (RunParser f xs) xs
   RunParser (PLabel p label) xs = RunLabel (RunParser p xs) label xs
   RunParser (PText txt) xs = RunText txt xs
   RunParser (PSatisfy f) xs = RunSatisfy f xs
-  RunParser EOF '[] = Success False '() '[]
-  RunParser EOF (x ': xs) = Fail False (Expected "eof" (Fold (x ': xs)))
+  RunParser PEOF '[] = Success False '() '[]
+  RunParser PEOF (x ': xs) = Fail False (Expected "eof" (x ': xs))
 
 -- PChar
 type family RunAnyChar xs where
   RunAnyChar (x ': xs) = Success True x xs
-  RunAnyChar '[] = Fail False (Expected "any char" "")
+  RunAnyChar '[] = Fail False (Expected "any char" '[])
 
 -- PChar
 type family RunChar a as where
   RunChar a (a ': as) = Success True a as
-  RunChar a as = Fail False (Expected a (Fold as))
+  RunChar a as = Fail False (Expected a as)
 
 -- <$>
 type family RunMap f p xs where
@@ -132,19 +145,19 @@ type family RunAlt2 m1 r2 where
   RunAlt2 m1 (Fail False m2) = Fail False (CombineErr m1 m2)
 
 type family CombineErr m1 m2 where
-  CombineErr Unknown m2 = m2
-  CombineErr m1 Unknown = m1
+  CombineErr (Unknown _) m2 = m2
+  CombineErr m1 (Unknown _) = m1
   CombineErr (Expected a1 xs) (Expected a2 xs) = Expected (a1 ## ", " ## a2) xs
 
 -- Try
-type family RunTry r where
-  RunTry (Success e a xs) = Success e a xs
-  RunTry (Fail False msg) = Fail False msg
-  RunTry (Fail True msg) = Fail False Unknown
+type family RunTry r xs where
+  RunTry (Success e a xs) _ = Success e a xs
+  RunTry (Fail False msg) _ = Fail False msg
+  RunTry (Fail True msg) xs = Fail False (Unknown xs)
 
 type family RunLabel r label xs where
   RunLabel (Success e a xs) _ _ = Success e a xs
-  RunLabel (Fail e _) label xs = Fail e (Expected label (Fold xs))
+  RunLabel (Fail e _) label xs = Fail e (Expected label xs)
 
 type family RunText txt xs where
   RunText txt xs = RunText' txt xs (ToList txt) xs
@@ -152,15 +165,15 @@ type family RunText txt xs where
 type family RunText' pat start as xs where
   RunText' pat start '[] xs = Success True pat xs
   RunText' pat start (a ': as) (a ': xs) = RunText' pat start as xs
-  RunText' pat start _ _ = Fail False (Expected pat (Fold start))
+  RunText' pat start _ _ = Fail False (Expected pat start)
 
 type family RunSatisfy f xs where
-  RunSatisfy f '[] = Fail False Unknown
+  RunSatisfy f '[] = Fail False (Unknown '[])
   RunSatisfy f (x ': xs) = RunSatisfy' (f @@ x) x xs
 
 type family RunSatisfy' b x xs where
   RunSatisfy' True x xs = Success True x xs
-  RunSatisfy' False x xs = Fail False Unknown
+  RunSatisfy' False x xs = Fail False (Unknown xs)
 
 type SomeText p = SFold <$> PSome p
 type ManyText p = SFold <$> PMany p
@@ -184,7 +197,3 @@ type NoneOf xs = PSatisfy (NotSym0 .@#@$$$ SAnyOf xs)
 
 type PNotChar c = PSatisfy (SNotEqual c)
 type SNotEqual a = (/=@#@$$) a
-
-data Specifier = Lit Symbol | Spec Symbol
-
-type PSpecs = PSome ((TyCon1 Lit <$> SomeText (NoneOf "%")) <|> (TyCon1 Spec <$> (PChar "%" ## PRange "a" "z")))
