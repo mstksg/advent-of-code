@@ -91,3 +91,7 @@ parse_reads = do str <- lookAhead (some anyChar)
 
 -- λ> parse (scanf @"hello, %/[a-z]+/s here") "hello, word here"
 -- "word" :< HNil
+
+-- λ> :t scanf @"%/[a-z]+/s = %r"
+-- scanf @"%/[a-z]+/s = %r"
+--   :: (Read a, Ty.Typeable a) => Parser (HList '[Text, a])
