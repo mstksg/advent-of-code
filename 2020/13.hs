@@ -55,7 +55,7 @@ part1 = minimum [(wait n, wait n * n) | Just n <- ids]
 part2 = go rules [0..]
   where
     go [] ts = head ts
-    go (r:rs) ts = go (accelerate (filter (solves r) ts)
+    go (r:rs) ts = go rs (accelerate (filter (solves r) ts))
     solves (dt,n) t = mod (t+dt) n == 0
     accelerate ts = let a:b:_ = ts in [a,b..]
     rules = [(dt, n) | (dt, Just n) <- zip [0..] (snd input)]
