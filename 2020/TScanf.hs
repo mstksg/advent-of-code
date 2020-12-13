@@ -36,6 +36,9 @@ import           ScanfParser
 data HList (l::[*]) where
     HNil :: HList '[]
     (:<) :: e -> HList l -> HList (e ': l)
+infixr 7 :<
+
+
 
 instance (Show a, Show (HList as)) => Show (HList (a ': as)) where
   showsPrec n (a :< as) = showsPrec 10 a . showString " :< " . showsPrec 10 as
@@ -62,8 +65,11 @@ instance (Scanf specs as, KnownSymbol pat, aas ~ (Text ': as)) => Scanf (SpecReg
               as <- scanf' @ specs
               return (a :< as)
 
-scanf :: forall (pat :: Symbol) as. Scanf (ParseScanf pat) as => Parser (HList as)
-scanf = scanf' @(ParseScanf pat)
+scanf'' :: forall (pat :: Symbol) as. Scanf (ParseScanf pat) as => Parser (HList as)
+scanf'' = scanf' @(ParseScanf pat)
+
+scanf :: forall (pat :: Symbol) as t. (Scanf (ParseScanf pat) as, Unpack as t) => Parser t
+scanf = unpack <$> scanf'' @pat
 
 -- This is pretty bad, it does infinite lookahead
 parse_reads :: forall a. Read a => Parser a
@@ -72,6 +78,24 @@ parse_reads = do str <- lookAhead (some anyChar)
                    [(a :: a, leftover)] -> let n = length str - length leftover
                                       in read <$> string (take n str)
                    _ -> mzero
+
+class Unpack as ts | as -> ts, ts -> as where
+  unpack :: HList as -> ts
+
+instance Unpack '[] () where
+  unpack HNil = ()
+
+instance Unpack '[a] (Maybe a) where
+  unpack (a :< HNil) = Just a
+
+instance Unpack '[a, b] (a, b) where
+  unpack (a :< b :< HNil) = (a, b)
+
+instance Unpack '[a, b, c] (a, b, c) where
+  unpack (a :< b :< c :< HNil) = (a, b, c)
+
+instance Unpack '[a, b, c, d] (a, b, c, d) where
+  unpack (a :< b :< c :< d :< HNil) = (a, b, c, d)
 
 -- λ> parse (scanf @"hello, %r") "hello, 50" :: HList '[Int]
 -- 50 :< HNil
