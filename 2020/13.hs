@@ -52,10 +52,11 @@ part1 = minimum [(wait n, wait n * n) | Just n <- ids]
     wait n = mod (n - mod t n) n
     (t, ids) = input
 
-part2 = go (head rules) (tail rules)
+part2 = go rules [0..]
   where
-    go (t0,t1) [] = t0
-    go (t0,t1) ((dt,n):rs) = let a:b:_ = [t | t <- [t0,t1..], mod (t+dt) n == 0] in
-                              go (a,b) rs
+    go [] ts = head ts
+    go (r:rs) ts = go (accelerate (filter (solves r) ts)
+    solves (dt,n) t = mod (t+dt) n == 0
+    accelerate ts = let a:b:_ = ts in [a,b..]
     rules = [(dt, n) | (dt, Just n) <- zip [0..] (snd input)]
     (_, ids) = input
