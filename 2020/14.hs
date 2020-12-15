@@ -12,8 +12,6 @@ import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Concurrent.STM.TQueue
 import           Control.Monad
-import           Criterion
-import           Criterion.Main
 import           Data.Bits
 import           Data.Char
 import           Data.Foldable
@@ -41,27 +39,44 @@ import           Text.Parser.Combinators hiding (count)
 import           Util
 import qualified Util.Text as T
 
-input :: (Int, [Maybe Int])
-input = unsafePerformIO (parse p <$> T.readFile "input/13.txt")
-  where
-    p = do
-      t <- p_nat <* spaces
-      nums <- some (((Just <$> p_nat) <|> (const Nothing <$> char 'x')) <* optional (char ','))
-      return (t, nums)
+data Op = Mask String | Mem Int Int
+  deriving (Show)
 
-part1 = minimum [(wait n, wait n * n) | Just n <- ids]
+input :: [Op]
+input = unsafePerformIO (parse p <$> T.readFile "input/14.txt")
   where
-    wait n = mod (n - mod t n) n
-    (t, ids) = input
+    p = some (
+      (do text "mask = "
+          bits <- some (oneOf "X01")
+          spaces
+          return (Mask bits)) <|>
+      (do text "mem["
+          loc <- p_nat
+          text "] = "
+          val <- p_nat
+          spaces
+          return (Mem loc val)))
 
-part2 input = go rules [0..]
+tobits val = [if testBit val (35-i) then '1' else '0' | i <- [0..35]]
+frombits bs = sum [if bs!!i == '1' then shiftL 1 (35-i) else 0 | i <- [0..35]]
+
+masked :: Maybe String -> Int -> Int
+masked (Just xs) val = frombits $ zipWith switch xs (tobits val)
   where
-    go [] ts = head ts
-    go (r:rs) ts = go rs (accelerate (filter (solves r) ts))
-    solves (dt,n) t = mod (t+dt) n == 0
-    accelerate ts = let a:b:_ = ts in [a,b..]
-    rules = [(dt, n) | (dt, Just n) <- zip [0..] (snd input)]
-    (_, ids) = input
+    switch 'X' x = x
+    switch '1' _ = '1'
+    switch '0' _ = '0'
 
-main :: IO ()
-main = defaultMain [bench "part2" $ whnf part2 input] >> print (part2 input)
+floated :: Maybe String -> Int -> [Int]
+floated (Just xs) val = frombits <$> sequence (zipWith switch xs (tobits val))
+  where
+    switch 'X' _ = ['1', '0']
+    switch '1' _ = ['1']
+    switch '0' x = [x]
+
+part2 = go Map.empty Nothing input
+  where
+    go mem mask [] = sum mem
+    go mem mask (Mask m : xs) = go mem (Just m) xs
+    go mem mask (Mem loc val : xs) =
+      go (Map.fromList [(l, val) | l <- floated mask loc] `Map.union` mem) mask xs
