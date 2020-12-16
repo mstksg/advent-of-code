@@ -5,15 +5,18 @@ module Util where
 
 import           Control.Applicative
 import           Control.Monad
+import           Control.Monad.Trans.State
 import           Data.Char
 import           Data.Constraint
-import           Data.Foldable
 import           Data.Foldable
 import           Data.List
 import           Data.Ord
 import           Data.Semigroup
 import           Data.Text (Text)
 import qualified Data.Text as T
+import qualified Ersatz as E
+import qualified Ersatz.Solver.Minisat as E
+import           System.IO.Unsafe
 import           Text.Parser.Char
 import           Text.Parser.Combinators
 import qualified Text.Trifecta as Trifecta
@@ -69,3 +72,19 @@ alnums = T.pack <$> some alphaNum
 
 (##) :: Monoid a => Parser a -> Parser a -> Parser a
 (##) a b = (<>) <$> a <*> b
+
+solves :: (E.Equatable a, E.Codec a) => Ersatz a -> [E.Decoded a]
+solves m = go []
+  where
+    go nots = case unsafePerformIO (E.solveWith E.anyminisat m') of
+      (E.Satisfied, Just x) -> x : go [x]
+      _ -> []
+      where
+        m' = do a <- m
+                for_ nots (\x -> E.assert (a E./== E.encode x))
+                return a
+
+type Ersatz = StateT E.SAT IO
+
+exactly :: Int -> [E.Bit] -> E.Bit
+exactly n xs = sum (map E.bits xs) E.=== fromIntegral n

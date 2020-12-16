@@ -12,6 +12,7 @@ import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Concurrent.STM.TQueue
 import           Control.Monad
+import           Control.Monad.Trans.State
 import           Data.Bits
 import           Data.Char
 import           Data.Foldable
@@ -31,10 +32,13 @@ import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Unboxed as U
 import           Data.Word
 import           Debug.Trace
+import qualified Ersatz as E
+import qualified Ersatz.Solver.Minisat as E
 import           System.IO
 import           System.IO.Unsafe
 import           Text.Parser.Char
 import           Text.Parser.Combinators hiding (count)
+
 
 import           Util
 import qualified Util.Text as T
@@ -69,8 +73,10 @@ input = unsafePerformIO (parse p <$> T.readFile "input/16.txt")
       nearby <- some $ some (p_nat <* optional (char ',')) <* spaces
       return (Map.fromList rules, you, nearby)
 
+valid :: Int -> Rule -> Bool
 valid num (Rule (a,b) (c,d)) = (a <= num && num <= b) || (c <= num && num <= d)
 
+part1 :: Int
 part1 = sum $ do
   ticket <- nearby
   num <- ticket
@@ -80,25 +86,32 @@ part1 = sum $ do
     (rules, you, nearby) = input
     numbers = fold nearby
 
-choose xs = [(xs!!i, take i xs ++ drop (i+1) xs) | i <- [0..n-1]]
-  where n = length xs
+fromopts :: [Bool] -> Int
+fromopts xs = fst $ head $ filter snd (zip [0..] xs)
 
+part2 :: Int
 part2 = product [you!!j | (i, j) <- Map.toList mapping, T.isPrefixOf "departure" i]
   where
-    n = length rules'
+    n = length rules
     match = Map.fromListWith (<>) $ do
       i <- Map.keys rules
       j <- [0..n-1]
       guard $ all (\ticket -> valid (ticket!!j) (rules Map.! i)) validTickets
-      return (i,Set.singleton j)
-    go order [] left = return order
-    go order (i:names) left = do
-      let allowed = Set.intersection (match Map.! i) left
-      j <- Set.toList allowed
-      go (Map.insert i j order) names (Set.delete j left)
-    mapping = head $ go Map.empty (Map.keys rules) (Set.fromList [0..n-1])
+      return (i, Set.singleton j)
+
+    mapping = fmap fromopts $ head $ solves $ do
+      let options n = do
+            xs <- replicateM n E.exists :: Ersatz [E.Bit]
+            E.assert (exactly 1 xs)
+            return xs
+      mp <- sequence (Map.fromList [(name, options n) | name <- Map.keys rules])
+      for_ [1..n-1] $ \j -> do
+        E.assert $ exactly 1 [mp Map.! name !! j | name <- Map.keys mp]
+      for_ (Map.toList match) $ \(name, js) -> do
+        E.assert $ exactly 1 [mp Map.! name !! j | j <- Set.toList js]
+      return mp
+
     (rules, you, nearby) = input
-    rules' = Map.toList rules
     numbers = fold nearby
     invalidTicket ticket = any (\num -> all (not . valid num) rules) ticket
     validTickets = filter (not . invalidTicket) nearby
