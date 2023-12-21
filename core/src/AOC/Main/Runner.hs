@@ -1,5 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Werror=incomplete-patterns #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ApplicativeDo #-}
 
 module AOC.Main.Runner (mainFor) where
 

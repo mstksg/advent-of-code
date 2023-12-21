@@ -1,6 +1,11 @@
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- |
 -- Module      : AOC.Run.Load
@@ -348,7 +353,7 @@ parseMeta = do
             Nothing <$ (MP.space *> "\n")
           ]
     parseData = do
-      MP.string ">>>"
+      _ <- MP.string ">>>"
       sym <- MP.manyTill (MP.try MP.letterChar) (MP.try (MP.char ':'))
       val <- MP.manyTill (MP.try MP.alphaNumChar) (MP.try (MP.char ':'))
       typ <- MP.many (MP.try MP.letterChar)

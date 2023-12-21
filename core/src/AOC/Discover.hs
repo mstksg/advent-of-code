@@ -1,4 +1,8 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 
 -- |
 -- Module      : AOC.Discover

@@ -1,10 +1,15 @@
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImplicitParams #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- |
--- Module      : AOC.Interactive
--- Copyright   : (c) Justin Le 2021
+-- Module      : AOC.Run
+-- Copyright   : (c) Justin Le 2023
 -- License     : BSD3
 --
 -- Maintainer  : justin@jle.im
@@ -315,7 +320,7 @@ mainSubmit CB {..} Cfg {..} MSO {..} = do
   pure output
   where
     d' = dayInt _csDay
-    cs@CS{..} = _msoSpec
+    cs@CS {..} = _msoSpec
     CP {..} = challengePaths _cbYear cs
     formatResp = T.unpack . T.intercalate "\n" . map ("> " <>)
     logFmt =

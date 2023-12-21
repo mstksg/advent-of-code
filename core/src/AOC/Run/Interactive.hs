@@ -1,3 +1,9 @@
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
+{-# LANGUAGE TypeOperators #-}
+
 -- |
 -- Module      : AOC.Run.Interactive
 -- Copyright   : (c) Justin Le 2021

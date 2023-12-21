@@ -161,7 +161,7 @@ library
 
 executable aoc2023
   import: common-options
-  main-is: runner-2023.hs
+  main-is: runner.hs
   hs-source-dirs:
       app
   build-depends:

@@ -1,4 +1,3 @@
-{-# LANGUAGE NoStarIsType #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module AOC.Common.Point

@@ -1,4 +1,1 @@
-packages:
-    ./2023
-    ./common
-    ./core
+packages: ./

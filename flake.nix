@@ -30,6 +30,6 @@
         flake = pkgs.aoc2023.flake { };
       in
       flake
-      // { packages.default = flake.packages."aoc2023:exe:aoc2023"; }
+      // { packages.default = flake.packages."advent-of-code:exe:aoc2023"; }
     );
 }

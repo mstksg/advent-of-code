@@ -1,3 +1,7 @@
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE DeriveGeneric #-}
+
 -- |
 -- Module      : AOC.Run.Config
 -- Copyright   : (c) Justin Le 2021

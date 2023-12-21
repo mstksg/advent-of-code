@@ -1,0 +1,296 @@
+cabal-version:  2.4
+name:           advent-of-code
+
+version:        0.1.0.0
+synopsis:       Advent of code runners and solvers
+description:    Runners and solvers (and input fetchers) for advent of code,
+                over multiple years.
+category:       Web
+homepage:       https://github.com/mstksg/advent-of-code#readme
+bug-reports:    https://github.com/mstksg/advent-of-code/issues
+author:         Justin Le
+maintainer:     justin@jle.im
+copyright:      (c) Justin Le 2023
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type:                git
+  location:            https://github.com/mstksg/advent-of-code.git
+
+common common-options
+  ghc-options:         -Wall
+                       -Wcompat
+                       -Widentities
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wno-partial-type-signatures
+  if impl(ghc >= 8.0)
+    ghc-options:       -Wredundant-constraints
+  if impl(ghc >= 8.2)
+    ghc-options:       -fhide-source-paths
+  if impl(ghc >= 8.4)
+    ghc-options:       -Wmissing-export-lists
+                       -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options:       -Wmissing-deriving-strategies
+
+  default-language:    Haskell2010
+
+library aoc-core
+  import:              common-options
+  build-depends:       base >=4.7 && <5
+                     , advent-of-code-api >=0.2.9.1
+                     , aeson
+                     , ansi-terminal
+                     , bytestring
+                     , constraints
+                     , constraints-extras
+                     , containers
+                     , criterion
+                     , data-default-class
+                     , deepseq
+                     , dependent-sum
+                     , directory
+                     , filepath
+                     , haskeline
+                     , megaparsec
+                     , microlens
+                     , microlens-th
+                     , mtl
+                     , optparse-applicative
+                     , pandoc
+                     , parser-combinators
+                     , tagsoup
+                     , template-haskell
+                     , text
+                     , th-abstraction
+                     , time
+                     , transformers
+                     , yaml
+  exposed-modules:
+      AOC.Discover
+      AOC.Main.Runner
+      AOC.Main.Spec
+      AOC.Main.Bench
+      AOC.Run
+      AOC.Run.Config
+      AOC.Run.Interactive
+      AOC.Run.Load
+      AOC.Solver
+      AOC.Util
+      AOC.Util.DynoMap
+  hs-source-dirs:
+      core/src
+
+common solver-extensions
+  default-extensions:
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BangPatterns
+      BlockArguments
+      DataKinds
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      EmptyCase
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      GeneralizedNewtypeDeriving
+      ImplicitParams
+      KindSignatures
+      LambdaCase
+      MonadComprehensions
+      MultiParamTypeClasses
+      MultiWayIf
+      NoStarIsType
+      NumDecimals
+      OverloadedLabels
+      PartialTypeSignatures
+      PatternGuards
+      PatternSynonyms
+      PolyKinds
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      UndecidableInstances
+      ViewPatterns
+
+library aoc-common
+  import:              common-options
+  import:              solver-extensions
+  build-depends:       base >=4.7 && <5
+                     , aoc-core
+                     , bitvec
+                     , comonad
+                     , containers
+                     , data-memocombinators
+                     , deepseq
+                     , fgl
+                     , fin
+                     , finitary
+                     , finite-typelits
+                     , foldl
+                     , ghc-typelits-natnormalise
+                     , groups
+                     , hashable
+                     , lens
+                     , linear
+                     , megaparsec
+                     , mtl
+                     , nonempty-containers
+                     , parallel
+                     , parser-combinators
+                     , psqueues
+                     , recursion-schemes
+                     , safe
+                     , semigroupoids
+                     , split
+                     , strict-tuple
+                     , text
+                     , time
+                     , transformers
+                     , vector
+                     , vector-algorithms
+                     , vector-sized
+  exposed-modules:
+      AOC.Common
+      AOC.Common.FinitarySet
+      AOC.Common.Point
+      AOC.Common.Search
+      AOC.Prelude
+  hs-source-dirs:
+      common/src
+
+common solver-deps
+  build-depends:       base >=4.7 && <5
+                     , aoc-common
+                     , aoc-core
+                     , bitvec
+                     , comonad
+                     , conduino >= 0.2.4
+                     , containers
+                     , data-default-class
+                     , data-interval
+                     , data-memocombinators
+                     , deepseq
+                     , fgl
+                     , fin
+                     , finitary
+                     , finite-typelits
+                     , foldl
+                     , ghc-typelits-natnormalise
+                     , groups
+                     , hashable
+                     , lens
+                     , linear
+                     , megaparsec
+                     , microlens-th
+                     , mtl
+                     , nonempty-containers
+                     , parallel
+                     , parser-combinators
+                     , pointedlist
+                     , profunctors
+                     , psqueues
+                     , recursion-schemes
+                     , safe
+                     , semigroupoids
+                     , split
+                     , strict-tuple
+                     , text
+                     , transformers
+                     , vector
+                     , vector-algorithms
+                     , vector-sized
+
+common executable-options
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
+
+-- 2023
+
+library aoc2023-lib
+  import: common-options
+  import: solver-extensions
+  import: solver-deps
+  exposed-modules:
+      AOC2023
+      AOC2023.Day01
+      AOC2023.Day02
+      AOC2023.Day03
+      AOC2023.Day04
+      AOC2023.Day05
+      AOC2023.Day06
+      AOC2023.Day07
+      AOC2023.Day08
+      AOC2023.Day09
+      AOC2023.Day10
+      AOC2023.Day11
+      AOC2023.Day12
+      AOC2023.Day13
+      AOC2023.Day14
+      AOC2023.Day15
+      AOC2023.Day16
+      AOC2023.Day17
+      AOC2023.Day18
+      AOC2023.Day19
+      AOC2023.Day20
+      AOC2023.Day21
+      AOC2023.Day22
+      AOC2023.Day23
+      AOC2023.Day24
+      AOC2023.Day25
+  hs-source-dirs:
+      2023/src
+
+executable aoc2023
+  import: common-options
+  import: executable-options
+  main-is: runner.hs
+  hs-source-dirs: 2023/app
+  build-depends:
+      base >=4.7 && <5
+    , ansi-terminal
+    , aoc2023-lib
+    , aoc-core
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+
+test-suite aoc2023-test
+  import: common-options
+  import: executable-options
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs: 2023/test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , ansi-terminal
+    , aoc2023-lib
+    , aoc-core
+
+benchmark aoc2023-bench
+  import: common-options
+  import: executable-options
+  type: exitcode-stdio-1.0
+  main-is: Bench.hs
+  hs-source-dirs: 2023/bench
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , ansi-terminal
+    , aoc2023-lib
+    , aoc-core
