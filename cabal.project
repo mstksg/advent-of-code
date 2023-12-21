@@ -2,11 +2,3 @@ packages:
     ./2023
     ./common
     ./core
-
-
--- only until haskell.nix pulls in v0.2.4.0
-source-repository-package
-  type: git
-  location: https://github.com/mstksg/conduino.git
-  tag: 6ab29555b108cb16ebf18117fad26ae40bb983cf
-  --sha256: 107w82zk65bvj3k2x6fjwiig98105rfh30qrp71x2m61mqvkdnlk
