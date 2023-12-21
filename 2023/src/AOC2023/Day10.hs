@@ -12,19 +12,19 @@ module AOC2023.Day10
   )
 where
 
-import AOC.Solver ((:~>)(..), noFail)
-import AOC.Common.Point (Dir(..), Point, dirPoint', inBoundingBox, boundingBox', parseAsciiMap, allDirSet)
-import Data.Tuple (swap)
+import AOC.Common.Point (Dir (..), Point, allDirSet, boundingBox', dirPoint', inBoundingBox, parseAsciiMap)
+import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad (guard, join)
-import Data.Maybe (listToMaybe, isJust, fromMaybe)
 import Data.Foldable (for_)
 import Data.List (foldl', unfoldr)
 import Data.Map (Map)
-import Safe (minimumMay)
-import Data.Set (Set)
 import qualified Data.Map as M
+import Data.Maybe (fromMaybe, isJust, listToMaybe)
+import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Set.NonEmpty as NES
+import Data.Tuple (swap)
+import Safe (minimumMay)
 
 prepareMap :: Map Point (Maybe (Set Dir)) -> Maybe (Point, Map Point (Set Dir))
 prepareMap mp = do

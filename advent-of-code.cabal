@@ -94,11 +94,13 @@ common solver-extensions
       BangPatterns
       BlockArguments
       DataKinds
+      DeriveAnyClass
       DeriveFoldable
       DeriveFunctor
       DeriveGeneric
       DeriveTraversable
       DerivingStrategies
+      DerivingVia
       EmptyCase
       FlexibleContexts
       FlexibleInstances
@@ -180,6 +182,8 @@ common solver-deps
   build-depends:       base >=4.7 && <5
                      , aoc-common
                      , aoc-core
+                     , arithmoi
+                     , barbies
                      , bitvec
                      , comonad
                      , conduino >= 0.2.4
@@ -188,32 +192,42 @@ common solver-deps
                      , data-interval
                      , data-memocombinators
                      , deepseq
+                     , distributive
+                     , extended-reals
                      , fgl
                      , fin
                      , finitary
                      , finite-typelits
                      , foldl
                      , ghc-typelits-natnormalise
+                     , grid
                      , groups
                      , hashable
                      , lens
                      , linear
                      , megaparsec
                      , microlens-th
+                     , monad-loops
+                     , monoidal-containers
                      , mtl
                      , nonempty-containers
+                     , one-liner-instances
                      , parallel
                      , parser-combinators
                      , pointedlist
+                     , primitive
                      , profunctors
                      , psqueues
                      , recursion-schemes
+                     , refined
                      , safe
                      , semigroupoids
                      , split
                      , strict-tuple
                      , text
                      , transformers
+                     , unordered-containers
+                     , vec
                      , vector
                      , vector-algorithms
                      , vector-sized
@@ -221,6 +235,74 @@ common solver-deps
 common executable-options
   import: common-options
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
+
+-- 2020
+
+library aoc2020-lib
+  import: common-options
+  import: solver-extensions
+  import: solver-deps
+  exposed-modules:
+      AOC2020
+      AOC2020.Day01
+      AOC2020.Day02
+      AOC2020.Day03
+      AOC2020.Day04
+      AOC2020.Day05
+      AOC2020.Day06
+      AOC2020.Day07
+      AOC2020.Day08
+      AOC2020.Day09
+      AOC2020.Day10
+      AOC2020.Day11
+      AOC2020.Day12
+      AOC2020.Day13
+      AOC2020.Day14
+      AOC2020.Day15
+      AOC2020.Day16
+      AOC2020.Day17
+      AOC2020.Day18
+      AOC2020.Day19
+      AOC2020.Day20
+      AOC2020.Day21
+      AOC2020.Day22
+      AOC2020.Day23
+      AOC2020.Day24
+      AOC2020.Day25
+  hs-source-dirs:
+      2020/src
+
+executable aoc2020
+  import: executable-options
+  main-is: runner.hs
+  hs-source-dirs: 2020/app
+  build-depends:
+      base >=4.7 && <5
+    , ansi-terminal
+    , aoc2020-lib
+    , aoc-core
+
+test-suite aoc2020-test
+  import: executable-options
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs: 2020/test
+  build-depends:
+      base >=4.7 && <5
+    , ansi-terminal
+    , aoc2020-lib
+    , aoc-core
+
+benchmark aoc2020-bench
+  import: executable-options
+  type: exitcode-stdio-1.0
+  main-is: Bench.hs
+  hs-source-dirs: 2020/bench
+  build-depends:
+      base >=4.7 && <5
+    , ansi-terminal
+    , aoc2020-lib
+    , aoc-core
 
 -- 2023
 

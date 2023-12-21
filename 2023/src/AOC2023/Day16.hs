@@ -21,9 +21,9 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2023.Day16
-  ( 
-    -- day16a,
-    -- day16b
+  (
+  -- day16a,
+  -- day16b
   )
 where
 
@@ -55,8 +55,7 @@ day16a =
   MkSol
     { sParse =
         noFail $
-          lines
-    ,
+          lines,
       sShow = show,
       sSolve =
         noFail $
