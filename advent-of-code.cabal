@@ -219,6 +219,7 @@ common solver-deps
                      , vector-sized
 
 common executable-options
+  import: common-options
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
 
 -- 2023
@@ -258,7 +259,6 @@ library aoc2023-lib
       2023/src
 
 executable aoc2023
-  import: common-options
   import: executable-options
   main-is: runner.hs
   hs-source-dirs: 2023/app
@@ -267,15 +267,12 @@ executable aoc2023
     , ansi-terminal
     , aoc2023-lib
     , aoc-core
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
 
 test-suite aoc2023-test
-  import: common-options
   import: executable-options
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   hs-source-dirs: 2023/test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , ansi-terminal
@@ -283,12 +280,10 @@ test-suite aoc2023-test
     , aoc-core
 
 benchmark aoc2023-bench
-  import: common-options
   import: executable-options
   type: exitcode-stdio-1.0
   main-is: Bench.hs
   hs-source-dirs: 2023/bench
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , ansi-terminal
