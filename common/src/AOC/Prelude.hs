@@ -34,6 +34,8 @@ import Data.Finite as P (Finite, finites, getFinite, modulo, packFinite)
 import Data.Foldable as P
 import Data.Function as P
 import Data.Functor as P
+import Data.Functor.Foldable as P (ana, cata, hylo)
+import Data.Functor.Foldable.TH as P (makeBaseFunctor)
 import Data.IntMap as P (IntMap)
 import Data.IntMap.NonEmpty as P (NEIntMap)
 import Data.IntSet as P (IntSet)
