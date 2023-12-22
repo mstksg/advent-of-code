@@ -104,6 +104,10 @@ import qualified Linear.Vector as L
 -- | 2D Coordinate
 type Point = V2 Int
 
+type Point3 = V3 Int
+
+type Point4 = V4 Int
+
 type FinPoint n = V2 (Finite n)
 
 -- | Find the minimum and maximum x and y from a collection of points.

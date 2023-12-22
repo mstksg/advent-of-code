@@ -59,6 +59,7 @@ import Data.Tuple as P
 import Data.Void as P
 import Debug.Trace as P
 import GHC.Generics as P (Generic)
+import Data.Generics.Labels ()
 import Numeric.Natural as P
 import Safe as P (atMay, foldl1May', headMay, initMay, lastMay, predMay, scanl1May, succMay, tailMay)
 import Safe.Foldable as P (foldl1May, foldr1May, maximumByMay, maximumMay, minimumByMay, minimumMay)
