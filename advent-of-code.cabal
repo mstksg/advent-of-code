@@ -147,6 +147,7 @@ library aoc-common
                      , finitary
                      , finite-typelits
                      , foldl
+                     , generic-lens
                      , ghc-typelits-natnormalise
                      , groups
                      , hashable
