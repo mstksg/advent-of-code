@@ -387,4 +387,5 @@ executable aoc-site
   hs-source-dirs: site/app
   build-depends:
       base >=4.7 && <5
+    , filepath
     , hakyll
