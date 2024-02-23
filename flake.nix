@@ -11,7 +11,7 @@
         overlays = [
           haskellNix.overlay
           (final: prev: {
-            aoc2023 = final.haskell-nix.project' {
+            advent-of-code = final.haskell-nix.project' {
               name = "advent-of-code";
               src = ./.;
               compiler-nix-name = "ghc964";
@@ -28,14 +28,29 @@
           })
         ];
         pkgs = import nixpkgs { inherit system overlays; inherit (haskellNix) config; };
-        flake = pkgs.aoc2023.flake { };
+        flake = pkgs.advent-of-code.flake { };
       in
       flake
       // {
-        packages = rec {
-          aoc2020 = flake.packages."advent-of-code:exe:aoc2020";
-          aoc2023 = flake.packages."advent-of-code:exe:aoc2023";
-          default = aoc2023;
+        packages =
+          pkgs.advent-of-code.hsPkgs.advent-of-code.components.exes
+          //
+          {
+            default = flake.packages."advent-of-code:exe:aoc2023";
+          };
+        legacyPackages = pkgs;
+        apps.format = {
+          type = "app";
+          program =
+            toString
+              (pkgs.writeShellApplication {
+                name = "formatHaskell.sh";
+                runtimeInputs = [ flake.devShell ];
+                text = ''
+                  # shellcheck disable=SC2046
+                  fourmolu --mode inplace $(git ls-files '*.hs')
+                '';
+              }) + "/bin/formatHaskell.sh";
         };
       }
     );
