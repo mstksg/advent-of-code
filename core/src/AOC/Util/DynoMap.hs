@@ -10,13 +10,13 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 
-module AOC.Util.DynoMap
-  ( DynoMap (..),
-    lookupDyno,
-    lookupDynoWith,
-    TestType (..),
-    HasTestType (..),
-  )
+module AOC.Util.DynoMap (
+  DynoMap (..),
+  lookupDyno,
+  lookupDynoWith,
+  TestType (..),
+  HasTestType (..),
+)
 where
 
 import Control.Monad

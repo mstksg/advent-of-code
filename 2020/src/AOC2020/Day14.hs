@@ -8,10 +8,10 @@
 -- Portability : non-portable
 --
 -- Day 14.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day14
-  ( day14a,
-    day14b,
-  )
+module AOC2020.Day14 (
+  day14a,
+  day14b,
+)
 where
 
 import AOC.Common (CharParser, parseLines)
@@ -43,9 +43,9 @@ applyMask1 = ifoldl' $ \i x -> \case
 day14a :: [Instr] :~> Int
 day14a =
   MkSol
-    { sParse = parseLines parseInstr,
-      sShow = show,
-      sSolve = Just . sum . fst . foldl' go mempty
+    { sParse = parseLines parseInstr
+    , sShow = show
+    , sSolve = Just . sum . fst . foldl' go mempty
     }
   where
     go :: (IntMap Int, [Maybe Bool]) -> Instr -> (IntMap Int, [Maybe Bool])
@@ -63,9 +63,9 @@ applyMask2 = ifoldlM $ \i x -> \case
 day14b :: [Instr] :~> Int
 day14b =
   MkSol
-    { sParse = sParse day14a,
-      sShow = show,
-      sSolve = Just . sum . fst . foldl' go mempty
+    { sParse = sParse day14a
+    , sShow = show
+    , sSolve = Just . sum . fst . foldl' go mempty
     }
   where
     go :: (IntMap Int, [Maybe Bool]) -> Instr -> (IntMap Int, [Maybe Bool])
@@ -81,9 +81,9 @@ parseInstr = (Mask <$> P.try masker) P.<|> (uncurry Write <$> memer)
       reverse <$> P.many bitter
     bitter =
       P.choice
-        [ Just True <$ P.char '1',
-          Just False <$ P.char '0',
-          Nothing <$ P.char 'X'
+        [ Just True <$ P.char '1'
+        , Just False <$ P.char '0'
+        , Nothing <$ P.char 'X'
         ]
     memer =
       (,)

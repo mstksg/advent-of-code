@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 4.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day04
-  ( day04a,
-    day04b,
-  )
+module AOC2020.Day04 (
+  day04a,
+  day04b,
+)
 where
 
 import AOC.Common (decimalDigit, hexDigit)
@@ -46,13 +46,13 @@ data Eye = AMB | BLU | BRN | GRY | GRN | HZL | OTH
   deriving stock (Show, Read, Eq, Ord, Enum)
 
 data Passport f = Passport
-  { pByr :: f (1920 <-> 2002),
-    pIyr :: f (2010 <-> 2020),
-    pEyr :: f (2020 <-> 2030),
-    pHgt :: f Height,
-    pHcl :: f (6 ** Finite 16),
-    pEcl :: f Eye,
-    pPid :: f (9 ** Finite 10)
+  { pByr :: f (1920 <-> 2002)
+  , pIyr :: f (2010 <-> 2020)
+  , pEyr :: f (2020 <-> 2030)
+  , pHgt :: f Height
+  , pHcl :: f (6 ** Finite 16)
+  , pEcl :: f Eye
+  , pPid :: f (9 ** Finite 10)
   }
   deriving stock (Generic)
 
@@ -75,32 +75,32 @@ newtype Parser a = Parser {runParser :: String -> Maybe a}
 passportParser :: Passport Parser
 passportParser =
   Passport
-    { pByr = Parser $ refineThrow <=< readMaybe,
-      pIyr = Parser $ refineThrow <=< readMaybe,
-      pEyr = Parser $ refineThrow <=< readMaybe,
-      pHgt = Parser $ \str ->
+    { pByr = Parser $ refineThrow <=< readMaybe
+    , pIyr = Parser $ refineThrow <=< readMaybe
+    , pEyr = Parser $ refineThrow <=< readMaybe
+    , pHgt = Parser $ \str ->
         let (x, u) = span isDigit str
          in case u of
               "cm" -> fmap HCm . refineThrow =<< readMaybe x
               "in" -> fmap HIn . refineThrow =<< readMaybe x
-              _ -> Nothing,
-      pHcl = Parser $ \case
+              _ -> Nothing
+    , pHcl = Parser $ \case
         '#' : n -> refineThrow =<< traverse (preview hexDigit) n
-        _ -> Nothing,
-      pEcl = Parser $ readMaybe . map toUpper,
-      pPid = Parser $ refineThrow <=< traverse (preview decimalDigit)
+        _ -> Nothing
+    , pEcl = Parser $ readMaybe . map toUpper
+    , pPid = Parser $ refineThrow <=< traverse (preview decimalDigit)
     }
 
 loadPassportField :: String -> Passport FirstRaw
 loadPassportField str = case splitOn ":" str of
   [k, v] -> case k of
-    "byr" -> mempty {pByr = Const (pure v)}
-    "iyr" -> mempty {pIyr = Const (pure v)}
-    "eyr" -> mempty {pEyr = Const (pure v)}
-    "hgt" -> mempty {pHgt = Const (pure v)}
-    "hcl" -> mempty {pHcl = Const (pure v)}
-    "ecl" -> mempty {pEcl = Const (pure v)}
-    "pid" -> mempty {pPid = Const (pure v)}
+    "byr" -> mempty{pByr = Const (pure v)}
+    "iyr" -> mempty{pIyr = Const (pure v)}
+    "eyr" -> mempty{pEyr = Const (pure v)}
+    "hgt" -> mempty{pHgt = Const (pure v)}
+    "hcl" -> mempty{pHcl = Const (pure v)}
+    "ecl" -> mempty{pEcl = Const (pure v)}
+    "pid" -> mempty{pPid = Const (pure v)}
     _ -> mempty
   _ -> mempty
 
@@ -124,15 +124,15 @@ parsePassport =
 day04a :: [String] :~> Int
 day04a =
   MkSol
-    { sParse = Just . splitOn "\n\n",
-      sShow = show,
-      sSolve = Just . length . mapMaybe loadPassport
+    { sParse = Just . splitOn "\n\n"
+    , sShow = show
+    , sSolve = Just . length . mapMaybe loadPassport
     }
 
 day04b :: [String] :~> Int
 day04b =
   MkSol
-    { sParse = Just . splitOn "\n\n",
-      sShow = show,
-      sSolve = Just . length . mapMaybe parsePassport
+    { sParse = Just . splitOn "\n\n"
+    , sShow = show
+    , sSolve = Just . length . mapMaybe parsePassport
     }

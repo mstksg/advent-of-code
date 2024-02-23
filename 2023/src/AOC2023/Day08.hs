@@ -9,10 +9,10 @@
 -- Portability : non-portable
 --
 -- Day 8.  See "AOC.Solver" for the types used in this module!
-module AOC2023.Day08
-  ( day08a,
-    day08b,
-  )
+module AOC2023.Day08 (
+  day08a,
+  day08b,
+)
 where
 
 import AOC.Common (LCM (..))
@@ -33,7 +33,7 @@ parseMe = \case
     let path = map (== 'R') x
         mp =
           [ (a, filter isAlphaNum b, filter isAlphaNum c)
-            | [a, "=", b, c] <- words <$> xs
+          | [a, "=", b, c] <- words <$> xs
           ]
      in Just (path, mp)
   _ -> Nothing
@@ -42,8 +42,8 @@ stateMachine :: (String -> Bool) -> [Bool] -> [(String, String, String)] -> Map 
 stateMachine isValid lrs xs =
   M.fromList
     [ (a, (\dir -> if dir then c else b) <$> dirMap)
-      | (a, b, c) <- xs,
-        isValid a
+    | (a, b, c) <- xs
+    , isValid a
     ]
   where
     dirMap :: Seq Bool
@@ -65,9 +65,9 @@ ixMod xs i = xs `Seq.index` (i `mod` Seq.length xs)
 day08a :: ([Bool], [(String, String, String)]) :~> Int
 day08a =
   MkSol
-    { sParse = parseMe . lines,
-      sShow = show,
-      sSolve = noFail \(xs, mp) ->
+    { sParse = parseMe . lines
+    , sShow = show
+    , sSolve = noFail \(xs, mp) ->
         let sm = stateMachine (/= "ZZZ") xs mp
          in length $ expandPath sm M.! "AAA"
     }
@@ -75,9 +75,9 @@ day08a =
 day08b :: ([Bool], [(String, String, String)]) :~> Int
 day08b =
   MkSol
-    { sParse = parseMe . lines,
-      sShow = show,
-      sSolve = noFail \(xs, mp) ->
+    { sParse = parseMe . lines
+    , sShow = show
+    , sSolve = noFail \(xs, mp) ->
         foldr lcm 1
           . mapMaybe (\(k, i) -> guard (last k == 'A') $> length i)
           . M.toList

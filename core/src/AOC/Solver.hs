@@ -20,26 +20,26 @@
 --
 -- Types to drive the challenge runner and help speed up/clean up
 -- solutions.
-module AOC.Solver
-  ( (:~>) (..),
-    noFail,
-    mapSum,
-    traverseSum,
-    withSolver,
-    withSolver',
-    SomeSolution (.., MkSomeSol),
-    SolutionError (..),
-    runSolution,
-    runSomeSolution,
-    ssIsNF,
+module AOC.Solver (
+  (:~>) (..),
+  noFail,
+  mapSum,
+  traverseSum,
+  withSolver,
+  withSolver',
+  SomeSolution (.., MkSomeSol),
+  SolutionError (..),
+  runSolution,
+  runSomeSolution,
+  ssIsNF,
 
-    -- * 'DynoMap'
-    runSolutionWith,
-    runSomeSolutionWith,
-    dyno,
-    dyno_,
-    TestType (..),
-  )
+  -- * 'DynoMap'
+  runSolutionWith,
+  runSomeSolutionWith,
+  dyno,
+  dyno_,
+  TestType (..),
+)
 where
 
 import AOC.Util
@@ -62,15 +62,15 @@ import GHC.Generics (Generic)
 -- a general @a -> 'Maybe' b@ function, and the parser and shower are used
 -- to handle the boilerplate of parsing and printing the solution.
 data a :~> b = MkSol
-  { -- | parse input into an @a@
-    sParse :: String -> Maybe a,
-    -- | solve an @a@ input to a @b@ solution
-    sSolve ::
+  { sParse :: String -> Maybe a
+  -- ^ parse input into an @a@
+  , sSolve ::
       (?dyno :: DynoMap) =>
       a ->
-      Maybe b,
-    -- | print out the @b@ solution in a pretty way
-    sShow :: b -> String
+      Maybe b
+  -- ^ solve an @a@ input to a @b@ solution
+  , sShow :: b -> String
+  -- ^ print out the @b@ solution in a pretty way
   }
 
 noFail :: (a -> b) -> a -> Maybe b
@@ -129,9 +129,9 @@ withSolver' f = withSolver (Just . f)
 withSolver :: (String -> Maybe String) -> String :~> String
 withSolver f =
   MkSol
-    { sParse = Just,
-      sShow = id,
-      sSolve = f
+    { sParse = Just
+    , sShow = id
+    , sSolve = f
     }
 
 -- | Run a ':~>' on some input.
@@ -145,7 +145,7 @@ runSolutionWith ::
   a :~> b ->
   String ->
   Either SolutionError String
-runSolutionWith dm MkSol {..} (stripNewline -> s) = do
+runSolutionWith dm MkSol{..} (stripNewline -> s) = do
   x <- maybeToEither SEParse . sParse $ s
   y <- maybeToEither SESolve . sSolve $ x
   pure $ sShow y

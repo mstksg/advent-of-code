@@ -8,13 +8,13 @@
 -- Portability : non-portable
 --
 -- Assorted utility functions and orphans used for solutions.
-module AOC.Util
-  ( strip,
-    stripNewline,
-    eitherToMaybe,
-    maybeToEither,
-    firstJust,
-  )
+module AOC.Util (
+  strip,
+  stripNewline,
+  eitherToMaybe,
+  maybeToEither,
+  firstJust,
+)
 where
 
 import Control.Applicative

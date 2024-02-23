@@ -8,10 +8,10 @@
 -- Portability : non-portable
 --
 -- Day 18.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day18
-  ( day18a,
-    day18b,
-  )
+module AOC2020.Day18 (
+  day18a,
+  day18b,
+)
 where
 
 import AOC.Solver ((:~>) (..))
@@ -25,35 +25,35 @@ type Parser = P.Parsec Void String
 
 -- | A right-associative syntax
 data Syntax f a = Syntax
-  { -- | Operations at each level; highest precedence is last.
-    sBinOps :: [f (a -> a -> a)],
-    -- | How to parse a primitive
-    sPrim :: f a,
-    -- | parentheses
-    sPar :: f a -> f a
+  { sBinOps :: [f (a -> a -> a)]
+  -- ^ Operations at each level; highest precedence is last.
+  , sPrim :: f a
+  -- ^ How to parse a primitive
+  , sPar :: f a -> f a
+  -- ^ parentheses
   }
 
 exprSyntax1 :: Syntax Parser Int
 exprSyntax1 =
   Syntax
-    { sBinOps = [P.choice [(*) <$ " * ", (+) <$ " + "]], -- all same level
-      sPrim = digitToInt <$> P.digitChar,
-      sPar = P.between "(" ")"
+    { sBinOps = [P.choice [(*) <$ " * ", (+) <$ " + "]] -- all same level
+    , sPrim = digitToInt <$> P.digitChar
+    , sPar = P.between "(" ")"
     }
 
 exprSyntax2 :: Syntax Parser Int
 exprSyntax2 =
   Syntax
     { sBinOps =
-        [ (*) <$ " * ", -- + higher than *
-          (+) <$ " + "
-        ],
-      sPrim = digitToInt <$> P.digitChar,
-      sPar = P.between "(" ")"
+        [ (*) <$ " * " -- + higher than *
+        , (+) <$ " + "
+        ]
+    , sPrim = digitToInt <$> P.digitChar
+    , sPar = P.between "(" ")"
     }
 
 parseSyntax :: forall f a. (MonadPlus f) => Syntax f a -> f a
-parseSyntax Syntax {..} = parseTopLevel
+parseSyntax Syntax{..} = parseTopLevel
   where
     parseTopLevel :: f a
     parseTopLevel = parseLevels sBinOps
@@ -71,9 +71,9 @@ parseSyntax Syntax {..} = parseTopLevel
 day18 :: (Num a, Show a) => Syntax Parser a -> String :~> a
 day18 s =
   MkSol
-    { sParse = Just,
-      sShow = show,
-      sSolve = P.parseMaybe $ sum <$> (parseSyntax s `P.sepBy` P.newline)
+    { sParse = Just
+    , sShow = show
+    , sSolve = P.parseMaybe $ sum <$> (parseSyntax s `P.sepBy` P.newline)
     }
 {-# INLINE day18 #-}
 

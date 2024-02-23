@@ -10,9 +10,9 @@
 -- Custom Prelude while developing challenges.  Ideally, once challenges
 -- are completed, an import to this module would be replaced with explicit
 -- ones for future readers.
-module AOC.Prelude
-  ( module P,
-  )
+module AOC.Prelude (
+  module P,
+)
 where
 
 import AOC.Common as P
@@ -42,7 +42,40 @@ import Data.IntMap.NonEmpty as P (NEIntMap)
 import Data.IntSet as P (IntSet)
 import Data.IntSet.NonEmpty as P (NEIntSet)
 import Data.Kind as P
-import Data.List as P (group, groupBy, inits, intercalate, intersperse, isInfixOf, isPrefixOf, isSubsequenceOf, isSuffixOf, permutations, scanl', sort, sortBy, sortOn, stripPrefix, subsequences, tails, transpose, uncons, unfoldr, unzip4, unzip5, unzip6, unzip7, zip4, zip5, zip6, zip7, zipWith4, zipWith5, zipWith6, zipWith7)
+import Data.List as P (
+  group,
+  groupBy,
+  inits,
+  intercalate,
+  intersperse,
+  isInfixOf,
+  isPrefixOf,
+  isSubsequenceOf,
+  isSuffixOf,
+  permutations,
+  scanl',
+  sort,
+  sortBy,
+  sortOn,
+  stripPrefix,
+  subsequences,
+  tails,
+  transpose,
+  uncons,
+  unfoldr,
+  unzip4,
+  unzip5,
+  unzip6,
+  unzip7,
+  zip4,
+  zip5,
+  zip6,
+  zip7,
+  zipWith4,
+  zipWith5,
+  zipWith6,
+  zipWith7,
+ )
 import Data.List.NonEmpty as P (NonEmpty (..), nonEmpty)
 import Data.List.Split as P
 import Data.Map as P (Map)
@@ -62,7 +95,17 @@ import Data.Void as P
 import Debug.Trace as P
 import GHC.Generics as P (Generic)
 import Numeric.Natural as P
-import Safe as P (atMay, foldl1May', headMay, initMay, lastMay, predMay, scanl1May, succMay, tailMay)
+import Safe as P (
+  atMay,
+  foldl1May',
+  headMay,
+  initMay,
+  lastMay,
+  predMay,
+  scanl1May,
+  succMay,
+  tailMay,
+ )
 import Safe.Foldable as P (foldl1May, foldr1May, maximumByMay, maximumMay, minimumByMay, minimumMay)
 import Text.Printf as P
 import Text.Read as P (readMaybe)

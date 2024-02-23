@@ -1,42 +1,42 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE NoStarIsType #-}
 
-module AOC.Common.FinitarySet
-  ( FinitarySet (..),
-    empty,
-    singleton,
-    insert,
-    delete,
-    fromList,
-    toList,
-    length,
-    intersection,
-    union,
-    unions,
-    difference,
-    (\\),
-    isSubsetOf,
-    isProperSubsetOf,
-    disjoint,
-    size,
-    member,
-    notMember,
-    null,
-    cartesianProduct,
-    disjointUnion,
-    foldr,
-    foldr',
-    foldl,
-    foldl',
-    map,
-    foldMap,
-    filter,
-    alterF,
-    generate,
-    powerSet,
-    mapMaybe,
-    partition,
-  )
+module AOC.Common.FinitarySet (
+  FinitarySet (..),
+  empty,
+  singleton,
+  insert,
+  delete,
+  fromList,
+  toList,
+  length,
+  intersection,
+  union,
+  unions,
+  difference,
+  (\\),
+  isSubsetOf,
+  isProperSubsetOf,
+  disjoint,
+  size,
+  member,
+  notMember,
+  null,
+  cartesianProduct,
+  disjointUnion,
+  foldr,
+  foldr',
+  foldl,
+  foldl',
+  map,
+  foldMap,
+  filter,
+  alterF,
+  generate,
+  powerSet,
+  mapMaybe,
+  partition,
+)
 where
 
 import Control.DeepSeq (NFData)
@@ -52,7 +52,24 @@ import qualified Data.Vector.Generic.Sized.Internal as VG
 import qualified Data.Vector.Unboxed.Sized as V
 import GHC.Generics (Generic)
 import GHC.TypeNats
-import Prelude (Bool (..), Either (..), Eq (..), Int, Maybe (..), Monoid, Ord, Semigroup (..), Show, fromIntegral, id, not, otherwise, ($), (&&), (.))
+import Prelude (
+  Bool (..),
+  Either (..),
+  Eq (..),
+  Int,
+  Maybe (..),
+  Monoid,
+  Ord,
+  Semigroup (..),
+  Show,
+  fromIntegral,
+  id,
+  not,
+  otherwise,
+  ($),
+  (&&),
+  (.),
+ )
 import qualified Prelude as P
 
 newtype FinitarySet a = FinitarySet (V.Vector (Cardinality a) Bit)

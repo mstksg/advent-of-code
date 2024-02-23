@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 5.  See "AOC.Solver" for the types used in this module!
-module AOC2023.Day05
-  ( day05a,
-    day05b,
-  )
+module AOC2023.Day05 (
+  day05a,
+  day05b,
+)
 where
 
 import AOC.Common (listTup, listTup3)
@@ -60,21 +60,21 @@ parseLine (x : xs) = do
 day05a :: ([Int], [IntervalMap Int Int]) :~> Int
 day05a =
   MkSol
-    { sParse = parseLine . lines,
-      sShow = show,
-      sSolve = \(s0, process) ->
+    { sParse = parseLine . lines
+    , sShow = show
+    , sSolve = \(s0, process) ->
         minimumMay
           [ foldl' convertSingle s process
-            | s <- s0
+          | s <- s0
           ]
     }
 
 day05b :: ([Interval Int], [IntervalMap Int Int]) :~> Int
 day05b =
   MkSol
-    { sParse = traverseOf _1 pairUp <=< parseLine . lines,
-      sShow = show,
-      sSolve = \(s0, process) ->
+    { sParse = traverseOf _1 pairUp <=< parseLine . lines
+    , sShow = show
+    , sSolve = \(s0, process) ->
         fromFinite . IV.lowerBound . IVS.span $
           foldl' convertMany (IVS.fromList s0) process
     }

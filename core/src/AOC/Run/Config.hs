@@ -12,12 +12,12 @@
 -- Portability : non-portable
 --
 -- Utilities for loading configuration file.
-module AOC.Run.Config
-  ( Config (..),
-    configFile,
-    defConfPath,
-    session,
-  )
+module AOC.Run.Config (
+  Config (..),
+  configFile,
+  defConfPath,
+  session,
+)
 where
 
 import Control.Exception
@@ -32,8 +32,8 @@ import Text.Printf
 
 -- | Configuration for auto-runner.
 data Config = Cfg
-  { -- | Default: 'Nothing'
-    _cfgSession :: Maybe String
+  { _cfgSession :: Maybe String
+  -- ^ Default: 'Nothing'
   }
   deriving stock (Generic)
 

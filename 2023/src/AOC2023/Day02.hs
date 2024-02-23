@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 2.  See "AOC.Solver" for the types used in this module!
-module AOC2023.Day02
-  ( day02a,
-    day02b,
-  )
+module AOC2023.Day02 (
+  day02a,
+  day02b,
+)
 where
 
 import AOC.Common (listTup)
@@ -40,23 +40,23 @@ parseLine fullLine = do
 day02a :: [(Int, Map String Int)] :~> Int
 day02a =
   MkSol
-    { sParse = traverse parseLine . lines,
-      sShow = show,
-      sSolve = Just . sum . mapMaybe (\(a, b) -> a <$ guard (isLegal b))
+    { sParse = traverse parseLine . lines
+    , sShow = show
+    , sSolve = Just . sum . mapMaybe (\(a, b) -> a <$ guard (isLegal b))
     }
   where
     maxMap =
       M.fromList
-        [ ("red", 12),
-          ("green", 13),
-          ("blue", 14)
+        [ ("red", 12)
+        , ("green", 13)
+        , ("blue", 14)
         ]
     isLegal = and . M.intersectionWith (>=) maxMap
 
 day02b :: [Map String Int] :~> Int
 day02b =
   MkSol
-    { sParse = fmap (map snd) . traverse parseLine . lines,
-      sShow = show,
-      sSolve = Just . sum . map product
+    { sParse = fmap (map snd) . traverse parseLine . lines
+    , sShow = show
+    , sSolve = Just . sum . map product
     }

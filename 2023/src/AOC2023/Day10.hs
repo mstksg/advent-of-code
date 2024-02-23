@@ -6,13 +6,21 @@
 -- Portability : non-portable
 --
 -- Day 10.  See "AOC.Solver" for the types used in this module!
-module AOC2023.Day10
-  ( day10a,
-    day10b,
-  )
+module AOC2023.Day10 (
+  day10a,
+  day10b,
+)
 where
 
-import AOC.Common.Point (Dir (..), Point, allDirSet, boundingBox', dirPoint', inBoundingBox, parseAsciiMap)
+import AOC.Common.Point (
+  Dir (..),
+  Point,
+  allDirSet,
+  boundingBox',
+  dirPoint',
+  inBoundingBox,
+  parseAsciiMap,
+ )
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad (guard, join)
 import Data.Foldable (for_)
@@ -50,9 +58,9 @@ followPath mp startPoint = unfoldr go (startPoint, Nothing)
 day10a :: Map Point (Maybe (Set Dir)) :~> Int
 day10a =
   MkSol
-    { sParse = noFail $ parseAsciiMap parseChar,
-      sShow = show,
-      sSolve = \mp -> do
+    { sParse = noFail $ parseAsciiMap parseChar
+    , sShow = show
+    , sSolve = \mp -> do
         (startPos, mp') <- prepareMap mp
         pure $ length (followPath mp' startPos) `div` 2
     }
@@ -65,9 +73,9 @@ bothDirs xs = zipWith go xs (drop 1 $ cycle xs)
 day10b :: Map Point (Maybe (Set Dir)) :~> Int
 day10b =
   MkSol
-    { sParse = noFail $ parseAsciiMap parseChar,
-      sShow = show,
-      sSolve = \mp -> do
+    { sParse = noFail $ parseAsciiMap parseChar
+    , sShow = show
+    , sSolve = \mp -> do
         (startPos, mp') <- prepareMap mp
         let path = followPath mp' startPos
             loopPoints = S.fromList $ map snd path

@@ -20,33 +20,33 @@
 -- prompts, etc.
 --
 -- Essentially implements the functionality of the main app.
-module AOC.Run
-  ( -- * Options
-    TestSpec (..),
-    ChallengeBundle (..),
+module AOC.Run (
+  -- * Options
+  TestSpec (..),
+  ChallengeBundle (..),
 
-    -- * Runners
+  -- * Runners
 
-    -- ** Run solutions, tests, benchmarks
-    MainRunOpts (..),
-    HasMainRunOpts (..),
-    mainRun,
-    defaultMRO,
+  -- ** Run solutions, tests, benchmarks
+  MainRunOpts (..),
+  HasMainRunOpts (..),
+  mainRun,
+  defaultMRO,
 
-    -- ** View prompts
-    MainViewOpts (..),
-    HasMainViewOpts (..),
-    mainView,
-    defaultMVO,
+  -- ** View prompts
+  MainViewOpts (..),
+  HasMainViewOpts (..),
+  mainView,
+  defaultMVO,
 
-    -- ** Submit answers
-    MainSubmitOpts (..),
-    mainSubmit,
-    defaultMSO,
+  -- ** Submit answers
+  MainSubmitOpts (..),
+  mainSubmit,
+  defaultMSO,
 
-    -- * Util
-    withColor,
-  )
+  -- * Util
+  withColor,
+)
 where
 
 import AOC.Discover
@@ -88,25 +88,25 @@ data TestSpec
 
 -- | Options for 'mainRun'.
 data MainRunOpts = MRO
-  { _mroSpec :: !TestSpec,
-    -- | Run input?  (Defualt: True)
-    _mroActual :: !Bool,
-    -- | Run tests?  (Default: False)
-    _mroTest :: !Bool,
-    -- | Benchmark?  (Default: False)
-    _mroBench :: !Bool,
-    -- | Lock in answer as correct?  (Default: False)
-    _mroLock :: !Bool,
-    -- | Manually supply input (Default: always return Nothing)
-    _mroInput :: !(ChallengeSpec -> IO (Maybe String))
+  { _mroSpec :: !TestSpec
+  , _mroActual :: !Bool
+  -- ^ Run input?  (Defualt: True)
+  , _mroTest :: !Bool
+  -- ^ Run tests?  (Default: False)
+  , _mroBench :: !Bool
+  -- ^ Benchmark?  (Default: False)
+  , _mroLock :: !Bool
+  -- ^ Lock in answer as correct?  (Default: False)
+  , _mroInput :: !(ChallengeSpec -> IO (Maybe String))
+  -- ^ Manually supply input (Default: always return Nothing)
   }
 
 makeClassy ''MainRunOpts
 
 -- | Options for 'mainView'.
 data MainViewOpts = MVO
-  { _mvoSpec :: !TestSpec,
-    _mvoWait :: !Bool
+  { _mvoSpec :: !TestSpec
+  , _mvoWait :: !Bool
   }
   deriving stock (Show)
 
@@ -114,50 +114,50 @@ makeClassy ''MainViewOpts
 
 -- | Options for 'mainSubmit'
 data MainSubmitOpts = MSO
-  { -- | Challenge spec
-    _msoSpec :: !ChallengeSpec,
-    -- | Run tests before submitting?  (Default: True)
-    _msoTest :: !Bool,
-    -- | Force submission even if bad?  (Default: False)
-    _msoForce :: !Bool,
-    -- | Lock answer if submission succeeded?  (Default: True)
-    _msoLock :: !Bool
+  { _msoSpec :: !ChallengeSpec
+  -- ^ Challenge spec
+  , _msoTest :: !Bool
+  -- ^ Run tests before submitting?  (Default: True)
+  , _msoForce :: !Bool
+  -- ^ Force submission even if bad?  (Default: False)
+  , _msoLock :: !Bool
+  -- ^ Lock answer if submission succeeded?  (Default: True)
   }
   deriving stock (Show)
 
 data ChallengeBundle = CB
-  { _cbYear :: Integer,
-    _cbChallengeMap :: ChallengeMap
+  { _cbYear :: Integer
+  , _cbChallengeMap :: ChallengeMap
   }
 
 -- | Default options for 'mainRun'.
 defaultMRO :: TestSpec -> MainRunOpts
 defaultMRO ts =
   MRO
-    { _mroSpec = ts,
-      _mroActual = True,
-      _mroTest = False,
-      _mroBench = False,
-      _mroLock = False,
-      _mroInput = \_ -> pure Nothing
+    { _mroSpec = ts
+    , _mroActual = True
+    , _mroTest = False
+    , _mroBench = False
+    , _mroLock = False
+    , _mroInput = \_ -> pure Nothing
     }
 
 -- | Default options for 'mainView'.
 defaultMVO :: TestSpec -> MainViewOpts
 defaultMVO ts =
   MVO
-    { _mvoSpec = ts,
-      _mvoWait = False
+    { _mvoSpec = ts
+    , _mvoWait = False
     }
 
 -- | Default options for 'mainSubmit'.
 defaultMSO :: ChallengeSpec -> MainSubmitOpts
 defaultMSO cs =
   MSO
-    { _msoSpec = cs,
-      _msoTest = True,
-      _msoForce = False,
-      _msoLock = True
+    { _msoSpec = cs
+    , _msoTest = True
+    , _msoForce = False
+    , _msoLock = True
     }
 
 toChallengeSet :: ChallengeMap -> TestSpec -> Either String (ChallengeSet SomeSolution)
@@ -166,8 +166,8 @@ toChallengeSet challengeMap = \case
     pure $
       M.fromList
         [ (CS d p, c)
-          | (d, ps) <- M.toList challengeMap,
-            (p, c) <- M.toList ps
+        | (d, ps) <- M.toList challengeMap
+        , (p, c) <- M.toList ps
         ]
   TSDay d -> do
     ps <-
@@ -176,7 +176,7 @@ toChallengeSet challengeMap = \case
     pure $
       M.fromList
         [ (CS d p, c)
-          | (p, c) <- M.toList ps
+        | (p, c) <- M.toList ps
         ]
   TSPart cs@(CS d p) -> do
     ps <-
@@ -194,9 +194,9 @@ mainRun ::
   Config ->
   MainRunOpts ->
   m (ChallengeSet (Maybe Bool, Either [String] String)) -- whether or not passed tests, and result
-mainRun CB {..} Cfg {..} MRO {..} = do
+mainRun CB{..} Cfg{..} MRO{..} = do
   toRun <- liftEither . first (: []) . toChallengeSet _cbChallengeMap $ _mroSpec
-  liftIO . runAll _cfgSession _cbYear _mroLock _mroInput toRun $ \c inp0 cd@CD {..} -> do
+  liftIO . runAll _cfgSession _cbYear _mroLock _mroInput toRun $ \c inp0 cd@CD{..} -> do
     testRes <- fmap join . forM (guard _mroTest) $ \_ ->
       runTestSuite c cd
 
@@ -210,7 +210,7 @@ mainRun CB {..} Cfg {..} MRO {..} = do
             res <$ case c of
               MkSomeSolWH _ ->
                 benchmark (nf (runSomeSolution c) inp)
-              MkSomeSolNF MkSol {..}
+              MkSomeSolNF MkSol{..}
                 | Just x <- sParse inp -> do
                     _ <- evaluate (force x)
                     benchmark (nf (let ?dyno = mempty in sSolve) x)
@@ -231,16 +231,16 @@ mainView ::
   Config ->
   MainViewOpts ->
   m (Map ChallengeSpec Text)
-mainView CB {..} Cfg {..} MVO {..} = do
+mainView CB{..} Cfg{..} MVO{..} = do
   let toRun :: ChallengeSet ()
       toRun =
         maybe M.empty void
           . eitherToMaybe
           . toChallengeSet _cbChallengeMap
           $ _mvoSpec
-  flip M.traverseWithKey toRun $ \cs@CS {..} _ -> do
+  flip M.traverseWithKey toRun $ \cs@CS{..} _ -> do
     pmpt <- waitFunc _csDay $ do
-      CD {..} <- liftIO $ challengeData _cfgSession _cbYear cs
+      CD{..} <- liftIO $ challengeData _cfgSession _cbYear cs
       liftEither . first ("[PROMPT ERROR]" :) $ _cdPrompt
     liftIO $ do
       withColor ANSI.Dull ANSI.Blue $
@@ -265,8 +265,8 @@ mainSubmit ::
   Config ->
   MainSubmitOpts ->
   m (Text, SubmitRes)
-mainSubmit CB {..} Cfg {..} MSO {..} = do
-  cd@CD {..} <- liftIO $ challengeData _cfgSession _cbYear cs
+mainSubmit CB{..} Cfg{..} MSO{..} = do
+  cd@CD{..} <- liftIO $ challengeData _cfgSession _cbYear cs
   inp <- liftEither . first ("[PROMPT ERROR]" :) $ _cdInput
   opts <-
     defaultAoCOpts aocUserAgent _cbYear
@@ -320,16 +320,16 @@ mainSubmit CB {..} Cfg {..} MSO {..} = do
   pure output
   where
     d' = dayInt _csDay
-    cs@CS {..} = _msoSpec
-    CP {..} = challengePaths _cbYear cs
+    cs@CS{..} = _msoSpec
+    CP{..} = challengePaths _cbYear cs
     formatResp = T.unpack . T.intercalate "\n" . map ("> " <>)
     logFmt =
       unlines
-        [ "[%s]",
-          "Submission: %s",
-          "Status: %s",
-          "Raw: %s",
-          "%s"
+        [ "[%s]"
+        , "Submission: %s"
+        , "Status: %s"
+        , "Raw: %s"
+        , "%s"
         ]
 
 displayStatus :: SubmitRes -> (ANSI.Color, Bool, String)
@@ -340,15 +340,15 @@ displayStatus = \case
     let (m, s) = t `divMod` 60
         resp = printf "Answer re-submitted too soon.  Please wait %dmin %dsec" m s
      in (ANSI.Yellow, False, resp)
-  SubInvalid {} ->
-    ( ANSI.Blue,
-      False,
-      "Submission was rejected.  Maybe not unlocked yet, or already answered?"
+  SubInvalid{} ->
+    ( ANSI.Blue
+    , False
+    , "Submission was rejected.  Maybe not unlocked yet, or already answered?"
     )
-  SubUnknown {} ->
-    ( ANSI.Magenta,
-      False,
-      "Response from server was not recognized."
+  SubUnknown{} ->
+    ( ANSI.Magenta
+    , False
+    , "Response from server was not recognized."
     )
   where
     correctMsg Nothing = "Answer was correct!"
@@ -381,18 +381,18 @@ runAll ::
   (SomeSolution -> Maybe String -> ChallengeData -> IO a) ->
   IO (ChallengeSet a)
 runAll sess yr lock rep cm f = flip M.traverseWithKey cm $ \cs@(CS d p) c -> do
-  let CP {..} = challengePaths yr cs
+  let CP{..} = challengePaths yr cs
   inp0 <- rep cs
   withColor ANSI.Dull ANSI.Blue $
     printf ">> Day %02d%c\n" (dayInt d) (partChar p)
   when lock $ do
-    CD {..} <- challengeData sess yr cs
+    CD{..} <- challengeData sess yr cs
     forM_ (inp0 <|> eitherToMaybe _cdInput) $ \inp ->
       mapM_ (writeFile _cpAnswer) =<< evaluate (force (runSomeSolution c inp))
   f c inp0 =<< challengeData sess yr cs
 
 runTestSuite :: SomeSolution -> ChallengeData -> IO (Maybe Bool)
-runTestSuite c CD {..} = do
+runTestSuite c CD{..} = do
   testRes <- mapMaybe fst <$> mapM (uncurry (testCase True c)) _cdTests
   unless (null testRes) $ do
     let (mark, color)
@@ -414,7 +414,7 @@ testCase ::
   String ->
   TestMeta ->
   IO (Maybe Bool, Either SolutionError String)
-testCase emph c inp TM {..} = do
+testCase emph c inp TM{..} = do
   withColor ANSI.Dull color $
     printf "[%c]" mark
   if emph

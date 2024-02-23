@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 15.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day15
-  ( day15a,
-    day15b,
-  )
+module AOC2020.Day15 (
+  day15a,
+  day15b,
+)
 where
 
 import AOC.Solver ((:~>) (..))
@@ -25,22 +25,22 @@ import Text.Read (readMaybe)
 day15a :: [Int] :~> Int
 day15a =
   MkSol
-    { sParse = traverse readMaybe . splitOn ",",
-      sShow = show,
-      sSolve = Just . looper 2020
+    { sParse = traverse readMaybe . splitOn ","
+    , sShow = show
+    , sSolve = Just . looper 2020
     }
 
 day15b :: [Int] :~> Int
 day15b =
   MkSol
-    { sParse = sParse day15a,
-      sShow = show,
-      sSolve = Just . looper 30000000
+    { sParse = sParse day15a
+    , sShow = show
+    , sSolve = Just . looper 30000000
     }
 
 data LoopState = LS
-  { lsLastSaid :: !Int,
-    lsCurrTime :: !Int32
+  { lsLastSaid :: !Int
+  , lsCurrTime :: !Int32
   }
 
 looper :: Int -> [Int] -> Int

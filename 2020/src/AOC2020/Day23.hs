@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 23.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day23
-  ( day23a,
-    day23b,
-  )
+module AOC2020.Day23 (
+  day23a,
+  day23b,
+)
 where
 
 import AOC.Solver ((:~>) (..))
@@ -34,7 +34,7 @@ sourceCrabState ::
   -- | item to start from
   Int ->
   C.Pipe i Int u m ()
-sourceCrabState CrabState {..} i0 = go i0
+sourceCrabState CrabState{..} i0 = go i0
   where
     go i = do
       j <- lift $ MV.unsafeRead csRight i
@@ -48,7 +48,7 @@ step ::
   CrabState s ->
   Int ->
   m Int
-step CrabState {..} lab = do
+step CrabState{..} lab = do
   (gs@(g1, _, g3), lab') <- pull3 lab
   MV.unsafeWrite csRight lab lab'
   let target = until (notAny gs) subWrap (subWrap lab)
@@ -84,7 +84,7 @@ initialize v0 = do
   for_ [0 .. n - 1] $ \i ->
     MV.unsafeWrite csRight (v0 V.! subWrap i) (v0 V.! i)
   let i0 = v0 V.! 0
-  pure (i0, CrabState {..})
+  pure (i0, CrabState{..})
   where
     n = V.length v0
     subWrap x
@@ -108,9 +108,9 @@ run n i0 cs = go 0 i0
 day23a :: Vector Int :~> [Int]
 day23a =
   MkSol
-    { sParse = Just . V.fromList . map toIx,
-      sShow = fmap intToDigit,
-      sSolve = \v0 -> Just $ runST $ do
+    { sParse = Just . V.fromList . map toIx
+    , sShow = fmap intToDigit
+    , sSolve = \v0 -> Just $ runST $ do
         (i0, cs) <- initialize v0
         run 100 i0 cs
         C.runPipe $
@@ -122,9 +122,9 @@ day23a =
 day23b :: Vector Int :~> [Int]
 day23b =
   MkSol
-    { sParse = Just . V.fromListN 1000000 . (++ [9 ..]) . map toIx,
-      sShow = show . product,
-      sSolve = \v0 -> Just $ runST $ do
+    { sParse = Just . V.fromListN 1000000 . (++ [9 ..]) . map toIx
+    , sShow = show . product
+    , sSolve = \v0 -> Just $ runST $ do
         (i0, cs) <- initialize v0
         run 10000000 i0 cs
         C.runPipe $

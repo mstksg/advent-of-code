@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 3.  See "AOC.Solver" for the types used in this module!
-module AOC2023.Day03
-  ( day03a,
-    day03b,
-  )
+module AOC2023.Day03 (
+  day03a,
+  day03b,
+)
 where
 
 import AOC.Common (listTup)
@@ -40,9 +40,9 @@ day03a =
                 c
                   | isDigit c -> Just $ Right c
                   | otherwise -> Just $ Left ()
-            ),
-      sShow = show,
-      sSolve = \(symbolPoints, numPoints) ->
+            )
+    , sShow = show
+    , sSolve = \(symbolPoints, numPoints) ->
         let numChunks = contiguousRegions (M.keysSet numPoints)
             adjacentToSymbols = fullNeighbsSet `foldMap` S.toList symbolPoints
             validNumChunks = flip S.filter numChunks \numChunk ->
@@ -66,9 +66,9 @@ day03b =
             ( \case
                 '*' -> Just $ Left ()
                 c -> Right c <$ guard (isDigit c)
-            ),
-      sShow = show,
-      sSolve = \(symbolPoints, numPoints) ->
+            )
+    , sShow = show
+    , sSolve = \(symbolPoints, numPoints) ->
         let numChunks = contiguousRegions (M.keysSet numPoints)
             adjacentToSymbols = M.fromList do
               p <- S.toList symbolPoints

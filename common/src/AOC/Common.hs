@@ -15,142 +15,142 @@
 -- Portability : non-portable
 --
 -- Common functions for solutions
-module AOC.Common
-  ( trace',
-    traceShowIdMsg,
-    traceShowMsg,
+module AOC.Common (
+  trace',
+  traceShowIdMsg,
+  traceShowMsg,
 
-    -- * Loops and searches
-    iterateMaybe,
-    loopMaybe,
-    loopMaybeM,
-    loopEither,
-    firstJust,
-    (!!!),
-    strictIterate,
-    (!?),
-    drop',
-    dup,
-    scanlT,
-    scanrT,
-    firstRepeated,
-    firstRepeatedBy,
-    firstRepeatedFinitary,
-    firstRepeatedByFinitary,
-    findLoopBy,
-    skipConsecutive,
-    skipConsecutiveBy,
-    fixedPoint,
-    floodFill,
-    floodFillCount,
-    countTrue,
-    pickUnique,
-    maybeAlt,
+  -- * Loops and searches
+  iterateMaybe,
+  loopMaybe,
+  loopMaybeM,
+  loopEither,
+  firstJust,
+  (!!!),
+  strictIterate,
+  (!?),
+  drop',
+  dup,
+  scanlT,
+  scanrT,
+  firstRepeated,
+  firstRepeatedBy,
+  firstRepeatedFinitary,
+  firstRepeatedByFinitary,
+  findLoopBy,
+  skipConsecutive,
+  skipConsecutiveBy,
+  fixedPoint,
+  floodFill,
+  floodFillCount,
+  countTrue,
+  pickUnique,
+  maybeAlt,
 
-    -- * Lists
-    freqs,
-    lookupFreq,
-    freqList,
-    revFreq,
-    perturbations,
-    perturbationsBy,
-    select,
-    slidingWindows,
-    withSlidingPairs,
-    slidingPairs,
-    withLaggedPairs,
-    laggedPairs,
-    sortedSlidingWindows,
-    sortedSlidingWindowsInt,
-    clearOut,
-    foldMapPar,
-    foldMapPar1,
-    foldMapParChunk,
-    meanVar,
-    maximumVal,
-    maximumValBy,
-    minimumVal,
-    minimumValBy,
-    maximumValNE,
-    maximumValByNE,
-    minimumValNE,
-    minimumValByNE,
-    listTup,
-    _ListTup,
-    listTup3,
-    _ListTup3,
-    listTup4,
-    _ListTup4,
-    listV2,
-    _ListV2,
-    listV3,
-    _ListV3,
-    listV4,
-    _ListV4,
-    sortSizedBy,
-    withAllSized,
-    binaryFold,
-    binaryFoldPar,
+  -- * Lists
+  freqs,
+  lookupFreq,
+  freqList,
+  revFreq,
+  perturbations,
+  perturbationsBy,
+  select,
+  slidingWindows,
+  withSlidingPairs,
+  slidingPairs,
+  withLaggedPairs,
+  laggedPairs,
+  sortedSlidingWindows,
+  sortedSlidingWindowsInt,
+  clearOut,
+  foldMapPar,
+  foldMapPar1,
+  foldMapParChunk,
+  meanVar,
+  maximumVal,
+  maximumValBy,
+  minimumVal,
+  minimumValBy,
+  maximumValNE,
+  maximumValByNE,
+  minimumValNE,
+  minimumValByNE,
+  listTup,
+  _ListTup,
+  listTup3,
+  _ListTup3,
+  listTup4,
+  _ListTup4,
+  listV2,
+  _ListV2,
+  listV3,
+  _ListV3,
+  listV4,
+  _ListV4,
+  sortSizedBy,
+  withAllSized,
+  binaryFold,
+  binaryFoldPar,
 
-    -- * Simple type util
-    deleteFinite,
-    Letter,
-    charFinite,
-    _CharFinite,
-    hexDigit,
-    decimalDigit,
-    splitWord,
-    digitToIntSafe,
-    toBinary,
-    toBinaryFixed,
-    parseBinary,
-    caeser,
-    eitherItem,
-    -- , getDown
-    toNatural,
-    factorial,
-    integerFactorial,
-    pascals,
-    triangles,
-    triangleNumber,
-    mapMaybeSet,
-    symDiff,
-    unfoldedIterate,
-    memo4,
-    LCM (..),
+  -- * Simple type util
+  deleteFinite,
+  Letter,
+  charFinite,
+  _CharFinite,
+  hexDigit,
+  decimalDigit,
+  splitWord,
+  digitToIntSafe,
+  toBinary,
+  toBinaryFixed,
+  parseBinary,
+  caeser,
+  eitherItem,
+  -- , getDown
+  toNatural,
+  factorial,
+  integerFactorial,
+  pascals,
+  triangles,
+  triangleNumber,
+  mapMaybeSet,
+  symDiff,
+  unfoldedIterate,
+  memo4,
+  LCM (..),
 
-    -- * Parsers
-    TokStream (..),
-    parseTokStream,
-    parseTokStream_,
-    parseTokStreamT,
-    parseTokStreamT_,
-    TokParser,
-    parseWords,
-    nextMatch,
-    parseMaybeLenient,
-    parseOrFail,
-    CharParser,
-    pWord,
-    pHWord,
-    pDecimal,
-    pTok,
-    pSpace,
-    parseLines,
+  -- * Parsers
+  TokStream (..),
+  parseTokStream,
+  parseTokStream_,
+  parseTokStreamT,
+  parseTokStreamT_,
+  TokParser,
+  parseWords,
+  nextMatch,
+  parseMaybeLenient,
+  parseOrFail,
+  CharParser,
+  pWord,
+  pHWord,
+  pDecimal,
+  pTok,
+  pSpace,
+  parseLines,
 
-    -- * Normal simple line-based
-    mapMaybeLines,
-    mapMaybeLinesJust,
-    traverseLines,
-    parseBin,
+  -- * Normal simple line-based
+  mapMaybeLines,
+  mapMaybeLinesJust,
+  traverseLines,
+  parseBin,
 
-    -- * Graph
-    Graph,
-    toFGL,
+  -- * Graph
+  Graph,
+  toFGL,
 
-    -- * Recursion Schemes
-    anaM,
-  )
+  -- * Recursion Schemes
+  anaM,
+)
 where
 
 import AOC.Util
@@ -435,8 +435,8 @@ type Letter = Finite 26
 charFinite :: Char -> Maybe (Bool, Finite 26)
 charFinite (ord -> c) =
   asum
-    [ (False,) <$> packFinite (fromIntegral (c - ord 'a')),
-      (True,) <$> packFinite (fromIntegral (c - ord 'A'))
+    [ (False,) <$> packFinite (fromIntegral (c - ord 'a'))
+    , (True,) <$> packFinite (fromIntegral (c - ord 'A'))
     ]
 
 digitToIntSafe :: Char -> Maybe Int
@@ -798,8 +798,8 @@ toFGL :: (G.Graph gr, Ord v) => Graph v e -> (gr v e, Set v)
 toFGL gr =
   ( G.mkGraph
       (zip [0 ..] $ toList vertices)
-      ((\(v, u, e) -> (ixOf v, ixOf u, e)) <$> edges),
-    vertices
+      ((\(v, u, e) -> (ixOf v, ixOf u, e)) <$> edges)
+  , vertices
   )
   where
     edges = do
@@ -1012,7 +1012,8 @@ pSpace = P.skipMany (P.char ' ')
 parseMaybeLenient :: P.Parsec Void s a -> s -> Maybe a
 parseMaybeLenient p = eitherToMaybe . P.parse p "parseMaybeLenient"
 
-parseOrFail :: (P.ShowErrorComponent e, P.VisualStream s, P.TraversableStream s) => P.Parsec e s a -> s -> a
+parseOrFail ::
+  (P.ShowErrorComponent e, P.VisualStream s, P.TraversableStream s) => P.Parsec e s a -> s -> a
 parseOrFail p = either (error . P.errorBundlePretty) id . P.parse p "parseMaybeLenient"
 
 parseLines :: P.Parsec Void String a -> String -> Maybe [a]

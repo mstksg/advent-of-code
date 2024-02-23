@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 12.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day12
-  ( day12a,
-    day12b,
-  )
+module AOC2020.Day12 (
+  day12a,
+  day12b,
+)
 where
 
 import AOC.Common.Point (Dir (..), Point, dirPoint, mannDist, rotPoint)
@@ -33,13 +33,13 @@ data Instr
 mkInstr :: Map Char (Int -> Instr)
 mkInstr =
   M.fromList
-    [ ('F', Forward),
-      ('L', Turn . pow West . (`div` 90)),
-      ('R', Turn . pow East . (`div` 90)),
-      ('N', Move . (*^ dirPoint North)),
-      ('S', Move . (*^ dirPoint South)),
-      ('E', Move . (*^ dirPoint East)),
-      ('W', Move . (*^ dirPoint West))
+    [ ('F', Forward)
+    , ('L', Turn . pow West . (`div` 90))
+    , ('R', Turn . pow East . (`div` 90))
+    , ('N', Move . (*^ dirPoint North))
+    , ('S', Move . (*^ dirPoint South))
+    , ('E', Move . (*^ dirPoint East))
+    , ('W', Move . (*^ dirPoint West))
     ]
 
 parseInstr :: String -> Maybe Instr
@@ -49,9 +49,9 @@ parseInstr (c : n) = M.lookup c mkInstr <*> readMaybe n
 day12a :: [Instr] :~> Point
 day12a =
   MkSol
-    { sParse = traverse parseInstr . lines,
-      sShow = show . mannDist 0,
-      sSolve = Just . snd . foldl' go (East, 0)
+    { sParse = traverse parseInstr . lines
+    , sShow = show . mannDist 0
+    , sSolve = Just . snd . foldl' go (East, 0)
     }
   where
     go :: (Dir, Point) -> Instr -> (Dir, Point)
@@ -63,9 +63,9 @@ day12a =
 day12b :: [Instr] :~> Point
 day12b =
   MkSol
-    { sParse = sParse day12a,
-      sShow = show . mannDist 0,
-      sSolve = Just . fst . foldl' go (0, V2 10 1)
+    { sParse = sParse day12a
+    , sShow = show . mannDist 0
+    , sSolve = Just . fst . foldl' go (0, V2 10 1)
     }
   where
     go :: (Point, Point) -> Instr -> (Point, Point)

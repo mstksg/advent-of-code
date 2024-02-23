@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 6.  See "AOC.Solver" for the types used in this module!
-module AOC2023.Day06
-  ( day06a,
-    day06b,
-  )
+module AOC2023.Day06 (
+  day06a,
+  day06b,
+)
 where
 
 import AOC.Common (listTup)
@@ -41,15 +41,15 @@ day06a =
         traverse listTup
           . transpose
           <=< traverse (traverse readMaybe . drop 1 . words)
-            . lines,
-      sShow = show,
-      sSolve = noFail $ product . map (uncurry getWays)
+            . lines
+    , sShow = show
+    , sSolve = noFail $ product . map (uncurry getWays)
     }
 
 day06b :: (Int, Int) :~> Int
 day06b =
   MkSol
-    { sParse = listTup <=< traverse (readMaybe . filter isDigit) . lines,
-      sShow = show,
-      sSolve = noFail $ uncurry getWays
+    { sParse = listTup <=< traverse (readMaybe . filter isDigit) . lines
+    , sShow = show
+    , sSolve = noFail $ uncurry getWays
     }

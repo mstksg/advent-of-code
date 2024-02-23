@@ -8,11 +8,11 @@
 -- Portability : non-portable
 --
 -- Day 7.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day07
-  ( day07a,
-    day07b,
-    bagParser,
-  )
+module AOC2020.Day07 (
+  day07a,
+  day07b,
+  bagParser,
+)
 where
 
 import AOC.Common (CharParser, pWord, parseLines)
@@ -53,8 +53,8 @@ flipGraph mp =
   M.fromListWith
     M.union
     [ (m, M.singleton n e)
-      | (n, ms) <- M.toList mp,
-        (m, e) <- M.toList ms
+    | (n, ms) <- M.toList mp
+    , (m, e) <- M.toList ms
     ]
 
 -- | Recursively fold up a monoid value for each vertex and all of its
@@ -89,15 +89,15 @@ usageCounts =
 day07a :: Graph Bag Int :~> Int
 day07a =
   MkSol
-    { sParse = fmap M.fromList . parseLines bagParser,
-      sShow = show,
-      sSolve = M.lookup target . fmap S.size . allDescendants . flipGraph
+    { sParse = fmap M.fromList . parseLines bagParser
+    , sShow = show
+    , sSolve = M.lookup target . fmap S.size . allDescendants . flipGraph
     }
 
 day07b :: Map Bag (Map Bag Int) :~> Int
 day07b =
   MkSol
-    { sParse = fmap M.fromList . parseLines bagParser,
-      sShow = show,
-      sSolve = M.lookup target . fmap getSum . usageCounts
+    { sParse = fmap M.fromList . parseLines bagParser
+    , sShow = show
+    , sSolve = M.lookup target . fmap getSum . usageCounts
     }

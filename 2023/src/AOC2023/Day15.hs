@@ -8,10 +8,10 @@
 -- Day 15.  See "AOC.Solver" for the types used in this module!
 --
 -- After completing the challenge, it is recommended to:
-module AOC2023.Day15
-  ( day15a,
-    day15b,
-  )
+module AOC2023.Day15 (
+  day15a,
+  day15b,
+)
 where
 
 import AOC.Common (digitToIntSafe)
@@ -41,9 +41,9 @@ day15a =
   MkSol
     { sParse =
         noFail $
-          splitOn ",",
-      sShow = show,
-      sSolve =
+          splitOn ","
+    , sShow = show
+    , sSolve =
         noFail $
           sum . map hasher
     }
@@ -64,9 +64,9 @@ parseAct str = do
       pure (label, Set n)
 
 data BoxNode = BN
-  { _bnValue :: !Int,
-    _bnAfter :: !(Maybe String),
-    _bnBefore :: !(Maybe String)
+  { _bnValue :: !Int
+  , _bnAfter :: !(Maybe String)
+  , _bnBefore :: !(Maybe String)
   }
   deriving stock (Eq, Ord, Show, Generic)
 
@@ -75,9 +75,9 @@ instance NFData BoxNode
 makeLenses ''BoxNode
 
 data Box = B
-  { _bMap :: NEMap String BoxNode,
-    _bFirst :: String,
-    _bLast :: String
+  { _bMap :: NEMap String BoxNode
+  , _bFirst :: String
+  , _bLast :: String
   }
   deriving stock (Eq, Ord, Show, Generic)
 
@@ -93,20 +93,20 @@ deleteBox label b = case NEM.alterF (,Nothing) label (_bMap b) of
               . maybe id (NEM.adjust (set bnAfter (_bnAfter bn))) (_bnBefore bn)
               $ mp'
        in B
-            { _bMap = mp'',
-              _bFirst = if _bFirst b == label then fromJust (_bnAfter bn) else _bFirst b,
-              _bLast = if _bLast b == label then fromJust (_bnBefore bn) else _bLast b
+            { _bMap = mp''
+            , _bFirst = if _bFirst b == label then fromJust (_bnAfter bn) else _bFirst b
+            , _bLast = if _bLast b == label then fromJust (_bnBefore bn) else _bLast b
             }
 
 setBox :: String -> Int -> Box -> Box
 setBox label n b
   | isNew =
       B
-        { _bMap = NEM.adjust (set bnAfter (Just label)) (_bLast b) mp,
-          _bFirst = _bFirst b,
-          _bLast = label
+        { _bMap = NEM.adjust (set bnAfter (Just label)) (_bLast b) mp
+        , _bFirst = _bFirst b
+        , _bLast = label
         }
-  | otherwise = b {_bMap = mp}
+  | otherwise = b{_bMap = mp}
   where
     (Any isNew, mp) = NEM.alterF' go label (_bMap b)
     go = \case
@@ -117,21 +117,21 @@ initBox :: String -> Int -> Box
 initBox label n = B (NEM.singleton label (BN n Nothing Nothing)) label label
 
 boxSum :: Box -> Int
-boxSum B {..} = go 1 0 _bFirst
+boxSum B{..} = go 1 0 _bFirst
   where
     go !i !n x = case _bnAfter of
       Nothing -> n'
       Just y -> go (i + 1) n' y
       where
         n' = n + _bnValue * i
-        BN {..} = _bMap NEM.! x
+        BN{..} = _bMap NEM.! x
 
 day15b :: [(String, Act)] :~> Int
 day15b =
   MkSol
-    { sParse = traverse parseAct . splitOn "," . strip,
-      sShow = show,
-      sSolve =
+    { sParse = traverse parseAct . splitOn "," . strip
+    , sShow = show
+    , sSolve =
         noFail $
           sum . IM.mapWithKey score . foldl' go IM.empty
     }

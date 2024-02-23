@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 13.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day13
-  ( day13a,
-    day13b,
-  )
+module AOC2020.Day13 (
+  day13a,
+  day13b,
+)
 where
 
 import AOC.Common (CharParser, parseMaybeLenient)
@@ -35,15 +35,15 @@ day13a =
         parseMaybeLenient $
           (,)
             <$> (PL.decimal <* P.newline)
-            <*> (catMaybes <$> parseTrains),
-      sShow = \(x, y) -> show $ x * y,
-      sSolve = \(t0, xs) ->
+            <*> (catMaybes <$> parseTrains)
+    , sShow = \(x, y) -> show $ x * y
+    , sSolve = \(t0, xs) ->
         Just $
           minimumBy
             (comparing snd)
             [ (x, waitTime)
-              | x <- xs,
-                let waitTime = x - (t0 `mod` x)
+            | x <- xs
+            , let waitTime = x - (t0 `mod` x)
             ]
     }
 
@@ -52,9 +52,9 @@ day13b =
   MkSol
     { sParse = parseMaybeLenient $ do
         _ <- P.manyTill P.anySingle P.newline
-        mapMaybe sequenceA . zip [0, 1 ..] <$> parseTrains,
-      sShow = show,
-      sSolve = Just . fst . foldl' go (0, 1)
+        mapMaybe sequenceA . zip [0, 1 ..] <$> parseTrains
+    , sShow = show
+    , sSolve = Just . fst . foldl' go (0, 1)
     }
   where
     go (!base, !step) (offset, i) = (base', step * i)

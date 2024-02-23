@@ -20,10 +20,10 @@
 --     types @_ :~> _@ with the actual types of inputs and outputs of the
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
-module AOC2023.Day14
-  ( day14a,
-    day14b,
-  )
+module AOC2023.Day14 (
+  day14a,
+  day14b,
+)
 where
 
 import AOC.Prelude
@@ -47,16 +47,16 @@ import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
 data PillarData = PD
-  { pdNorth :: Pillars,
-    pdEast :: Pillars,
-    pdSouth :: Pillars,
-    pdWest :: Pillars
+  { pdNorth :: Pillars
+  , pdEast :: Pillars
+  , pdSouth :: Pillars
+  , pdWest :: Pillars
   }
 
 data Pillars = Pillars
-  { pCols :: IntMap IntSet,
-    pMin :: Int,
-    pMax :: Int
+  { pCols :: IntMap IntSet
+  , pMin :: Int
+  , pMax :: Int
   }
 
 splitPoints :: Map Point Bool -> (PillarData, [Point])
@@ -73,18 +73,18 @@ splitPoints mp = (PD (go North) (go East) (go South) (go West), rocks)
           IM.fromListWith
             (<>)
             [ (x, NEIM.singleton y v)
-              | (V2 x y, v) <- first (rotPoint dir) <$> M.toList mp
+            | (V2 x y, v) <- first (rotPoint dir) <$> M.toList mp
             ]
     rocks = M.keys $ M.filter not mp
 
 shiftDir :: PillarData -> Dir -> [Point] -> [Point]
-shiftDir PD {..} dir rs =
+shiftDir PD{..} dir rs =
   [ rotPoint (invert dir) $ V2 x y
-    | (x, ys) <- IM.toList fallens,
-      y <- ys
+  | (x, ys) <- IM.toList fallens
+  , y <- ys
   ]
   where
-    Pillars {..} = case dir of
+    Pillars{..} = case dir of
       North -> pdNorth
       East -> pdEast
       South -> pdSouth
@@ -94,15 +94,15 @@ shiftDir PD {..} dir rs =
       IM.fromListWith
         (<>)
         [ (x, IS.singleton y)
-          | V2 x y <- rotPoint dir <$> rs
+        | V2 x y <- rotPoint dir <$> rs
         ]
     fallens :: IntMap [Int]
     fallens = IM.intersectionWith go pCols cols
       where
         go pCol col =
           [ j
-            | (i, n) <- IM.toList fallen,
-              j <- [i + 1 .. i + n]
+          | (i, n) <- IM.toList fallen
+          , j <- [i + 1 .. i + n]
           ]
           where
             fallen :: IntMap Int
@@ -126,9 +126,9 @@ day14a =
         parseAsciiMap $ \case
           'O' -> Just False
           '#' -> Just True
-          _ -> Nothing,
-      sShow = show,
-      sSolve = noFail $ \mp ->
+          _ -> Nothing
+    , sShow = show
+    , sSolve = noFail $ \mp ->
         let (ps, rs) = splitPoints mp
          in score (pMax (pdNorth ps)) $ shiftDir ps North rs
     }
@@ -136,9 +136,9 @@ day14a =
 day14b :: _ :~> _
 day14b =
   MkSol
-    { sParse = sParse day14a,
-      sShow = show,
-      sSolve = \mp -> do
+    { sParse = sParse day14a
+    , sShow = show
+    , sSolve = \mp -> do
         let (ps, rs) = splitPoints mp
             shifts = iterate (shiftCycle ps) rs
         V2 i j <- fmap fst <$> findLoopBy id shifts

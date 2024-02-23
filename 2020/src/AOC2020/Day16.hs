@@ -8,10 +8,10 @@
 -- Portability : non-portable
 --
 -- Day 16.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day16
-  ( day16a,
-    day16b,
-  )
+module AOC2020.Day16 (
+  day16a,
+  day16b,
+)
 where
 
 import AOC.Common (CharParser, pickUnique, withAllSized)
@@ -39,9 +39,9 @@ import qualified Text.Megaparsec.Char.Lexer as PP
 type Passport = [Int]
 
 data Info = Info
-  { iFields :: IntervalMap Int (Set Text),
-    iYours :: Passport,
-    iTheirs :: [Passport]
+  { iFields :: IntervalMap Int (Set Text)
+  , iYours :: Passport
+  , iTheirs :: [Passport]
   }
   deriving stock (Show, Eq, Generic)
 
@@ -50,23 +50,23 @@ instance NFData Info
 day16a :: Info :~> Int
 day16a =
   MkSol
-    { sParse = P.parseMaybe parseInfo,
-      sShow = show,
-      sSolve = \Info {..} ->
+    { sParse = P.parseMaybe parseInfo
+    , sShow = show
+    , sSolve = \Info{..} ->
         Just . sum $
           [ n
-            | ns <- iTheirs,
-              n <- ns,
-              n `IM.notMember` iFields
+          | ns <- iTheirs
+          , n <- ns
+          , n `IM.notMember` iFields
           ]
     }
 
 day16b :: Info :~> [Int]
 day16b =
   MkSol
-    { sParse = sParse day16a,
-      sShow = show . product,
-      sSolve = \Info {..} -> do
+    { sParse = sParse day16a
+    , sShow = show . product
+    , sSolve = \Info{..} -> do
         th : ths <- pure $ mapMaybe (traverse (`IM.lookup` iFields)) iTheirs
         withAllSized (th :| ths) $ \vths -> do
           yours <- V.fromList iYours
@@ -78,8 +78,8 @@ day16b =
           validMap <- listToMaybe $ pickUnique candidates
           pure
             [ yours `V.index` i
-              | (i, k) <- M.toList validMap,
-                T.pack (dyno_ "prefix" "departure") `T.isPrefixOf` k
+            | (i, k) <- M.toList validMap
+            , T.pack (dyno_ "prefix" "departure") `T.isPrefixOf` k
             ]
     }
 
@@ -90,7 +90,7 @@ parseInfo = do
   iYours <- tok $ passportParser
   tok "nearby tickets:"
   iTheirs <- passportParser `P.sepBy` P.newline
-  pure Info {..}
+  pure Info{..}
   where
     tok p = p <* P.some P.newline
     fieldParser = do

@@ -51,21 +51,21 @@ otherYears = S.fromList [2016 .. 2023]
 ctx0 :: M.Map Text Text
 ctx0 =
   M.fromList
-    [ ("year", T.pack (show year)),
-      ("github", T.pack github),
-      ("name", "Justin Le"),
-      ("email", "justin@jle.im"),
-      ("rss", "http://feeds.feedburner.com/jle-advent-of-code-2023"),
-      ("other_years", yearLinks)
+    [ ("year", T.pack (show year))
+    , ("github", T.pack github)
+    , ("name", "Justin Le")
+    , ("email", "justin@jle.im")
+    , ("rss", "http://feeds.feedburner.com/jle-advent-of-code-2023")
+    , ("other_years", yearLinks)
     ]
 
 opts :: ShakeOptions
 opts =
   shakeOptions
-    { shakeFiles = "_build",
-      shakeVersion = "1.0",
-      shakeVerbosity = Chatty,
-      shakeThreads = 1 -- for benchmarks to work properly
+    { shakeFiles = "_build"
+    , shakeVersion = "1.0"
+    , shakeVerbosity = Chatty
+    , shakeThreads = 1 -- for benchmarks to work properly
     }
 
 parseDayFp :: FilePath -> Maybe Int
@@ -112,15 +112,16 @@ main = shakeArgs opts $ do
             then printf "* [Day %d](#day-%d)" d d
             else printf "* [Day %d](#day-%d) *(no reflection yet)*" d d
         yearUrls = tUnlines' . flip foldMap otherYears $ \oy ->
-          T.pack (printf "[%04d]: https://github.com/%s/advent-of-code-%04d/blob/master/reflections.md" oy github oy)
+          T.pack
+            (printf "[%04d]: https://github.com/%s/advent-of-code-%04d/blob/master/reflections.md" oy github oy)
             <$ guard (oy /= year)
 
         ctx =
           ctx0
             <> M.fromList
-              [ ("toc", T.pack $ unlines' toc),
-                ("body", T.intercalate "\n\n\n" bodies),
-                ("other_links", yearUrls)
+              [ ("toc", T.pack $ unlines' toc)
+              , ("body", T.intercalate "\n\n\n" bodies)
+              , ("other_links", yearUrls)
               ]
     writeTemplate fp ctx "template/reflections.md.template"
 
@@ -141,17 +142,23 @@ main = shakeArgs opts $ do
            in T.pack $ printf "*%s*" linker
         dayLinks = tUnlines' . flip mapMaybe rDays $ \od ->
           T.pack
-            (printf "[day%02d]: https://github.com/%s/advent-of-code-%04d/blob/master/%s" od github year (standaloneReflectionPath od))
+            ( printf
+                "[day%02d]: https://github.com/%s/advent-of-code-%04d/blob/master/%s"
+                od
+                github
+                year
+                (standaloneReflectionPath od)
+            )
             <$ guard (od /= d)
         ctx =
           ctx0
             <> M.fromList
-              [ ("daylong", T.pack $ printf "%02d" d),
-                ("dayshort", T.pack $ printf "%d" d),
-                ("body", refl),
-                ("benchmarks", bench),
-                ("other_links", dayLinks),
-                ("other_days", otherDays)
+              [ ("daylong", T.pack $ printf "%02d" d)
+              , ("dayshort", T.pack $ printf "%d" d)
+              , ("body", refl)
+              , ("benchmarks", bench)
+              , ("other_links", dayLinks)
+              , ("other_days", otherDays)
               ]
     writeTemplate fp ctx "template/standalone-reflection.md.template"
 
@@ -189,9 +196,9 @@ main = shakeArgs opts $ do
         ctx =
           ctx0
             <> M.fromList
-              [ ("table", T.pack table),
-                ("links", T.pack links),
-                ("other_links", yearUrls)
+              [ ("table", T.pack table)
+              , ("links", T.pack links)
+              , ("other_links", yearUrls)
               ]
     writeTemplate fp ctx "template/README.md.template"
 
@@ -203,8 +210,8 @@ main = shakeArgs opts $ do
     let ctx =
           ctx0
             <> M.fromList
-              [ ("body", T.intercalate "\n" bodies),
-                ("time", T.pack . formatTime defaultTimeLocale rfc822DateFormat $ time)
+              [ ("body", T.intercalate "\n" bodies)
+              , ("time", T.pack . formatTime defaultTimeLocale rfc822DateFormat $ time)
               ]
     writeTemplate fp ctx "template/feed.xml.template"
 
@@ -219,10 +226,10 @@ main = shakeArgs opts $ do
     let ctx =
           ctx0
             <> M.fromList
-              [ ("daylong", T.pack $ printf "%02d" d),
-                ("dayshort", T.pack $ printf "%d" d),
-                ("body", refl),
-                ("benchmarks", bench)
+              [ ("daylong", T.pack $ printf "%02d" d)
+              , ("dayshort", T.pack $ printf "%d" d)
+              , ("body", refl)
+              , ("benchmarks", bench)
               ]
     writeTemplate fp ctx "template/reflection.md.template"
 
@@ -243,9 +250,9 @@ main = shakeArgs opts $ do
         ctx =
           ctx0
             <> M.fromList
-              [ ("day", T.pack $ printf "%d" d),
-                ("body", H.text . T.pack $ html),
-                ("time", T.pack . formatTime defaultTimeLocale rfc822DateFormat $ time)
+              [ ("day", T.pack $ printf "%d" d)
+              , ("body", H.text . T.pack $ html)
+              , ("time", T.pack . formatTime defaultTimeLocale rfc822DateFormat $ time)
               ]
     writeTemplate fp ctx "template/feed-item.xml.template"
 
@@ -291,22 +298,22 @@ mkLinks d hasRef =
           "[d%02dg]: https://github.com/mstksg/advent-of-code-%04d/blob/master/src/AOC/Challenge/Day%02d.hs"
           d
           year
-          d,
-      Just $
+          d
+    , Just $
         printf
           "[d%02dh]: https://mstksg.github.io/advent-of-code-%04d/src/AOC.Challenge.Day%02d.html"
           d
           year
-          d,
-      do
+          d
+    , do
         guard hasRef
         Just $
           printf
             "[d%02dr]: https://github.com/mstksg/advent-of-code-%04d/blob/master/reflections.md#day-%d"
             d
             year
-            d,
-      Just $
+            d
+    , Just $
         printf
           "[d%02db]: https://github.com/mstksg/advent-of-code-%04d/blob/master/reflections.md#day-%d-benchmarks"
           d

@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 19.  See "AOC.Solver" for the types used in this module!
-module AOC2023.Day19
-  ( day19a,
-    day19b,
-  )
+module AOC2023.Day19 (
+  day19a,
+  day19b,
+)
 where
 
 import AOC.Common (countTrue, listTup)
@@ -55,18 +55,18 @@ result r a d = \case
   Defer x -> d x
 
 data Rule a = Rule
-  { rXmas :: XMAS,
-    rOp :: Ordering,
-    rVal :: Int,
-    rResult :: Result a
+  { rXmas :: XMAS
+  , rOp :: Ordering
+  , rVal :: Int
+  , rResult :: Result a
   }
   deriving stock (Eq, Ord, Show, Generic, Functor)
 
 instance (NFData a) => NFData (Rule a)
 
 data Workflow a = Workflow
-  { wfRules :: [Rule a],
-    wfDefault :: Result a
+  { wfRules :: [Rule a]
+  , wfDefault :: Result a
   }
   deriving stock (Eq, Ord, Show, Generic, Functor)
 
@@ -109,8 +109,8 @@ parseBag = fmap M.fromList . traverse go . snd . chunky
 evalWorkflow :: Map XMAS Int -> Workflow Bool -> Bool
 evalWorkflow mp = go
   where
-    go Workflow {..} = foldr eval (unResult wfDefault) wfRules
-    eval Rule {..} rest
+    go Workflow{..} = foldr eval (unResult wfDefault) wfRules
+    eval Rule{..} rest
       | compare (mp M.! rXmas) rVal == rOp = unResult rResult
       | otherwise = rest
     unResult = result False True id
@@ -122,9 +122,9 @@ day19a =
         (a, b) <- listTup $ splitOn "\n\n" inp
         (,)
           <$> fmap M.fromList (traverse parseWorkflow (lines a))
-          <*> traverse parseBag (lines b),
-      sShow = show,
-      sSolve = noFail $ \(wfs, xs) ->
+          <*> traverse parseBag (lines b)
+    , sShow = show
+    , sSolve = noFail $ \(wfs, xs) ->
         sum
           . map sum
           . filter (\x -> hylo (evalWorkflow x) (wfs M.!) "in")
@@ -187,7 +187,7 @@ size (XmasSet xs) = (sumBySize . sumBySize . sumBySize) (sum . map ivalSize . IV
         + countTrue (== IV.Closed) (map snd [IV.lowerBound' i, IV.upperBound' i])
 
 xmasRule :: Rule XmasSet -> XmasSet -> XmasSet
-xmasRule Rule {..} rest = case rResult of
+xmasRule Rule{..} rest = case rResult of
   Reject -> rest `difference` ivalXmas
   Accept -> ivalXmas `union` rest
   Defer s -> (s `intersect` ivalXmas) `union` (rest `difference` ivalXmas)
@@ -197,13 +197,25 @@ xmasRule Rule {..} rest = case rResult of
       GT -> IV.Finite rVal IV.<..<= IV.Finite 4000
       EQ -> IV.singleton rVal
     ivalXmas = case rXmas of
-      X -> XmasSet $ IVM.singleton ival . IVM.singleton xmasRange . IVM.singleton xmasRange $ IVS.singleton xmasRange
-      M -> XmasSet $ IVM.singleton xmasRange . IVM.singleton ival . IVM.singleton xmasRange $ IVS.singleton xmasRange
-      A -> XmasSet $ IVM.singleton xmasRange . IVM.singleton xmasRange . IVM.singleton ival $ IVS.singleton xmasRange
-      S -> XmasSet $ IVM.singleton xmasRange . IVM.singleton xmasRange . IVM.singleton xmasRange $ IVS.singleton ival
+      X ->
+        XmasSet $
+          IVM.singleton ival . IVM.singleton xmasRange . IVM.singleton xmasRange $
+            IVS.singleton xmasRange
+      M ->
+        XmasSet $
+          IVM.singleton xmasRange . IVM.singleton ival . IVM.singleton xmasRange $
+            IVS.singleton xmasRange
+      A ->
+        XmasSet $
+          IVM.singleton xmasRange . IVM.singleton xmasRange . IVM.singleton ival $
+            IVS.singleton xmasRange
+      S ->
+        XmasSet $
+          IVM.singleton xmasRange . IVM.singleton xmasRange . IVM.singleton xmasRange $
+            IVS.singleton ival
 
 workflowInterval :: Workflow XmasSet -> XmasSet
-workflowInterval Workflow {..} = foldr xmasRule (unResult wfDefault) wfRules
+workflowInterval Workflow{..} = foldr xmasRule (unResult wfDefault) wfRules
   where
     unResult = result noXmas allXmas id
     allXmas =
@@ -217,9 +229,9 @@ workflowInterval Workflow {..} = foldr xmasRule (unResult wfDefault) wfRules
 day19b :: Map String (Workflow String) :~> Int
 day19b =
   MkSol
-    { sParse = fmap M.fromList . traverse parseWorkflow . takeWhile (not . null) . lines,
-      sShow = show,
-      sSolve =
+    { sParse = fmap M.fromList . traverse parseWorkflow . takeWhile (not . null) . lines
+    , sShow = show
+    , sSolve =
         noFail $ \wfs ->
           size $ hylo workflowInterval (wfs M.!) "in"
     }

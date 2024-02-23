@@ -8,10 +8,10 @@
 -- Day 7.  See "AOC.Solver" for the types used in this module!
 --
 -- After completing the challenge, it is recommended to:
-module AOC2023.Day07
-  ( day07a,
-    day07b,
-  )
+module AOC2023.Day07 (
+  day07a,
+  day07b,
+)
 where
 
 import AOC.Common (freqs, listTup)
@@ -64,9 +64,9 @@ day07 parseCard =
   MkSol
     { sParse =
         traverse (bitraverse (traverse (`M.lookup` parseCard)) readMaybe <=< listTup . words)
-          . lines,
-      sShow = show,
-      sSolve =
+          . lines
+    , sShow = show
+    , sSolve =
         noFail $
           sum
             . zipWith (\i (_, b) -> i * b) [1 ..]

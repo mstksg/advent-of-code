@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 8.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day08
-  ( day08a,
-    day08b,
-  )
+module AOC2020.Day08 (
+  day08a,
+  day08b,
+)
 where
 
 import AOC.Common (CharParser, pDecimal, parseLines, perturbationsBy)
@@ -37,9 +37,9 @@ type Command = (Instr, Int)
 instrParser :: CharParser Instr
 instrParser =
   P.choice
-    [ NOP <$ P.string "nop",
-      ACC <$ P.string "acc",
-      JMP <$ P.string "jmp"
+    [ NOP <$ P.string "nop"
+    , ACC <$ P.string "acc"
+    , JMP <$ P.string "jmp"
     ]
 
 commandParser :: CharParser Command
@@ -110,22 +110,22 @@ exhaustVM cmds = R.hylo sumStreamAlg (vmStreamCoalg cmds) (IS.empty, 0)
 day08a :: Vector Command :~> Int
 day08a =
   MkSol
-    { sParse = fmap V.fromList . parseLines commandParser,
-      sShow = show,
-      sSolve = Just . snd . exhaustVM
+    { sParse = fmap V.fromList . parseLines commandParser
+    , sShow = show
+    , sSolve = Just . snd . exhaustVM
     }
 
 day08b :: Vector Command :~> Int
 day08b =
   MkSol
-    { sParse = fmap V.fromList . parseLines commandParser,
-      sShow = show,
-      sSolve = \cmds0 ->
+    { sParse = fmap V.fromList . parseLines commandParser
+    , sShow = show
+    , sSolve = \cmds0 ->
         listToMaybe
           [ i
-            | cmds <- perturbationsBy (traverse . _1) perturbs cmds0,
-              let (es, i) = exhaustVM cmds,
-              es == Halt
+          | cmds <- perturbationsBy (traverse . _1) perturbs cmds0
+          , let (es, i) = exhaustVM cmds
+          , es == Halt
           ]
     }
   where

@@ -4,28 +4,28 @@
 --
 -- Stability   : experimental
 -- Portability : non-portable
-module AOC2020.Day17
-  ( day17a,
-    day17b,
-    runDay17,
-    ixPascal,
-    ixPascalRef,
-    pascalIx,
-    encRun,
-    pascalVecRunIx,
-    vecRunIxPascal,
-    genVecRunIxPascal,
-    oldNeighborWeights,
-    vecRunNeighbs,
-    vecRunNeighbsInt,
-    vecRunNeighbs_,
-    neighborWeights,
-    finalWeight,
-    binom,
-    chompPascal,
-    ixChomper,
-    ixChomperRef,
-  )
+module AOC2020.Day17 (
+  day17a,
+  day17b,
+  runDay17,
+  ixPascal,
+  ixPascalRef,
+  pascalIx,
+  encRun,
+  pascalVecRunIx,
+  vecRunIxPascal,
+  genVecRunIxPascal,
+  oldNeighborWeights,
+  vecRunNeighbs,
+  vecRunNeighbsInt,
+  vecRunNeighbs_,
+  neighborWeights,
+  finalWeight,
+  binom,
+  chompPascal,
+  ixChomper,
+  ixChomperRef,
+)
 where
 
 import AOC.Common (factorial, foldMapParChunk, freqs, integerFactorial, lookupFreq, strictIterate)
@@ -186,8 +186,8 @@ encRun mx = take (mx + 1) . (++ repeat 0) . go 0 0
 neighbs2d :: Int -> Int -> [Int]
 neighbs2d n i =
   [ i + dx + n * dy
-    | dx <- [0, -1, 1],
-      dy <- [0, -1, 1]
+  | dx <- [0, -1, 1]
+  , dy <- [0, -1, 1]
   ]
 
 data NCount
@@ -564,9 +564,9 @@ day17 ::
   Set Point :~> Integer
 day17 d =
   MkSol
-    { sParse = Just . parseAsciiSet (== '#'),
-      sShow = show,
-      sSolve =
+    { sParse = Just . parseAsciiSet (== '#')
+    , sShow = show
+    , sSolve =
         fmap (sum . map (sum . map (finalWeight d . ixPascal d) . IS.toList) . toList)
           . lastMay
           . runDay17 False False 6 d

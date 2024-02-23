@@ -34,20 +34,23 @@ data Mode
   | MSubmit MainSubmitOpts
 
 data Opts = O
-  { _oMode :: !Mode,
-    _oConfig :: !(Maybe FilePath)
+  { _oMode :: !Mode
+  , _oConfig :: !(Maybe FilePath)
   }
 
 mainFor :: ChallengeBundle -> IO ()
-mainFor cb@CB {..} = do
+mainFor cb@CB{..} = do
   inputCache <- newIORef Nothing
-  O {..} <-
+  O{..} <-
     execParser $
       info
         (parseOpts inputCache <**> helper)
         ( fullDesc
             <> header "aoc-dev - Advent of Code interactive development environment"
-            <> progDesc ("Run, test, bench, challenges from Advent of Code, and view prompts. Available days: " ++ availableDays)
+            <> progDesc
+              ( "Run, test, bench, challenges from Advent of Code, and view prompts. Available days: "
+                  ++ availableDays
+              )
         )
   cfg <- configFile $ fromMaybe defConfPath _oConfig
   out <- runExceptT $ case _oMode of
@@ -123,8 +126,8 @@ parseTestSpec = do
   where
     pDay =
       asum
-        [ Nothing <$ maybeReader (guard . (== "all") . map toLower),
-          Just <$> readDay
+        [ Nothing <$ maybeReader (guard . (== "all") . map toLower)
+        , Just <$> readDay
         ]
     pPart = readPart
 
@@ -134,96 +137,96 @@ parseOpts ::
 parseOpts inputCache = do
   _oConfig <-
     optional . strOption . mconcat $
-      [ long "config",
-        metavar "PATH",
-        help $ printf "Path to configuration file (default: %s)" defConfPath
+      [ long "config"
+      , metavar "PATH"
+      , help $ printf "Path to configuration file (default: %s)" defConfPath
       ]
   _oMode <-
     subparser . mconcat $
       [ command "run" $
-          info (MRun <$> parseRun <**> helper) (progDesc "Run, test, and benchmark challenges"),
-        command "view" $
-          info (MView <$> parseView <**> helper) (progDesc "View a prompt for a given challenge"),
-        command "submit" $
-          info (MSubmit <$> parseSubmit <**> helper) (progDesc "Test and submit answers for challenges"),
-        command "test" $
-          info (MRun <$> parseTest <**> helper) (progDesc "Alias for run --test"),
-        command "bench" $
-          info (MRun <$> parseBench <**> helper) (progDesc "Alias for run --bench"),
-        command "countdown" $
+          info (MRun <$> parseRun <**> helper) (progDesc "Run, test, and benchmark challenges")
+      , command "view" $
+          info (MView <$> parseView <**> helper) (progDesc "View a prompt for a given challenge")
+      , command "submit" $
+          info (MSubmit <$> parseSubmit <**> helper) (progDesc "Test and submit answers for challenges")
+      , command "test" $
+          info (MRun <$> parseTest <**> helper) (progDesc "Alias for run --test")
+      , command "bench" $
+          info (MRun <$> parseBench <**> helper) (progDesc "Alias for run --bench")
+      , command "countdown" $
           info (MView <$> parseCountdown <**> helper) (progDesc "Alias for view --countdown")
       ]
-  pure O {..}
+  pure O{..}
   where
     parseRun :: Parser MainRunOpts
     parseRun = do
       _mroSpec <- parseTestSpec
       _mroActual <-
         fmap not . switch . mconcat $
-          [ long "skip",
-            short 's',
-            help "Do not run the actual input, but still run tests or benchmarks"
+          [ long "skip"
+          , short 's'
+          , help "Do not run the actual input, but still run tests or benchmarks"
           ]
       _mroTest <-
         switch . mconcat $
-          [ long "test",
-            short 't',
-            help "Run sample tests"
+          [ long "test"
+          , short 't'
+          , help "Run sample tests"
           ]
       _mroBench <-
         switch . mconcat $
-          [ long "bench",
-            short 'b',
-            help "Run benchmarks"
+          [ long "bench"
+          , short 'b'
+          , help "Run benchmarks"
           ]
       _mroLock <-
         switch . mconcat $
-          [ long "lock",
-            short 'l',
-            help "Lock in results as \"correct\" answers"
+          [ long "lock"
+          , short 'l'
+          , help "Lock in results as \"correct\" answers"
           ]
       takeStdin <-
         switch . mconcat $
-          [ long "stdin",
-            help "Take first input from stdin instead of input directory"
+          [ long "stdin"
+          , help "Take first input from stdin instead of input directory"
           ]
       pure $
         let _mroInput
               | takeStdin = \(CS d _) -> pullStdin inputCache d
               | otherwise = \_ -> pure Nothing
-         in MRO {..}
+         in MRO{..}
     parseView :: Parser MainViewOpts
     parseView = do
       _mvoSpec <- parseTestSpec
       _mvoWait <-
         switch . mconcat $
-          [ long "countdown",
-            short 'c',
-            help "Countdown until release if not yet available"
+          [ long "countdown"
+          , short 'c'
+          , help "Countdown until release if not yet available"
           ]
-      pure MVO {..}
+      pure MVO{..}
     parseSubmit :: Parser MainSubmitOpts
     parseSubmit = do
       _msoSpec <- parseChallengeSpec
       _msoTest <-
         fmap not . switch . mconcat $
-          [ long "skip-tests",
-            short 's',
-            help "Skip running tests before submission"
+          [ long "skip-tests"
+          , short 's'
+          , help "Skip running tests before submission"
           ]
       _msoForce <-
         switch . mconcat $
-          [ long "force",
-            short 'f',
-            help "Always submit, even if tests fail"
+          [ long "force"
+          , short 'f'
+          , help "Always submit, even if tests fail"
           ]
       _msoLock <-
         fmap not . switch . mconcat $
-          [ long "no-lock",
-            short 'n',
-            help "Do not lock in answer, even if correct submission was received"
+          [ long "no-lock"
+          , short 'n'
+          , help "Do not lock in answer, even if correct submission was received"
           ]
-      pure MSO {..}
+      pure MSO{..}
     parseTest :: Parser MainRunOpts
     parseTest = parseRun & mapped . mroTest .~ True
     parseBench :: Parser MainRunOpts

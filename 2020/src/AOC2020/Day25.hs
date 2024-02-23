@@ -6,9 +6,9 @@
 -- Portability : non-portable
 --
 -- Day 25.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day25
-  ( day25a,
-  )
+module AOC2020.Day25 (
+  day25a,
+)
 where
 
 import AOC.Common (_ListTup)
@@ -16,7 +16,15 @@ import AOC.Solver ((:~>) (..))
 import Control.Lens (preview)
 import Control.Monad ((<=<))
 import Data.Maybe (fromJust)
-import Math.NumberTheory.Moduli (Mod, PrimitiveRoot, discreteLogarithm, getVal, isMultElement, isPrimitiveRoot, (^%))
+import Math.NumberTheory.Moduli (
+  Mod,
+  PrimitiveRoot,
+  discreteLogarithm,
+  getVal,
+  isMultElement,
+  isPrimitiveRoot,
+  (^%),
+ )
 import Math.NumberTheory.Moduli.Singleton (CyclicGroup, cyclicGroup)
 import Numeric.Natural (Natural)
 import Text.Read (readMaybe)
@@ -40,7 +48,7 @@ day25a =
     { sParse =
         preview _ListTup
           <=< traverse (fmap fromInteger . readMaybe)
-            . lines,
-      sShow = show,
-      sSolve = \(x, y) -> getVal . (y ^%) <$> findSecret x
+            . lines
+    , sShow = show
+    , sSolve = \(x, y) -> getVal . (y ^%) <$> findSecret x
     }

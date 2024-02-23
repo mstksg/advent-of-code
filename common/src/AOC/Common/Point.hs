@@ -1,64 +1,64 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module AOC.Common.Point
-  ( -- * Points
-    Point,
-    FinPoint,
-    cardinalNeighbs,
-    cardinalNeighbsSet,
-    fullNeighbs,
-    fullNeighbsSet,
-    mannDist,
-    mannNorm,
-    mulPoint,
-    lineTo,
+module AOC.Common.Point (
+  -- * Points
+  Point,
+  FinPoint,
+  cardinalNeighbs,
+  cardinalNeighbsSet,
+  fullNeighbs,
+  fullNeighbsSet,
+  mannDist,
+  mannNorm,
+  mulPoint,
+  lineTo,
 
-    -- * Linear operations
-    module L,
+  -- * Linear operations
+  module L,
 
-    -- * Directions
-    Dir (..),
-    parseDir,
-    parseDir',
-    dirPoint,
-    dirPoint',
-    rotPoint,
-    rotFin,
-    mulDir,
-    allDir,
-    allDirSet,
+  -- * Directions
+  Dir (..),
+  parseDir,
+  parseDir',
+  dirPoint,
+  dirPoint',
+  rotPoint,
+  rotFin,
+  mulDir,
+  allDir,
+  allDirSet,
 
-    -- * Orientations
-    D8 (..),
-    mulD8,
-    orientPoint,
-    orientFin,
-    allD8,
-    allD8Set,
+  -- * Orientations
+  D8 (..),
+  mulD8,
+  orientPoint,
+  orientFin,
+  allD8,
+  allD8Set,
 
-    -- * 2D Maps
-    memoPoint,
-    boundingBox,
-    boundingBox',
-    inBoundingBox,
-    fillBoundingBox,
-    minCorner,
-    minCorner',
-    contiguousRegions,
-    contiguousShapes,
-    contiguousShapesBy,
-    shiftToZero,
-    shiftToZero',
-    parseAsciiMap,
-    asciiGrid,
-    parseAsciiSet,
-    ScanPoint (..),
-    displayAsciiMap,
-    displayAsciiSet,
+  -- * 2D Maps
+  memoPoint,
+  boundingBox,
+  boundingBox',
+  inBoundingBox,
+  fillBoundingBox,
+  minCorner,
+  minCorner',
+  contiguousRegions,
+  contiguousShapes,
+  contiguousShapesBy,
+  shiftToZero,
+  shiftToZero',
+  parseAsciiMap,
+  asciiGrid,
+  parseAsciiSet,
+  ScanPoint (..),
+  displayAsciiMap,
+  displayAsciiSet,
 
-    -- * Util
-    centeredFinite,
-  )
+  -- * Util
+  centeredFinite,
+)
 where
 
 import Control.DeepSeq
@@ -169,10 +169,10 @@ cardinalNeighbs p = (p +) <$> [V2 0 (-1), V2 1 0, V2 0 1, V2 (-1) 0]
 cardinalNeighbsSet :: Point -> Set Point
 cardinalNeighbsSet p =
   S.fromDistinctAscList . map (p +) $
-    [ V2 (-1) 0,
-      V2 0 (-1),
-      V2 0 1,
-      V2 1 0
+    [ V2 (-1) 0
+    , V2 0 (-1)
+    , V2 0 1
+    , V2 1 0
     ]
 
 fullNeighbs ::
@@ -182,7 +182,7 @@ fullNeighbs ::
 fullNeighbs p =
   tail
     [ liftA2 (+) p d
-      | d <- sequence (pure [0, -1, 1])
+    | d <- sequence (pure [0, -1, 1])
     ]
 {-# INLINE fullNeighbs #-}
 
@@ -193,8 +193,8 @@ fullNeighbsSet ::
 fullNeighbsSet p =
   S.fromDistinctAscList $
     [ liftA2 (+) p d
-      | d <- sequence (pure [-1, 0, 1]),
-        d /= pure 0
+    | d <- sequence (pure [-1, 0, 1])
+    , d /= pure 0
     ]
 
 -- | Find contiguous regions by cardinal neighbors
@@ -223,9 +223,9 @@ contiguousShapes :: Set Point -> Map (V2 Double) (NESet Point)
 contiguousShapes s0 =
   M.fromList
     [ (com, NES.map (subtract topCorner) s)
-      | s <- S.toList $ contiguousRegions s0,
-        let com = F.fold ((lmap . fmap) fromIntegral F.mean) s
-            V2 topCorner _ = boundingBox s
+    | s <- S.toList $ contiguousRegions s0
+    , let com = F.fold ((lmap . fmap) fromIntegral F.mean) s
+          V2 topCorner _ = boundingBox s
     ]
 
 -- | The set of unconnected shapes, sorted against some function on their
@@ -303,14 +303,14 @@ parseDir = flip M.lookup dirMap . toUpper
   where
     dirMap =
       M.fromList
-        [ ('N', North),
-          ('E', East),
-          ('S', South),
-          ('W', West),
-          ('U', North),
-          ('R', East),
-          ('D', South),
-          ('L', West)
+        [ ('N', North)
+        , ('E', East)
+        , ('S', South)
+        , ('W', West)
+        , ('U', North)
+        , ('R', East)
+        , ('D', South)
+        , ('L', West)
         ]
 
 parseDir' :: Char -> Dir
@@ -460,9 +460,9 @@ displayAsciiMap ::
 displayAsciiMap d (NEM.IsNonEmpty mp) =
   unlines
     [ [ NEM.findWithDefault d (V2 x y) mp
-        | x <- [xMin .. xMax]
+      | x <- [xMin .. xMax]
       ]
-      | y <- [yMin .. yMax]
+    | y <- [yMin .. yMax]
     ]
   where
     V2 xMin yMin `V2` V2 xMax yMax = boundingBox $ NEM.keysSet mp
@@ -500,4 +500,6 @@ instance (Finitary a, KnownNat (Cardinality a * Cardinality a)) => Finitary (V2 
 
 instance (Finitary a, KnownNat (Cardinality a * (Cardinality a * Cardinality a))) => Finitary (V3 a)
 
-instance (Finitary a, KnownNat ((Cardinality a * Cardinality a) * (Cardinality a * Cardinality a))) => Finitary (V4 a)
+instance
+  (Finitary a, KnownNat ((Cardinality a * Cardinality a) * (Cardinality a * Cardinality a))) =>
+  Finitary (V4 a)

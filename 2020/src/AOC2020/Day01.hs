@@ -6,11 +6,11 @@
 -- Portability : non-portable
 --
 -- Day 1.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day01
-  ( day01a,
-    day01b,
-    knapsack,
-  )
+module AOC2020.Day01 (
+  day01a,
+  day01b,
+  knapsack,
+)
 where
 
 import AOC.Common (firstJust)
@@ -46,15 +46,15 @@ knapsack = case snat :: SNat n of
 day01a :: [Int] :~> Int
 day01a =
   MkSol
-    { sParse = traverse readMaybe . lines,
-      sShow = show,
-      sSolve = fmap product . knapsack @Nat1 2020 . IS.fromList
+    { sParse = traverse readMaybe . lines
+    , sShow = show
+    , sSolve = fmap product . knapsack @Nat1 2020 . IS.fromList
     }
 
 day01b :: [Int] :~> Int
 day01b =
   MkSol
-    { sParse = traverse readMaybe . lines,
-      sShow = show,
-      sSolve = fmap product . knapsack @Nat2 2020 . IS.fromList
+    { sParse = traverse readMaybe . lines
+    , sShow = show
+    , sSolve = fmap product . knapsack @Nat2 2020 . IS.fromList
     }

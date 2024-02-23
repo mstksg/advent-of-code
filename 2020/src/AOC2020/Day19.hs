@@ -8,10 +8,10 @@
 -- Portability : non-portable
 --
 -- Day 19.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day19
-  ( day19a,
-    day19b,
-  )
+module AOC2020.Day19 (
+  day19a,
+  day19b,
+)
 where
 
 import AOC.Common (countTrue, pTok)
@@ -52,24 +52,24 @@ solver rules = countTrue (any null . matcher rules)
 day19a :: (IntMap (Rule Int), [String]) :~> Int
 day19a =
   MkSol
-    { sParse = P.parseMaybe inputParser,
-      sShow = show,
-      sSolve = Just . uncurry solver
+    { sParse = P.parseMaybe inputParser
+    , sShow = show
+    , sSolve = Just . uncurry solver
     }
 
 day19b :: (IntMap (Rule Int), [String]) :~> Int
 day19b =
   MkSol
-    { sParse = sParse day19a,
-      sShow = show,
-      sSolve = Just . uncurry solver . first (extraRules <>)
+    { sParse = sParse day19a
+    , sShow = show
+    , sSolve = Just . uncurry solver . first (extraRules <>)
     }
 
 extraRules :: IntMap (Rule Int)
 extraRules =
   IM.fromList
-    [ (8, Compound [[42], [42, 8]]),
-      (11, Compound [[42, 31], [42, 11, 31]])
+    [ (8, Compound [[42], [42, 8]])
+    , (11, Compound [[42, 31], [42, 11, 31]])
     ]
 
 -- for fun: generate all matching strings
@@ -85,8 +85,8 @@ ruleParser = do
   i <- pTok $ PP.decimal <* ":"
   r <-
     P.choice
-      [ P.try $ Simple <$> simpleParser,
-        Compound <$> compoundParser
+      [ P.try $ Simple <$> simpleParser
+      , Compound <$> compoundParser
       ]
   pure (i, r)
   where

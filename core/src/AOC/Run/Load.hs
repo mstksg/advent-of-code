@@ -17,32 +17,32 @@
 -- Portability : non-portable
 --
 -- Loading challenge data and prompts.
-module AOC.Run.Load
-  ( ChallengePaths (..),
-    challengePaths,
-    ChallengeData (..),
-    challengeData,
-    Day (..),
-    countdownConsole,
-    timeToRelease,
-    showNominalDiffTime,
-    charPart,
-    showAoCError,
-    htmlToMarkdown,
-    mkDay,
-    mkDay_,
-    dayInt,
-    TestMeta (..),
-    aocUserAgent,
+module AOC.Run.Load (
+  ChallengePaths (..),
+  challengePaths,
+  ChallengeData (..),
+  challengeData,
+  Day (..),
+  countdownConsole,
+  timeToRelease,
+  showNominalDiffTime,
+  charPart,
+  showAoCError,
+  htmlToMarkdown,
+  mkDay,
+  mkDay_,
+  dayInt,
+  TestMeta (..),
+  aocUserAgent,
 
-    -- * Parsers
-    parseMeta,
-    parseTests,
+  -- * Parsers
+  parseMeta,
+  parseTests,
 
-    -- * Printers
-    printMeta,
-    printTests,
-  )
+  -- * Printers
+  printMeta,
+  printTests,
+)
 where
 
 import AOC.Discover
@@ -85,42 +85,42 @@ import Text.Read (readMaybe)
 
 -- | A record of paths corresponding to a specific challenge.
 data ChallengePaths = CP
-  { _cpPrompt :: !FilePath,
-    _cpCodeBlocks :: !FilePath,
-    _cpInput :: !FilePath,
-    _cpAnswer :: !FilePath,
-    _cpTests :: !FilePath,
-    _cpLog :: !FilePath
+  { _cpPrompt :: !FilePath
+  , _cpCodeBlocks :: !FilePath
+  , _cpInput :: !FilePath
+  , _cpAnswer :: !FilePath
+  , _cpTests :: !FilePath
+  , _cpLog :: !FilePath
   }
   deriving stock (Show)
 
 -- | A record of data (test inputs, answers) corresponding to a specific
 -- challenge.
 data ChallengeData = CD
-  { _cdPrompt :: !(Either [String] Text),
-    _cdCodeBlocks :: !(Either [String] [Text]),
-    _cdInput :: !(Either [String] String),
-    _cdAnswer :: !(Maybe String),
-    _cdTests :: ![(String, TestMeta)]
+  { _cdPrompt :: !(Either [String] Text)
+  , _cdCodeBlocks :: !(Either [String] [Text])
+  , _cdInput :: !(Either [String] String)
+  , _cdAnswer :: !(Maybe String)
+  , _cdTests :: ![(String, TestMeta)]
   }
 
 -- | Generate a 'ChallengePaths' from a specification of a challenge.
 challengePaths :: Integer -> ChallengeSpec -> ChallengePaths
 challengePaths y (CS d p) =
   CP
-    { _cpPrompt = printf "prompt/%04d/%02d%c" y d' p' <.> "md",
-      _cpCodeBlocks = printf "data/%04d/code-blocks/%02d%c" y d' p' <.> "txt",
-      _cpInput = printf "data/%04d/%02d" y d' <.> "txt",
-      _cpAnswer = printf "data/%04d/ans/%02d%c" y d' p' <.> "txt",
-      _cpTests = printf "test-data/%04d/%02d%c" y d' p' <.> "txt",
-      _cpLog = printf "logs/submission/%04d/%02d%c" y d' p' <.> "txt"
+    { _cpPrompt = printf "prompt/%04d/%02d%c" y d' p' <.> "md"
+    , _cpCodeBlocks = printf "data/%04d/code-blocks/%02d%c" y d' p' <.> "txt"
+    , _cpInput = printf "data/%04d/%02d" y d' <.> "txt"
+    , _cpAnswer = printf "data/%04d/ans/%02d%c" y d' p' <.> "txt"
+    , _cpTests = printf "test-data/%04d/%02d%c" y d' p' <.> "txt"
+    , _cpLog = printf "logs/submission/%04d/%02d%c" y d' p' <.> "txt"
     }
   where
     d' = dayInt d
     p' = partChar p
 
 makeChallengeDirs :: ChallengePaths -> IO ()
-makeChallengeDirs CP {..} =
+makeChallengeDirs CP{..} =
   mapM_
     (createDirectoryIfMissing True . takeDirectory)
     [_cpPrompt, _cpCodeBlocks, _cpInput, _cpAnswer, _cpTests, _cpLog]
@@ -135,25 +135,25 @@ challengeData ::
   Integer ->
   ChallengeSpec ->
   IO ChallengeData
-challengeData sess yr spec@CS {..} = do
+challengeData sess yr spec@CS{..} = do
   makeChallengeDirs ps
   inp <-
     runExceptT . asum $
       [ maybeToEither [printf "Input file not found at %s" _cpInput]
-          =<< liftIO (readFileMaybe _cpInput),
-        fetchInput
+          =<< liftIO (readFileMaybe _cpInput)
+      , fetchInput
       ]
   blocks <-
     runExceptT . asum $
       [ maybeToEither [printf "Input file not found at %s" _cpCodeBlocks]
-          =<< liftIO (fmap (T.splitOn codeBlockSep . T.pack) <$> readFileMaybe _cpCodeBlocks),
-        fetchCodeBlocks
+          =<< liftIO (fmap (T.splitOn codeBlockSep . T.pack) <$> readFileMaybe _cpCodeBlocks)
+      , fetchCodeBlocks
       ]
   prompt <-
     runExceptT . asum $
       [ maybeToEither [printf "Prompt file not found at %s" _cpPrompt]
-          =<< liftIO (fmap T.pack <$> readFileMaybe _cpPrompt),
-        fetchPrompt
+          =<< liftIO (fmap T.pack <$> readFileMaybe _cpPrompt)
+      , fetchPrompt
       ]
   ans <- readFileMaybe _cpAnswer
   ts <-
@@ -164,14 +164,14 @@ challengeData sess yr spec@CS {..} = do
         Right r -> pure r
   return
     CD
-      { _cdPrompt = prompt,
-        _cdCodeBlocks = blocks,
-        _cdInput = inp,
-        _cdAnswer = ans,
-        _cdTests = ts
+      { _cdPrompt = prompt
+      , _cdCodeBlocks = blocks
+      , _cdInput = inp
+      , _cdAnswer = ans
+      , _cdTests = ts
       }
   where
-    ps@CP {..} = challengePaths yr spec
+    ps@CP{..} = challengePaths yr spec
     readFileMaybe :: FilePath -> IO (Maybe String)
     readFileMaybe =
       (traverse (evaluate . force) . eitherToMaybe =<<)
@@ -232,13 +232,13 @@ challengeData sess yr spec@CS {..} = do
 showAoCError :: AoCError -> [String]
 showAoCError = \case
   AoCClientError e ->
-    [ "Error contacting Advent of Code server to fetch input",
-      "Possible invalid session key",
-      printf "Server response: %s" (show e)
+    [ "Error contacting Advent of Code server to fetch input"
+    , "Possible invalid session key"
+    , printf "Server response: %s" (show e)
     ]
   AoCReleaseError t ->
-    [ "Challenge not yet released!",
-      printf "Please wait %s" (showNominalDiffTime t)
+    [ "Challenge not yet released!"
+    , printf "Please wait %s" (showNominalDiffTime t)
     ]
   AoCThrottleError -> ["Too many requests at a time.  Please slow down."]
 
@@ -296,9 +296,9 @@ htmlToMarkdown :: Bool -> Text -> Either [String] T.Text
 htmlToMarkdown pretty html = first ((: []) . show) . P.runPure $ do
   p <-
     P.readHtml
-      (P.def {P.readerExtensions = exts})
+      (P.def{P.readerExtensions = exts})
       html
-  writer (P.def {P.writerExtensions = exts}) p
+  writer (P.def{P.writerExtensions = exts}) p
   where
     writer
       | pretty = P.writeMarkdown
@@ -323,8 +323,8 @@ pullCodeBlocks = concatMap pullEm . processHTML "code"
 type Parser = MP.Parsec Void String
 
 data TestMeta = TM
-  { _tmAnswer :: Maybe String,
-    _tmData :: Map String (DSum TestType Identity)
+  { _tmAnswer :: Maybe String
+  , _tmData :: Map String (DSum TestType Identity)
   }
   deriving stock (Show)
 
@@ -349,8 +349,8 @@ parseMeta = do
     parseAnswer =
       MP.string ">>>"
         *> asum
-          [ Just <$> MP.try (MP.space1 *> MP.many (MP.noneOf ['\n']) <* "\n"),
-            Nothing <$ (MP.space *> "\n")
+          [ Just <$> MP.try (MP.space1 *> MP.many (MP.noneOf ['\n']) <* "\n")
+          , Nothing <$ (MP.space *> "\n")
           ]
     parseData = do
       _ <- MP.string ">>>"
@@ -367,11 +367,11 @@ parseMeta = do
         _ -> fail $ "Unrecognized type " ++ typ
 
 printMeta :: TestMeta -> [Text]
-printMeta TM {..} =
+printMeta TM{..} =
   map printData (M.toList _tmData)
     <> [ case _tmAnswer of
-           Just x -> ">>> " <> T.pack x
-           Nothing -> ">>>"
+          Just x -> ">>> " <> T.pack x
+          Nothing -> ">>>"
        ]
   where
     printData :: (String, DSum TestType Identity) -> Text

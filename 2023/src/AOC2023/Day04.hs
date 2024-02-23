@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 4.  See "AOC.Solver" for the types used in this module!
-module AOC2023.Day04
-  ( day04a,
-    day04b,
-  )
+module AOC2023.Day04 (
+  day04a,
+  day04b,
+)
 where
 
 import AOC.Common (listTup)
@@ -36,9 +36,9 @@ cardWins = S.size . uncurry S.intersection
 day04a :: [(Set Int, Set Int)] :~> Int
 day04a =
   MkSol
-    { sParse = traverse parseCard . lines,
-      sShow = show,
-      sSolve =
+    { sParse = traverse parseCard . lines
+    , sShow = show
+    , sSolve =
         noFail $
           sum . map ((2 ^) . subtract 1) . filter (> 0) . map cardWins
     }
@@ -46,9 +46,9 @@ day04a =
 day04b :: [(Set Int, Set Int)] :~> Int
 day04b =
   MkSol
-    { sParse = traverse parseCard . lines,
-      sShow = show,
-      sSolve = noFail \cards ->
+    { sParse = traverse parseCard . lines
+    , sShow = show
+    , sSolve = noFail \cards ->
         let ixedCards = M.fromList $ zip [1 ..] cards
          in sum . flip evalState (1 <$ ixedCards) $
               for (M.toList ixedCards) \(i, (a, b)) -> state \currState ->

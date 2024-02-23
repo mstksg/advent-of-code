@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 13.  See "AOC.Solver" for the types used in this module!
-module AOC2023.Day13
-  ( day13a,
-    day13b,
-  )
+module AOC2023.Day13 (
+  day13a,
+  day13b,
+)
 where
 
 import AOC.Common (firstJust)
@@ -35,14 +35,14 @@ findRefl pts = findForMap cols <> map (* 100) (findForMap rows)
       IM.fromListWith
         (<>)
         [ (x, IS.singleton y)
-          | V2 x y <- toList pts
+        | V2 x y <- toList pts
         ]
     rows :: IntMap IntSet
     rows =
       IM.fromListWith
         (<>)
         [ (y, IS.singleton x)
-          | V2 x y <- toList pts
+        | V2 x y <- toList pts
         ]
     findForMap :: IntMap IntSet -> [Int]
     findForMap mp = flip filter [minKey + 1 .. maxKey] $ \i ->
@@ -55,9 +55,9 @@ findRefl pts = findForMap cols <> map (* 100) (findForMap rows)
 day13a :: [Set Point] :~> Int
 day13a =
   MkSol
-    { sParse = noFail $ map (parseAsciiSet (== '#')) . splitOn "\n\n",
-      sShow = show,
-      sSolve = traverseSum $ listToMaybe . findRefl
+    { sParse = noFail $ map (parseAsciiSet (== '#')) . splitOn "\n\n"
+    , sShow = show
+    , sSolve = traverseSum $ listToMaybe . findRefl
     }
 
 findSmudge :: Set Point -> Maybe Int
@@ -72,7 +72,7 @@ findSmudge pts = flip firstJust (fillBoundingBox pts) \pt ->
 day13b :: [Set Point] :~> Int
 day13b =
   MkSol
-    { sParse = noFail $ map (parseAsciiSet (== '#')) . splitOn "\n\n",
-      sShow = show,
-      sSolve = traverseSum findSmudge
+    { sParse = noFail $ map (parseAsciiSet (== '#')) . splitOn "\n\n"
+    , sShow = show
+    , sSolve = traverseSum findSmudge
     }

@@ -8,10 +8,10 @@
 -- Day 10.  See "AOC.Solver" for the types used in this module!
 --
 -- After completing the challenge, it is recommended to:
-module AOC2020.Day10
-  ( day10a,
-    day10b,
-  )
+module AOC2020.Day10 (
+  day10a,
+  day10b,
+)
 where
 
 import AOC.Common (freqs, lookupFreq)
@@ -31,9 +31,9 @@ toChain xs = xsset `IS.union` IS.fromList [0, top + 3]
 day10a :: [Int] :~> (Int, Int)
 day10a =
   MkSol
-    { sParse = traverse readMaybe . lines,
-      sShow = \(x, y) -> show (x * y),
-      sSolve = \(IS.toList . toChain -> xs) ->
+    { sParse = traverse readMaybe . lines
+    , sShow = \(x, y) -> show (x * y)
+    , sSolve = \(IS.toList . toChain -> xs) ->
         Just
           let fs = freqs (zipWith (-) (drop 1 xs) xs)
            in (lookupFreq 1 fs, lookupFreq 3 fs)
@@ -53,7 +53,7 @@ pathsToGoal is = res
         else
           sum
             [ findOrZero (i + j) res
-              | j <- [1, 2, 3]
+            | j <- [1, 2, 3]
             ]
     goal = IS.findMax is
 
@@ -76,8 +76,8 @@ pathsToGoal is = res
 day10b :: [Int] :~> Int
 day10b =
   MkSol
-    { sParse = traverse readMaybe . lines,
-      sShow = show,
-      sSolve = Just . findOrZero 0 . pathsToGoal . toChain
-      -- , sSolve = Just . gapMethod . IS.toList . toChain
+    { sParse = traverse readMaybe . lines
+    , sShow = show
+    , sSolve = Just . findOrZero 0 . pathsToGoal . toChain
+    -- , sSolve = Just . gapMethod . IS.toList . toChain
     }

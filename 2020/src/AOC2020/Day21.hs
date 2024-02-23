@@ -8,10 +8,10 @@
 -- Portability : non-portable
 --
 -- Day 21.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day21
-  ( day21a,
-    day21b,
-  )
+module AOC2020.Day21 (
+  day21a,
+  day21b,
+)
 where
 
 import AOC.Common (countTrue, parseLines, pickUnique)
@@ -38,9 +38,9 @@ assembleOptions info =
 day21a :: [(Set String, Set String)] :~> Int
 day21a =
   MkSol
-    { sParse = parseLines lineParser,
-      sShow = show,
-      sSolve = \igrsAlgs ->
+    { sParse = parseLines lineParser
+    , sShow = show
+    , sSolve = \igrsAlgs ->
         fmap (countNotIn (concatMap (toList . fst) igrsAlgs))
           . listToMaybe
           . map (S.fromList . toList)
@@ -53,9 +53,9 @@ day21a =
 day21b :: [(Set String, Set String)] :~> [String]
 day21b =
   MkSol
-    { sParse = parseLines lineParser,
-      sShow = intercalate ",",
-      sSolve = fmap toList . listToMaybe . pickUnique . assembleOptions
+    { sParse = parseLines lineParser
+    , sShow = intercalate ","
+    , sSolve = fmap toList . listToMaybe . pickUnique . assembleOptions
     }
 
 type Parser = P.Parsec Void String

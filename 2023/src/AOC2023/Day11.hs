@@ -4,10 +4,10 @@
 --
 -- Stability   : experimental
 -- Portability : non-portable
-module AOC2023.Day11
-  ( day11a,
-    day11b,
-  )
+module AOC2023.Day11 (
+  day11a,
+  day11b,
+)
 where
 
 import AOC.Common.Point (Point, boundingBox, mannDist, parseAsciiSet)
@@ -35,14 +35,14 @@ expandBy toAdd orig = NES.mapMonotonic reshape orig
 day11 :: ((?dyno :: DynoMap) => Int) -> NESet Point :~> Int
 day11 toAdd =
   MkSol
-    { sParse = NES.nonEmptySet . parseAsciiSet (== '#'),
-      sShow = show,
-      sSolve = noFail $
+    { sParse = NES.nonEmptySet . parseAsciiSet (== '#')
+    , sShow = show
+    , sSolve = noFail $
         \xs ->
           sum
             [ mannDist x y
-              | x : ys <- tails $ toList (expandBy toAdd xs),
-                y <- ys
+            | x : ys <- tails $ toList (expandBy toAdd xs)
+            , y <- ys
             ]
     }
 

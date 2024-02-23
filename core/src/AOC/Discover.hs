@@ -15,20 +15,20 @@
 --
 -- Template Haskell for discovering all named challenges in a given
 -- directory.
-module AOC.Discover
-  ( mkChallengeMap,
-    solutionList,
-    ChallengeMap,
-    ChallengeSpec (..),
-    lookupSolution,
-    solSpec,
-    solSpecStr,
-    solSpecStr_,
-    charPart,
-    specSomeSol,
-    liftDay,
-    liftPart,
-  )
+module AOC.Discover (
+  mkChallengeMap,
+  solutionList,
+  ChallengeMap,
+  ChallengeSpec (..),
+  lookupSolution,
+  solSpec,
+  solSpecStr,
+  solSpecStr_,
+  charPart,
+  specSomeSol,
+  liftDay,
+  liftPart,
+)
 where
 
 import AOC.Solver
@@ -69,8 +69,8 @@ checkIfNFData = True
 -- | A specification for a specific challenge.  Should consist of a day and
 -- a lowercase character.
 data ChallengeSpec = CS
-  { _csDay :: Day,
-    _csPart :: Part
+  { _csDay :: Day
+  , _csPart :: Part
   }
   deriving stock (Show, Eq, Ord)
 
@@ -79,7 +79,7 @@ type ChallengeMap = Map Day (Map Part SomeSolution)
 
 -- | Lookup up a solution from a 'ChallengeMap'
 lookupSolution :: ChallengeSpec -> Map Day (Map Part a) -> Maybe a
-lookupSolution CS {..} = M.lookup _csPart <=< M.lookup _csDay
+lookupSolution CS{..} = M.lookup _csPart <=< M.lookup _csDay
 
 -- | Get a 'ChallengeSpec' from a given reified solution (name).
 --
@@ -133,11 +133,11 @@ specExp s@(CS d p) = do
     pure $
       TH.TExp $
         TH.TupE
-          [ Just . TH.unType $ liftDay d,
-            Just $
+          [ Just . TH.unType $ liftDay d
+          , Just $
               TH.TupE
-                [ Just . TH.unType $ liftPart p,
-                  Just ss
+                [ Just . TH.unType $ liftPart p
+                , Just ss
                 ]
           ]
 

@@ -11,10 +11,10 @@
 -- Portability : non-portable
 --
 -- Gather together all challenges and collect them into a single map.
-module AOC2020
-  ( module AOC,
-    challengeBundle2020,
-  )
+module AOC2020 (
+  module AOC,
+  challengeBundle2020,
+)
 where
 
 import AOC.Discover

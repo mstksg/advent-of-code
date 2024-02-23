@@ -8,10 +8,10 @@
 -- Portability : non-portable
 --
 -- Day 22.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day22
-  ( day22a,
-    day22b,
-  )
+module AOC2020.Day22 (
+  day22a,
+  day22b,
+)
 where
 
 import AOC.Solver ((:~>) (..))
@@ -45,9 +45,9 @@ instance Hashable GameState where
   hashWithSalt s (GS xs ys) =
     hashWithSalt
       s
-      ( take 2 (toList xs),
-        take 2 (toList ys),
-        Seq.length xs
+      ( take 2 (toList xs)
+      , take 2 (toList ys)
+      , Seq.length xs
       )
 
 score :: Deck -> Int
@@ -98,17 +98,17 @@ game2 = playGameWith $ \(x :<|| xs) (y :<|| ys) -> do
 day22a :: (Deck, Deck) :~> Deck
 day22a =
   MkSol
-    { sParse = P.parseMaybe gameParser,
-      sShow = show . score,
-      sSolve = Just . snd . uncurry game1
+    { sParse = P.parseMaybe gameParser
+    , sShow = show . score
+    , sSolve = Just . snd . uncurry game1
     }
 
 day22b :: (Deck, Deck) :~> Deck
 day22b =
   MkSol
-    { sParse = P.parseMaybe gameParser,
-      sShow = show . score,
-      sSolve = Just . snd . uncurry game2
+    { sParse = P.parseMaybe gameParser
+    , sShow = show . score
+    , sSolve = Just . snd . uncurry game2
     }
 
 takeExactly :: Int -> Seq a -> Maybe (Seq a)

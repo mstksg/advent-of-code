@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 9.  See "AOC.Solver" for the types used in this module!
-module AOC2023.Day09
-  ( day09a,
-    day09b,
-  )
+module AOC2023.Day09 (
+  day09a,
+  day09b,
+)
 where
 
 import AOC.Solver (noFail, (:~>) (..))
@@ -29,9 +29,9 @@ day09a =
   MkSol
     { sParse =
         traverse (NE.nonEmpty <=< traverse readMaybe . words)
-          . lines,
-      sShow = show,
-      sSolve =
+          . lines
+    , sShow = show
+    , sSolve =
         noFail $
           sum . map (stepSeriesBack . NE.reverse)
     }
@@ -41,9 +41,9 @@ day09b =
   MkSol
     { sParse =
         traverse (NE.nonEmpty <=< traverse readMaybe . words)
-          . lines,
-      sShow = show,
-      sSolve =
+          . lines
+    , sShow = show
+    , sSolve =
         noFail $
           sum . map stepSeriesBack
     }

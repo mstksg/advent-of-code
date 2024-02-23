@@ -1,13 +1,13 @@
-module AOC.Common.Search
-  ( aStar,
-    bfs,
-    binarySearch,
-    exponentialSearch,
-    binaryMinSearch,
-    exponentialMinSearch,
-    binaryFindMin,
-    exponentialFindMin,
-  )
+module AOC.Common.Search (
+  aStar,
+  bfs,
+  binarySearch,
+  exponentialSearch,
+  binaryMinSearch,
+  exponentialMinSearch,
+  binaryFindMin,
+  exponentialFindMin,
+)
 where
 
 import Data.Bifunctor
@@ -21,10 +21,10 @@ import Data.Set (Set)
 import qualified Data.Set as S
 
 data AStarState n p = AS
-  { -- | map of item to "parent"
-    _asClosed :: !(Map n (Maybe n)),
-    -- | map of item to "parent", and cost-so-far
-    _asOpen :: !(OrdPSQ n p (p, Maybe n))
+  { _asClosed :: !(Map n (Maybe n))
+  -- ^ map of item to "parent"
+  , _asOpen :: !(OrdPSQ n p (p, Maybe n))
+  -- ^ map of item to "parent", and cost-so-far
   }
 
 -- | A* Search
@@ -48,18 +48,18 @@ aStar h ex x0 dest = second reconstruct <$> go (addBack x0 0 Nothing (AS M.empty
       where
         goreco n = n : maybe [] goreco (mp M.! n)
     go :: AStarState n p -> Maybe (p, (n, Map n (Maybe n)))
-    go as0@AS {..} =
+    go as0@AS{..} =
       Q.minView _asOpen >>= \(n, p, (g, up), queue') ->
         let closed' = M.insert n up _asClosed
          in if dest n
               then Just (p, (n, closed'))
               else
-                go . M.foldlWithKey' (processNeighbor n g) (as0 {_asOpen = queue', _asClosed = closed'}) $
+                go . M.foldlWithKey' (processNeighbor n g) (as0{_asOpen = queue', _asClosed = closed'}) $
                   ex n
     addBack :: n -> p -> Maybe n -> AStarState n p -> AStarState n p
-    addBack x g up as0 = as0 {_asOpen = insertIfBetter x (g + h x) (g, up) . _asOpen $ as0}
+    addBack x g up as0 = as0{_asOpen = insertIfBetter x (g + h x) (g, up) . _asOpen $ as0}
     processNeighbor :: n -> p -> AStarState n p -> n -> p -> AStarState n p
-    processNeighbor curr currCost as0@AS {..} neighb moveCost
+    processNeighbor curr currCost as0@AS{..} neighb moveCost
       --     | neighb `Q.member` _asOpen || neighb `M.member` _asClosed = as0
       | neighb `M.member` _asClosed = as0
       | otherwise = addBack neighb (currCost + moveCost) (Just curr) as0
@@ -74,10 +74,10 @@ insertIfBetter k p x q = case Q.lookup k q of
     | otherwise -> q
 
 data BFSState n = BS
-  { -- | map of item to "parent"
-    _bsClosed :: !(Map n (Maybe n)),
-    -- | queue
-    _bsOpen :: !(Seq n)
+  { _bsClosed :: !(Map n (Maybe n))
+  -- ^ map of item to "parent"
+  , _bsOpen :: !(Seq n)
+  -- ^ queue
   }
 
 -- | Breadth-first search, with loop detection
@@ -99,19 +99,19 @@ bfs ex x0 dest = reconstruct <$> go (addBack x0 Nothing (BS M.empty Seq.empty))
       where
         goreco n = n : maybe [] goreco (mp M.! n)
     go :: BFSState n -> Maybe (n, Map n (Maybe n))
-    go BS {..} = case _bsOpen of
+    go BS{..} = case _bsOpen of
       Empty -> Nothing
       n :<| ns
         | dest n -> Just (n, _bsClosed)
         | otherwise -> go . S.foldl' (processNeighbor n) (BS _bsClosed ns) $ ex n
     addBack :: n -> Maybe n -> BFSState n -> BFSState n
-    addBack x up BS {..} =
+    addBack x up BS{..} =
       BS
-        { _bsClosed = M.insert x up _bsClosed,
-          _bsOpen = _bsOpen :|> x
+        { _bsClosed = M.insert x up _bsClosed
+        , _bsOpen = _bsOpen :|> x
         }
     processNeighbor :: n -> BFSState n -> n -> BFSState n
-    processNeighbor curr bs0@BS {..} neighb
+    processNeighbor curr bs0@BS{..} neighb
       | neighb `M.member` _bsClosed = bs0
       | otherwise = addBack neighb (Just curr) bs0
 

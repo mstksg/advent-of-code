@@ -4,10 +4,10 @@
 --
 -- Stability   : experimental
 -- Portability : non-portable
-module AOC2023.Day01
-  ( day01a,
-    day01b,
-  )
+module AOC2023.Day01 (
+  day01a,
+  day01b,
+)
 where
 
 import AOC.Common (digitToIntSafe, firstJust)
@@ -31,17 +31,17 @@ dictionary =
 day01a :: [String] :~> Int
 day01a =
   MkSol
-    { sParse = Just . lines,
-      sShow = show,
-      sSolve = Just . sum . mapMaybe (firstAndLast . mapMaybe digitToIntSafe)
+    { sParse = Just . lines
+    , sShow = show
+    , sSolve = Just . sum . mapMaybe (firstAndLast . mapMaybe digitToIntSafe)
     }
 
 day01b :: [String] :~> Int
 day01b =
   MkSol
-    { sParse = Just . lines,
-      sShow = show,
-      sSolve = Just . sum . mapMaybe (firstAndLast . mapMaybe hasNumber . tails)
+    { sParse = Just . lines
+    , sShow = show
+    , sSolve = Just . sum . mapMaybe (firstAndLast . mapMaybe hasNumber . tails)
     }
   where
     hasNumber x = firstJust (\(t, y) -> guard (t `isPrefixOf` x) $> y) dictionary

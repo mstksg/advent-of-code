@@ -6,14 +6,21 @@
 -- Portability : non-portable
 --
 -- Day 11.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day11
-  ( day11a,
-    day11b,
-  )
+module AOC2020.Day11 (
+  day11a,
+  day11b,
+)
 where
 
 import AOC.Common (countTrue)
-import AOC.Common.Point (Point, boundingBox', fullNeighbs, fullNeighbsSet, inBoundingBox, parseAsciiMap)
+import AOC.Common.Point (
+  Point,
+  boundingBox',
+  fullNeighbs,
+  fullNeighbsSet,
+  inBoundingBox,
+  parseAsciiMap,
+ )
 import AOC.Solver ((:~>) (..))
 import Control.Monad.Loops (whileM_)
 import Control.Monad.Primitive (PrimMonad, PrimState)
@@ -109,9 +116,9 @@ lineOfSights1 pts = M.fromSet go pts
 day11a :: Map Point Bool :~> Int
 day11a =
   MkSol
-    { sParse = Just . parseSeatMap,
-      sShow = show,
-      sSolve = \mp ->
+    { sParse = Just . parseSeatMap
+    , sShow = show
+    , sSolve = \mp ->
         Just $
           let los = lineOfSights1 (M.keysSet mp)
            in compile (M.intersectionWith (,) los mp) (solveWith 4)
@@ -139,9 +146,9 @@ lineOfSights2 bb pts = M.fromSet go pts
 day11b :: Map Point Bool :~> Int
 day11b =
   MkSol
-    { sParse = Just . parseSeatMap,
-      sShow = show,
-      sSolve = \mp -> do
+    { sParse = Just . parseSeatMap
+    , sShow = show
+    , sSolve = \mp -> do
         bb <- boundingBox' (M.keys mp)
         let los = lineOfSights2 bb (M.keysSet mp)
         pure $ compile (M.intersectionWith (,) los mp) (solveWith 5)

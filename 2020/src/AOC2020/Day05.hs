@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 5.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day05
-  ( day05a,
-    day05b,
-  )
+module AOC2020.Day05 (
+  day05a,
+  day05b,
+)
 where
 
 import AOC.Solver ((:~>) (..))
@@ -41,15 +41,15 @@ findHole = do
 day05a :: [String] :~> Int
 day05a =
   MkSol
-    { sParse = Just . lines,
-      sShow = show,
-      sSolve = F.fold (F.premap seatId F.maximum)
+    { sParse = Just . lines
+    , sShow = show
+    , sSolve = F.fold (F.premap seatId F.maximum)
     }
 
 day05b :: [String] :~> Int
 day05b =
   MkSol
-    { sParse = Just . lines,
-      sShow = show,
-      sSolve = F.fold (F.premap seatId findHole)
+    { sParse = Just . lines
+    , sShow = show
+    , sSolve = F.fold (F.premap seatId findHole)
     }

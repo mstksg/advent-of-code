@@ -14,40 +14,40 @@
 -- Portability : non-portable
 --
 -- Versions of loaders and runners meant to be used in GHCI.
-module AOC.Run.Interactive
-  ( -- * Fetch and Run
-    fromSol,
+module AOC.Run.Interactive (
+  -- * Fetch and Run
+  fromSol,
 
-    -- ** Return Answers
-    execSolution,
-    lockSolution,
-    execSolutionWith,
-    testSolution,
-    testSolutionOnly,
-    viewPrompt,
-    waitForPrompt,
-    submitSolution,
+  -- ** Return Answers
+  execSolution,
+  lockSolution,
+  execSolutionWith,
+  testSolution,
+  testSolutionOnly,
+  viewPrompt,
+  waitForPrompt,
+  submitSolution,
 
-    -- ** No Answers
-    execSolution_,
-    lockSolution_,
-    execSolutionWith_,
-    testSolution_,
-    testSolutionOnly_,
-    viewPrompt_,
-    waitForPrompt_,
-    submitSolution_,
+  -- ** No Answers
+  execSolution_,
+  lockSolution_,
+  execSolutionWith_,
+  testSolution_,
+  testSolutionOnly_,
+  viewPrompt_,
+  waitForPrompt_,
+  submitSolution_,
 
-    -- * Load Inputs
-    loadInput,
-    loadParseInput,
-    loadTests,
-    loadParseTests,
+  -- * Load Inputs
+  loadInput,
+  loadParseInput,
+  loadTests,
+  loadParseTests,
 
-    -- * Util
-    RunInteractive (..),
-    mkSpec,
-  )
+  -- * Util
+  RunInteractive (..),
+  mkSpec,
+)
 where
 
 import AOC.Discover
@@ -68,24 +68,25 @@ import Data.Text (Text)
 import qualified Language.Haskell.TH as TH
 
 data RunInteractive = RI
-  { _riYear :: Integer,
-    _riSpec :: ChallengeSpec,
-    _riSolution :: SomeSolution
+  { _riYear :: Integer
+  , _riSpec :: ChallengeSpec
+  , _riSolution :: SomeSolution
   }
 
 riChallengeBundle :: RunInteractive -> ChallengeBundle
-riChallengeBundle RI {..} =
+riChallengeBundle RI{..} =
   CB
-    { _cbYear = _riYear,
-      _cbChallengeMap =
+    { _cbYear = _riYear
+    , _cbChallengeMap =
         M.singleton
           (_csDay _riSpec)
           (M.singleton (_csPart _riSpec) _riSolution)
     }
 
 -- | Interactively call 'mainRun'.
-runInteractive :: MainRunOpts -> RunInteractive -> ExceptT [String] IO (Maybe Bool, Either [String] String)
-runInteractive mro ri@RI {..} = do
+runInteractive ::
+  MainRunOpts -> RunInteractive -> ExceptT [String] IO (Maybe Bool, Either [String] String)
+runInteractive mro ri@RI{..} = do
   cfg <- liftIO $ configFile defConfPath
   out <- mainRun (riChallengeBundle ri) cfg mro
   maybeToEither ["Result not found in result map (Internal Error)"] $
@@ -94,17 +95,17 @@ runInteractive mro ri@RI {..} = do
 -- | Run the solution indicated by the challenge spec on the official
 -- puzzle input.  Get answer as result.
 execSolution :: RunInteractive -> IO String
-execSolution ri@RI {..} = eitherIO do
+execSolution ri@RI{..} = eitherIO do
   (_, res) <- runInteractive (defaultMRO (TSPart _riSpec)) ri
   liftEither res
 
 -- | Run the solution indicated by the challenge spec on the official
 -- puzzle input, and lock the answer as correct.  Get answer as result.
 lockSolution :: RunInteractive -> IO String
-lockSolution ri@RI {..} = eitherIO do
+lockSolution ri@RI{..} = eitherIO do
   (_, res) <-
     runInteractive
-      (defaultMRO (TSPart _riSpec)) {_mroLock = True}
+      (defaultMRO (TSPart _riSpec)){_mroLock = True}
       ri
   liftEither res
 
@@ -115,10 +116,10 @@ execSolutionWith ::
   -- | custom puzzle input
   String ->
   IO String
-execSolutionWith ri@RI {..} inp = eitherIO do
+execSolutionWith ri@RI{..} inp = eitherIO do
   (_, res) <-
     runInteractive
-      (defaultMRO (TSPart _riSpec)) {_mroInput = \_ -> pure $ Just inp}
+      (defaultMRO (TSPart _riSpec)){_mroInput = \_ -> pure $ Just inp}
       ri
   liftEither res
 
@@ -127,22 +128,22 @@ execSolutionWith ri@RI {..} inp = eitherIO do
 -- Returns 'Just' if any tests were run, with a 'Bool' specifying whether
 -- or not all tests passed.
 testSolution :: RunInteractive -> IO (Maybe Bool)
-testSolution ri@RI {..} =
+testSolution ri@RI{..} =
   eitherIO $
-    fst <$> runInteractive (defaultMRO (TSPart _riSpec)) {_mroTest = True} ri
+    fst <$> runInteractive (defaultMRO (TSPart _riSpec)){_mroTest = True} ri
 
 -- | Run test suite for a given challenge spec, and NOT the actual input.
 --
 -- Returns 'Just' if any tests were run, with a 'Bool' specifying whether
 -- or not all tests passed.
 testSolutionOnly :: RunInteractive -> IO (Maybe Bool)
-testSolutionOnly ri@RI {..} =
+testSolutionOnly ri@RI{..} =
   eitherIO $
-    fst <$> runInteractive (defaultMRO (TSPart _riSpec)) {_mroTest = True, _mroActual = False} ri
+    fst <$> runInteractive (defaultMRO (TSPart _riSpec)){_mroTest = True, _mroActual = False} ri
 
 -- | View the prompt for a given challenge spec.
 viewPrompt :: RunInteractive -> IO Text
-viewPrompt ri@RI {..} = eitherIO $ do
+viewPrompt ri@RI{..} = eitherIO $ do
   cfg <- liftIO $ configFile defConfPath
   out <- mainView (riChallengeBundle ri) cfg . defaultMVO $ TSPart _riSpec
   maybeToEither ["Prompt not found in result map (Internal Error)"] $
@@ -151,7 +152,7 @@ viewPrompt ri@RI {..} = eitherIO $ do
 -- | Countdown to get the prompt for a given challenge spec, if not yet
 -- available.
 waitForPrompt :: RunInteractive -> IO Text
-waitForPrompt ri@RI {..} = eitherIO $ do
+waitForPrompt ri@RI{..} = eitherIO $ do
   cfg <- liftIO $ configFile defConfPath
   out <-
     mainView (riChallengeBundle ri) cfg $
@@ -163,7 +164,7 @@ waitForPrompt ri@RI {..} = eitherIO $ do
 
 -- | Submit solution for a given challenge spec, and lock if correct.
 submitSolution :: RunInteractive -> IO (Text, SubmitRes)
-submitSolution ri@RI {..} = eitherIO $ do
+submitSolution ri@RI{..} = eitherIO $ do
   cfg <- liftIO $ configFile defConfPath
   mainSubmit (riChallengeBundle ri) cfg (defaultMSO _riSpec)
 
@@ -224,15 +225,15 @@ loadParseTests yr cs s = (map . first) (sParse s) <$> loadTests yr cs
 -- | Load input for a given challenge
 loadInput :: Integer -> ChallengeSpec -> IO String
 loadInput yr cs = eitherIO $ do
-  CD {..} <- liftIO $ do
-    Cfg {..} <- configFile defConfPath
+  CD{..} <- liftIO $ do
+    Cfg{..} <- configFile defConfPath
     challengeData _cfgSession yr cs
   liftEither _cdInput
 
 -- | Load test cases for a given challenge
 loadTests :: Integer -> ChallengeSpec -> IO [(String, TestMeta)]
 loadTests yr cs = do
-  Cfg {..} <- configFile defConfPath
+  Cfg{..} <- configFile defConfPath
   _cdTests <$> challengeData _cfgSession yr cs
 
 -- | Unsafely create a 'ChallengeSpec' from a day number and part.
@@ -258,15 +259,16 @@ fromSol nm = do
   pure $
     TH.RecConE
       'RI
-      [ ('_riYear, TH.LitE (TH.IntegerL year)),
-        ( '_riSpec,
-          TH.RecConE
+      [ ('_riYear, TH.LitE (TH.IntegerL year))
+      ,
+        ( '_riSpec
+        , TH.RecConE
             'CS
-            [ ('_csDay, TH.unType $ liftDay d),
-              ('_csPart, TH.unType $ liftPart p)
+            [ ('_csDay, TH.unType $ liftDay d)
+            , ('_csPart, TH.unType $ liftPart p)
             ]
-        ),
-        ('_riSolution, ss)
+        )
+      , ('_riSolution, ss)
       ]
   where
     CS d p = solSpec nm

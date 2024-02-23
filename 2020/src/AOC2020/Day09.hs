@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 9.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day09
-  ( day09a,
-    day09b,
-  )
+module AOC2020.Day09 (
+  day09a,
+  day09b,
+)
 where
 
 import AOC.Common (firstJust, slidingWindows)
@@ -36,9 +36,9 @@ oddOneOut w = firstJust isBad . slidingWindows (w + 1)
 day09a :: [Int] :~> Int
 day09a =
   MkSol
-    { sParse = traverse readMaybe . lines,
-      sShow = show,
-      sSolve = oddOneOut (dyno_ "window" 25)
+    { sParse = traverse readMaybe . lines
+    , sShow = show
+    , sSolve = oddOneOut (dyno_ "window" 25)
     }
 
 findBounds :: V.Vector Int -> Int -> Maybe (Int, Int)
@@ -55,9 +55,9 @@ findBounds ns goal = go 0 1
 day09b :: [Int] :~> (Int, Int)
 day09b =
   MkSol
-    { sParse = traverse readMaybe . lines,
-      sShow = \(x, y) -> show (x + y),
-      sSolve = \ns -> do
+    { sParse = traverse readMaybe . lines
+    , sShow = \(x, y) -> show (x + y)
+    , sSolve = \ns -> do
         goal <- oddOneOut (dyno_ "window" 25) ns
         let cumsum = V.fromList (scanl' (+) 0 ns)
         (i, j) <- findBounds cumsum goal

@@ -4,11 +4,11 @@
 --
 -- Stability   : experimental
 -- Portability : non-portable
-module AOC2020.Day03
-  ( day03a,
-    day03b,
-    validCoord,
-  )
+module AOC2020.Day03 (
+  day03a,
+  day03b,
+  validCoord,
+)
 where
 
 import AOC.Common (countTrue)
@@ -43,23 +43,23 @@ countLine dx dy =
 day03a :: String :~> Int
 day03a =
   MkSol
-    { sParse = Just . filter (not . isSpace),
-      sShow = show,
-      sSolve = Just . countLine 3 1
+    { sParse = Just . filter (not . isSpace)
+    , sShow = show
+    , sSolve = Just . countLine 3 1
     }
 
 day03b :: String :~> Int
 day03b =
   MkSol
-    { sParse = Just . filter (not . isSpace),
-      sShow = show,
-      sSolve = \s ->
+    { sParse = Just . filter (not . isSpace)
+    , sShow = show
+    , sSolve = \s ->
         Just . product $
-          [ countLine 1 1,
-            countLine 3 1,
-            countLine 5 1,
-            countLine 7 1,
-            countLine 1 2
+          [ countLine 1 1
+          , countLine 3 1
+          , countLine 5 1
+          , countLine 7 1
+          , countLine 1 2
           ]
             <*> [s]
     }

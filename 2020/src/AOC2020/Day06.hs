@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 6.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day06
-  ( day06a,
-    day06b,
-  )
+module AOC2020.Day06 (
+  day06a,
+  day06b,
+)
 where
 
 import AOC.Solver ((:~>) (..))
@@ -38,9 +38,9 @@ day06With ::
   [[String]] :~> Int
 day06With f =
   MkSol
-    { sParse = Just . map lines . splitOn "\n\n",
-      sShow = show,
-      sSolve = Just . sum . mapMaybe (fmap (popCount . foldr1 f) . answers)
+    { sParse = Just . map lines . splitOn "\n\n"
+    , sShow = show
+    , sSolve = Just . sum . mapMaybe (fmap (popCount . foldr1 f) . answers)
     }
 
 day06a :: [[String]] :~> Int

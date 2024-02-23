@@ -6,14 +6,28 @@
 -- Portability : non-portable
 --
 -- Day 20.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day20
-  ( day20a,
-    day20b,
-  )
+module AOC2020.Day20 (
+  day20a,
+  day20b,
+)
 where
 
 import AOC.Common (mapMaybeSet)
-import AOC.Common.Point (D8 (..), Dir (..), FinPoint, Point, allD8, allDir, boundingBox, boundingBox', orientFin, orientPoint, parseAsciiSet, rotPoint, shiftToZero)
+import AOC.Common.Point (
+  D8 (..),
+  Dir (..),
+  FinPoint,
+  Point,
+  allD8,
+  allDir,
+  boundingBox,
+  boundingBox',
+  orientFin,
+  orientPoint,
+  parseAsciiSet,
+  rotPoint,
+  shiftToZero,
+ )
 import AOC.Solver ((:~>) (..))
 import Control.Lens hiding (uncons)
 import Control.Monad ((<=<))
@@ -85,8 +99,8 @@ assembleMap tileMap tiles0 =
       NEM.fromListWith
         (++)
         [ (edge, [placement])
-          | (_, tileEdges) <- NEIM.toList tiles0,
-            (edge, placement) <- NEM.toList tileEdges
+        | (_, tileEdges) <- NEIM.toList tiles0
+        , (edge, placement) <- NEM.toList tileEdges
         ]
     go ::
       Map Edge (Point, Dir) ->
@@ -130,8 +144,8 @@ assembleMap tileMap tiles0 =
       M.fromList $
         toList ds <&> \d ->
           ( (tileMap NEIM.! tileId)
-              `V.index` toFinite (o <> D8 d False),
-            (p0 + rotPoint d (V2 0 (-1)), d)
+              `V.index` toFinite (o <> D8 d False)
+          , (p0 + rotPoint d (V2 0 (-1)), d)
           )
 
 solve ::
@@ -150,30 +164,30 @@ solve ts = (mp, blitted)
 day20a :: IntMap (NESet (FinPoint 10)) :~> Int
 day20a =
   MkSol
-    { sParse = parseTiles,
-      sShow = show,
-      sSolve = \ts -> do
+    { sParse = parseTiles
+    , sShow = show
+    , sSolve = \ts -> do
         (mp, _) <- solve <$> NEIM.nonEmptyMap ts
         bb <- distribute <$> boundingBox' (M.keys mp)
         pure $
           product
             [ fst $ mp M.! p
-              | p <- traverse toList bb
+            | p <- traverse toList bb
             ]
     }
 
 day20b :: IntMap (NESet (FinPoint 10)) :~> Int
 day20b =
   MkSol
-    { sParse = parseTiles,
-      sShow = show,
-      sSolve = \ts -> do
+    { sParse = parseTiles
+    , sShow = show
+    , sSolve = \ts -> do
         (_, NES.IsNonEmpty blitted) <- solve <$> NEIM.nonEmptyMap ts
         listToMaybe
           [ res
-            | drgn <- toList dragons,
-              let res = S.size $ pokePattern (NES.toSet drgn) blitted,
-              res /= NES.size blitted
+          | drgn <- toList dragons
+          , let res = S.size $ pokePattern (NES.toSet drgn) blitted
+          , res /= NES.size blitted
           ]
     }
 
@@ -197,9 +211,9 @@ dragon :: NESet Point
 dragon =
   fromJust . NES.nonEmptySet . parseAsciiSet (== '#') $
     unlines
-      [ "                  # ",
-        "#    ##    ##    ###",
-        " #  #  #  #  #  #   "
+      [ "                  # "
+      , "#    ##    ##    ###"
+      , " #  #  #  #  #  #   "
       ]
 
 parseTiles :: String -> Maybe (IntMap (NESet (FinPoint 10)))

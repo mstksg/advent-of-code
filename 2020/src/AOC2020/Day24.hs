@@ -6,10 +6,10 @@
 -- Portability : non-portable
 --
 -- Day 24.  See "AOC.Solver" for the types used in this module!
-module AOC2020.Day24
-  ( day24a,
-    day24b,
-  )
+module AOC2020.Day24 (
+  day24a,
+  day24b,
+)
 where
 
 import AOC.Common (foldMapParChunk, (!!!))
@@ -30,12 +30,12 @@ import Math.Geometry.Grid.HexagonalInternal (HexDirection (..))
 neighbors :: Point -> Set Point
 neighbors (V2 x y) =
   S.fromDistinctAscList
-    [ V2 (x - 1) y,
-      V2 (x - 1) (y + 1),
-      V2 x (y - 1),
-      V2 x (y + 1),
-      V2 (x + 1) (y - 1),
-      V2 (x + 1) y
+    [ V2 (x - 1) y
+    , V2 (x - 1) (y + 1)
+    , V2 x (y - 1)
+    , V2 x (y + 1)
+    , V2 (x + 1) (y - 1)
+    , V2 (x + 1) y
     ]
 
 toDirs :: String -> Maybe [HexDirection]
@@ -80,17 +80,17 @@ initialize =
 day24a :: [[HexDirection]] :~> Int
 day24a =
   MkSol
-    { sParse = traverse toDirs . lines,
-      sShow = show,
-      sSolve = Just . S.size . initialize
+    { sParse = traverse toDirs . lines
+    , sShow = show
+    , sSolve = Just . S.size . initialize
     }
 
 day24b :: [[HexDirection]] :~> Int
 day24b =
   MkSol
-    { sParse = traverse toDirs . lines,
-      sShow = show,
-      sSolve = Just . S.size . (!!! 100) . iterate step . initialize
+    { sParse = traverse toDirs . lines
+    , sShow = show
+    , sSolve = Just . S.size . (!!! 100) . iterate step . initialize
     }
 
 step :: Set Point -> Set Point
