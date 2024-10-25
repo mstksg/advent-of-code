@@ -1,6 +1,5 @@
 column-limit: 100
 comma-style: leading
-fixities: []
 function-arrows: trailing
 haddock-style: single-line
 haddock-style-module: null
@@ -13,5 +12,6 @@ newlines-between-decls: 1
 record-break-space: true
 reexports: []
 respectful: true
-single-constraint-parens: always
+single-constraint-parens: never
 unicode: detect
+fixities: []
