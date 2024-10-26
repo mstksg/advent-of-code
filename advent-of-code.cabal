@@ -85,7 +85,7 @@ library aoc-core
       AOC.Util
       AOC.Util.DynoMap
   hs-source-dirs:
-      core/src
+      core
 
 common solver-extensions
   default-extensions:
@@ -177,7 +177,7 @@ library aoc-common
       AOC.Common.Search
       AOC.Prelude
   hs-source-dirs:
-      common/src
+      common
 
 common solver-deps
   build-depends:       base >=4.7 && <5
@@ -271,12 +271,12 @@ library aoc2020-lib
       AOC2020.Day24
       AOC2020.Day25
   hs-source-dirs:
-      2020/src
+      2020
 
 executable aoc2020
   import: executable-options
-  main-is: runner.hs
-  hs-source-dirs: 2020/app
+  main-is: aoc2020.hs
+  hs-source-dirs: app
   build-depends:
       base >=4.7 && <5
     , ansi-terminal
@@ -286,8 +286,8 @@ executable aoc2020
 test-suite aoc2020-test
   import: executable-options
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
-  hs-source-dirs: 2020/test
+  main-is: aoc2020-test.hs
+  hs-source-dirs: test
   build-depends:
       base >=4.7 && <5
     , ansi-terminal
@@ -297,8 +297,8 @@ test-suite aoc2020-test
 benchmark aoc2020-bench
   import: executable-options
   type: exitcode-stdio-1.0
-  main-is: Bench.hs
-  hs-source-dirs: 2020/bench
+  main-is: aoc2020-bench.hs
+  hs-source-dirs: bench
   build-depends:
       base >=4.7 && <5
     , ansi-terminal
@@ -339,12 +339,12 @@ library aoc2023-lib
       AOC2023.Day24
       AOC2023.Day25
   hs-source-dirs:
-      2023/src
+      2023
 
 executable aoc2023
   import: executable-options
-  main-is: runner.hs
-  hs-source-dirs: 2023/app
+  main-is: aoc2023.hs
+  hs-source-dirs: app
   build-depends:
       base >=4.7 && <5
     , ansi-terminal
@@ -354,8 +354,8 @@ executable aoc2023
 test-suite aoc2023-test
   import: executable-options
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
-  hs-source-dirs: 2023/test
+  main-is: aoc2023-test.hs
+  hs-source-dirs: test
   build-depends:
       base >=4.7 && <5
     , ansi-terminal
@@ -365,8 +365,8 @@ test-suite aoc2023-test
 benchmark aoc2023-bench
   import: executable-options
   type: exitcode-stdio-1.0
-  main-is: Bench.hs
-  hs-source-dirs: 2023/bench
+  main-is: aoc2023-bench.hs
+  hs-source-dirs: bench
   build-depends:
       base >=4.7 && <5
     , ansi-terminal
@@ -379,12 +379,12 @@ library aoc-site-lib
   import:              common-options
   build-depends:       base >=4.7 && <5
                      , hakyll
-  hs-source-dirs: site/src
+  hs-source-dirs: site
 
 executable aoc-site
   import: executable-options
-  main-is: site.hs
-  hs-source-dirs: site/app
+  main-is: aoc-site.hs
+  hs-source-dirs: app
   build-depends:
       base >=4.7 && <5
     , filepath
