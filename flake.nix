@@ -8,23 +8,34 @@
   outputs = { self, nixpkgs, flake-utils, haskellNix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        overlays = [ haskellNix.overlay ];
+        overlays = [
+          haskellNix.overlay
+          (final: prev:
+            {
+              advent-of-code = {
+                reflections = prev.callPackage ./reflections { };
+                project = prev.haskell-nix.project'
+                  {
+                    name = "advent-of-code";
+                    src = ./.;
+                    compiler-nix-name = "ghc982";
+                    shell = {
+                      withHoogle = false;
+                      buildInputs = [ format-haskell ];
+                      tools = {
+                        cabal = { };
+                        hlint = { };
+                        haskell-language-server = { };
+                        fourmolu = { };
+                      };
+                    };
+                  };
+              };
+            }
+          )
+        ];
         pkgs = import nixpkgs { inherit system overlays; inherit (haskellNix) config; };
-        advent-of-code-project = pkgs.haskell-nix.project' {
-          name = "advent-of-code";
-          src = ./.;
-          compiler-nix-name = "ghc982";
-          shell = {
-            withHoogle = false;
-            buildInputs = [ format-haskell ];
-            tools = {
-              cabal = { };
-              hlint = { };
-              haskell-language-server = { };
-              fourmolu = { };
-            };
-          };
-        };
+        advent-of-code-project = pkgs.advent-of-code.project;
         inherit (advent-of-code-project.hsPkgs) advent-of-code;
         format-haskell =
           pkgs.writeShellApplication {
@@ -41,7 +52,7 @@
         packages = advent-of-code.components.exes //
           { default = advent-of-code.components.exes.aoc2023; };
         devShells.default = advent-of-code-project.shell;
-        legacyPackages = pkgs // { inherit advent-of-code-project; };
+        legacyPackages = pkgs;
         apps = {
           format =
             pkgs.writeShellApplication {
