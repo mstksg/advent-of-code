@@ -66,6 +66,9 @@ let
           ''
             ${builtins.concatStringsSep " / " (lib.mapAttrsToList yearLink allDays)}
 
+            Table of Contents
+ .          -----------------
+
             ${lib.concatStrings (lib.mapAttrsToList tocLink daysOut)}
           ''
         ;
