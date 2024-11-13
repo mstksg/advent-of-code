@@ -6,7 +6,7 @@ Haskell for now, maybe other languages later.
 
 [Advent of Code]: https://adventofcode.com/
 
-Reflections are avilable on the wiki:
+Reflections are available on the wiki:
 
 *   [2020](https://github.com/mstksg/advent-of-code/wiki/Reflections-2020)
 *   [2023](https://github.com/mstksg/advent-of-code/wiki/Reflections-2023)

@@ -1,7 +1,12 @@
 { advent-of-code, writeText, lib, writeTextDir, symlinkJoin }:
 let
   github = "mstksg";
-  allDays = lib.recursiveUpdate advent-of-code.reflections advent-of-code.benchmarks;
+  allDays =
+    lib.filterAttrs
+      (_: ym: builtins.isAttrs ym && builtins.hasAttr "days" ym)
+      (
+        lib.recursiveUpdate advent-of-code.reflections advent-of-code.benchmarks
+      );
   renderedMap = builtins.mapAttrs
     (n: yearmap:
       let
@@ -46,30 +51,50 @@ let
               writeText "${n}-${d}-rendered.md" body
             )
             yearmap.days;
+        reflectionsHeader =
+          let
+            yearLink = n2: _: if n2 == n then year else
+            let y2 = lib.removePrefix "aoc" n2;
+            in "[${y2}](https://github.com/${github}/advent-of-code/wiki/Reflections-${y2})";
+            tocLink = d: _:
+              let dshort = lib.removePrefix "0" (lib.removePrefix "day" d);
+              in
+              ''
+                * [Day ${dshort}](https://github.com/${github}/advent-of-code/wiki/Reflections-${year}#day-${dshort})
+              '';
+          in
+          ''
+            ${builtins.concatStringsSep " / " (lib.mapAttrsToList yearLink allDays)}
+
+            ${lib.concatStrings (lib.mapAttrsToList tocLink daysOut)}
+          ''
+        ;
         reflections =
           writeTextDir "Reflections-${year}.md"
-            (builtins.concatStringsSep "\n\n" (lib.mapAttrsToList
-              (d:
-                dayout: builtins.readFile dayout)
-              daysOut));
+            ''
+              ${reflectionsHeader}
+              ${builtins.concatStringsSep "\n\n" (lib.mapAttrsToList (d: dayout: builtins.readFile dayout) daysOut)}
+            '';
       in
       { inherit reflections year; days = daysOut; }
     )
-    (lib.filterAttrs (_: ym: builtins.isAttrs ym && builtins.hasAttr "days" ym) allDays);
-  home = 
-    let mkLink = n: ym:
+    allDays;
+  home =
+    let
+      mkLink = n: ym:
+        ''
+          * [${ym.year}](https://github.com/${github}/advent-of-code/wiki/${lib.removeSuffix ".md" ym.reflections.name})
+        ''
+      ;
+    in
+    writeTextDir "Home.md"
       ''
-        * [${ym.year}](https://github.com/${github}/advent-of-code/wiki/${lib.removeSuffix ".md" ym.reflections.name})
-      ''
-      ; 
-    in writeTextDir "Home.md"
-    ''
-      Check out the reflections page for each year!
+        Check out the reflections page for each year!
       
-      ${lib.concatStrings (lib.mapAttrsToList mkLink renderedMap)}
-    ''
+        ${lib.concatStrings (lib.mapAttrsToList mkLink renderedMap)}
+      ''
 
-    ;
+  ;
   site = symlinkJoin {
     name = "advent-of-code-site";
     paths = [ home ] ++ lib.mapAttrsToList (_: y: y.reflections) renderedMap;
