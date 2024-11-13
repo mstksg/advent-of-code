@@ -1,4 +1,4 @@
-{ advent-of-code, runCommand, lib, writeShellApplication, jq }:
+{ advent-of-code, runCommand, lib, writeShellApplication, jq, ansifilter }:
 let
   benchmarkMap =
     builtins.mapAttrs
@@ -7,7 +7,7 @@ let
           year = builtins.substring 3 4 n;
           generate-benches = writeShellApplication {
             name = "generate-benches";
-            runtimeInputs = [ exe jq ];
+            runtimeInputs = [ exe jq ansifilter ];
             text = ''
               DIR="''${1:-./bench-results}"
               mkdir -p "$DIR/${year}"
@@ -19,13 +19,13 @@ let
                   echo "Generating benchmark for $OUTFILE ..."
                   TEMPFILE=$(mktemp)
                   ${lib.getExe exe} bench "$DAY" | tee "$TEMPFILE"
-                  cat "$TEMPFILE" > "$OUTFILE"
+                  ansifilter "$TEMPFILE" > "$OUTFILE"
                 fi
               done
             '';
           };
         in
-        generate-benches
+        { inherit generate-benches; }
       )
       advent-of-code.project.hsPkgs.advent-of-code.components.exes;
 in

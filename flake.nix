@@ -54,18 +54,31 @@
           { default = advent-of-code.components.exes.aoc2023; };
         devShells.default = advent-of-code-project.shell;
         legacyPackages = pkgs;
-        apps = {
-          format =
-            pkgs.writeShellApplication {
-              name = "format-haskell";
-              runtimeInputs = [ (advent-of-code-project.tool "fourmolu" { }) pkgs.haskellPackages.cabal-fmt ];
-              text = ''
-                # shellcheck disable=SC2046
-                fourmolu --mode inplace $(git ls-files '**.hs')
-                cabal-fmt -i advent-of-code.cabal
-              '';
-            };
-        };
+        apps =
+          (pkgs.lib.concatMapAttrs
+            (n: bs: {
+              "generate-benches-${n}" = {
+                type = "app";
+                program = pkgs.lib.getExe bs.generate-benches;
+              };
+            })
+            pkgs.advent-of-code.benchmarks)
+          //
+          {
+            format =
+              let
+                app = pkgs.writeShellApplication {
+                  name = "format-haskell";
+                  runtimeInputs = [ (advent-of-code-project.tool "fourmolu" { }) pkgs.haskellPackages.cabal-fmt ];
+                  text = ''
+                    # shellcheck disable=SC2046
+                    fourmolu --mode inplace $(git ls-files '**.hs')
+                    cabal-fmt -i advent-of-code.cabal
+                  '';
+                };
+              in
+              { type = "app"; program = pkgs.lib.getExe app; };
+          };
       }
     );
 }
