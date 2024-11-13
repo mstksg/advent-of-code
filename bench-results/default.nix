@@ -1,4 +1,4 @@
-{ advent-of-code, runCommand, lib, writeShellApplication, jq, ansifilter }:
+{ advent-of-code, runCommand, lib, writeShellApplication, jq, ansifilter, writeText }:
 let
   benchmarkMap =
     builtins.mapAttrs
@@ -25,7 +25,21 @@ let
             '';
           };
         in
-        { inherit generate-benches; }
+        {
+          inherit generate-benches;
+          days = builtins.listToAttrs
+            (builtins.map
+              (fp:
+                let day = lib.removeSuffix ".txt" (builtins.baseNameOf fp);
+                in {
+                  name = day;
+                  value = {
+                    benchmark = writeText "${n}-${day}-bench.txt" (builtins.readFile fp);
+                  };
+                }
+              )
+              (lib.filesystem.listFilesRecursive (./. + "/${year}")));
+        }
       )
       advent-of-code.project.hsPkgs.advent-of-code.components.exes;
 in

@@ -1,4 +1,4 @@
-{ lib, writeText }:
+{ lib, writeText, advent-of-code }:
 let
   reflectionMap = builtins.foldl' (x: y: lib.recursiveUpdate x y) { }
     (builtins.map
