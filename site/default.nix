@@ -2,7 +2,6 @@
 let
   github = "mstksg";
   allDays = lib.recursiveUpdate advent-of-code.reflections advent-of-code.benchmarks;
-  allYears = builtins.filter (y: builtins.match "^[0-9]{4}$" y != null) (builtins.map (builtins.substring 3 4) (builtins.attrNames allDays));
   renderedMap = builtins.mapAttrs
     (n: yearmap:
       let
@@ -57,9 +56,23 @@ let
       { inherit reflections; days = daysOut; }
     )
     (lib.filterAttrs (_: ym: builtins.isAttrs ym && builtins.hasAttr "days" ym) allDays);
+  home = 
+    let mkLink = ym:
+      ''
+        * <https://github.com/${github}/advent-of-code/wiki/${lib.removeSuffix ".md" ym.reflections.name}>
+      ''
+      ; 
+    in writeTextDir "Home.md"
+    ''
+      Check out the reflections page for each year!
+      
+      ${builtins.concatStringsSep "\n" (lib.mapAttrsToList (_: mkLink) renderedMap)}
+    ''
+
+    ;
   site = symlinkJoin {
     name = "advent-of-code-site";
-    paths = [ ./static ] ++ lib.mapAttrsToList (_: y: y.reflections) renderedMap;
+    paths = [ home ] ++ lib.mapAttrsToList (_: y: y.reflections) renderedMap;
   };
 in
 { inherit renderedMap site; }
