@@ -35,10 +35,11 @@ let
                     `./reflections/${year}/day${daylong}.md`.  If you want to edit this, edit that file instead!
                     -->
 
-                    *[Prompt][d${daylong}p]* / *[Code][d${daylong}g]*
+                    *[Prompt][d${daylong}p]* / *[Code][d${daylong}g]* / *[Standalone][d${daylong}s]*
 
                     [d${daylong}p]: https://adventofcode.com/${year}/day/${dayshort}
                     [d${daylong}g]: https://github.com/${github}/advent-of-code/blob/master/${year}/AOC${year}/Day${daylong}.hs
+                    [d${daylong}s]: https://github.com/mstksg/advent-of-code/blob/main/reflections/${year}/day${daylong}.md
 
                     ${lib.optionalString
                         (builtins.hasAttr "reflection" daymap)
