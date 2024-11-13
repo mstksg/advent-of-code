@@ -66,7 +66,7 @@ let
     ''
       Check out the reflections page for each year!
       
-      ${builtins.concatStringsSep "\n" (lib.mapAttrsToList (_: mkLink) renderedMap)}
+      ${lib.concatStrings (lib.mapAttrsToList (_: mkLink) renderedMap)}
     ''
 
     ;
