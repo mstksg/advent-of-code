@@ -34,7 +34,7 @@ let
                     *[Prompt][d${daylong}p]* / *[Code][d${daylong}g]*
 
                     [d${daylong}p]: https://adventofcode.com/${year}/day/${dayshort}
-                    [d${daylong}g]: https://github.com/${github}/advent-of-code/blob/master/${year}/AOC${daylong}/Day${daylong}.hs
+                    [d${daylong}g]: https://github.com/${github}/advent-of-code/blob/master/${year}/AOC${year}/Day${daylong}.hs
 
                     ${lib.optionalString
                         (builtins.hasAttr "reflection" daymap)
