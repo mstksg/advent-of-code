@@ -1,0 +1,19 @@
+>> Day 21a
+benchmarking...
+time                 202.2 μs   (201.8 μs .. 202.4 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 199.8 μs   (198.9 μs .. 200.4 μs)
+std dev              2.637 μs   (2.122 μs .. 3.172 μs)
+
+* parsing and formatting times excluded
+
+>> Day 21b
+benchmarking...
+time                 114.5 μs   (113.7 μs .. 114.9 μs)
+                     0.999 R²   (0.999 R² .. 1.000 R²)
+mean                 110.8 μs   (109.9 μs .. 111.7 μs)
+std dev              3.248 μs   (2.926 μs .. 3.554 μs)
+variance introduced by outliers: 27% (moderately inflated)
+
+* parsing and formatting times excluded
+

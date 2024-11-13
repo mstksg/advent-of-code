@@ -1,0 +1,19 @@
+>> Day 16a
+benchmarking...
+time                 602.5 μs   (601.9 μs .. 603.2 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 600.7 μs   (600.1 μs .. 601.4 μs)
+std dev              2.309 μs   (1.614 μs .. 3.329 μs)
+
+* parsing and formatting times excluded
+
+>> Day 16b
+benchmarking...
+time                 653.1 μs   (632.8 μs .. 688.4 μs)
+                     0.991 R²   (0.981 R² .. 1.000 R²)
+mean                 622.3 μs   (616.6 μs .. 637.1 μs)
+std dev              29.84 μs   (11.71 μs .. 54.55 μs)
+variance introduced by outliers: 41% (moderately inflated)
+
+* parsing and formatting times excluded
+

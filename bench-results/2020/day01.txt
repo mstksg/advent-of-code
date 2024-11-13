@@ -1,0 +1,18 @@
+>> Day 01a
+benchmarking...
+time                 4.166 μs   (4.158 μs .. 4.177 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 4.164 μs   (4.158 μs .. 4.170 μs)
+std dev              21.00 ns   (16.85 ns .. 24.70 ns)
+
+* parsing and formatting times excluded
+
+>> Day 01b
+benchmarking...
+time                 29.82 μs   (29.77 μs .. 29.88 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 29.85 μs   (29.82 μs .. 29.89 μs)
+std dev              119.1 ns   (99.73 ns .. 149.0 ns)
+
+* parsing and formatting times excluded
+

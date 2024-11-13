@@ -1,0 +1,18 @@
+>> Day 22a
+benchmarking...
+time                 157.9 μs   (157.5 μs .. 158.1 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 156.9 μs   (156.6 μs .. 157.2 μs)
+std dev              1.145 μs   (976.9 ns .. 1.335 μs)
+
+* parsing and formatting times excluded
+
+>> Day 22b
+benchmarking...
+time                 4.760 ms   (4.745 ms .. 4.776 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 4.770 ms   (4.758 ms .. 4.783 ms)
+std dev              42.70 μs   (34.82 μs .. 55.29 μs)
+
+* parsing and formatting times excluded
+

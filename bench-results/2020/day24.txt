@@ -1,0 +1,15 @@
+>> Day 24a
+benchmarking...
+time                 789.7 μs   (788.4 μs .. 792.4 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 790.1 μs   (788.9 μs .. 791.7 μs)
+std dev              4.920 μs   (3.912 μs .. 6.493 μs)
+
+>> Day 24b
+benchmarking...
+time                 159.4 ms   (157.8 ms .. 162.2 ms)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 158.6 ms   (157.9 ms .. 159.9 ms)
+std dev              1.396 ms   (715.9 μs .. 2.219 ms)
+variance introduced by outliers: 12% (moderately inflated)
+

@@ -205,13 +205,13 @@ mainRun CB{..} Cfg{..} MRO{..} = do
     case inp1 of
       Right inp
         | _mroBench -> do
-            _ <- evaluate (force inp)
+            inp' <- stripNewline <$> evaluate (force inp)
             let res = (testRes, Left ["Ran benchmark, so no result"])
             res <$ case c of
               MkSomeSolWH _ ->
-                benchmark (nf (runSomeSolution c) inp)
+                benchmark (nf (runSomeSolution c) inp')
               MkSomeSolNF MkSol{..}
-                | Just x <- sParse inp -> do
+                | Just x <- sParse inp' -> do
                     _ <- evaluate (force x)
                     benchmark (nf (let ?dyno = mempty in sSolve) x)
                     putStrLn "* parsing and formatting times excluded"

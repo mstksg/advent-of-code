@@ -1,0 +1,20 @@
+>> Day 17a
+benchmarking...
+time                 1.157 ms   (1.145 ms .. 1.184 ms)
+                     0.996 R²   (0.991 R² .. 1.000 R²)
+mean                 1.160 ms   (1.150 ms .. 1.193 ms)
+std dev              59.47 μs   (6.700 μs .. 117.2 μs)
+variance introduced by outliers: 40% (moderately inflated)
+
+* parsing and formatting times excluded
+
+>> Day 17b
+benchmarking...
+time                 1.984 ms   (1.946 ms .. 2.016 ms)
+                     0.998 R²   (0.995 R² .. 0.999 R²)
+mean                 2.004 ms   (1.970 ms .. 2.086 ms)
+std dev              167.7 μs   (42.52 μs .. 324.8 μs)
+variance introduced by outliers: 60% (severely inflated)
+
+* parsing and formatting times excluded
+
