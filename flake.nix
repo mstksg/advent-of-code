@@ -52,7 +52,10 @@
       in
       {
         packages = advent-of-code.components.exes //
-          { default = advent-of-code.components.exes.aoc2023; };
+          {
+            inherit (pkgs.advent-of-code.site) site;
+            default = advent-of-code.components.exes.aoc2023;
+          };
         devShells.default = advent-of-code-project.shell;
         legacyPackages = pkgs;
         apps =

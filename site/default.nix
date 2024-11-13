@@ -1,4 +1,4 @@
-{ advent-of-code, writeText, lib }:
+{ advent-of-code, writeText, lib, writeTextDir, symlinkJoin }:
 let
   github = "mstksg";
   allDays = lib.recursiveUpdate advent-of-code.reflections advent-of-code.benchmarks;
@@ -49,18 +49,23 @@ let
             )
             yearmap.days;
         reflections =
-          writeText "${n}-reflections.md"
-          ''
-            Reflections
-            ===========
+          writeTextDir "Reflections-${year}.md"
+            ''
+              Reflections
+              ===========
 
-            ${builtins.concatStringsSep " / " allYears}
+              ${builtins.concatStringsSep " / " allYears}
 
-            ${builtins.concatStringsSep "\n\n" (lib.mapAttrsToList (d: dayout: builtins.readFile dayout) daysOut)}
-          '';
+              ${builtins.concatStringsSep "\n\n" (lib.mapAttrsToList (d: dayout: builtins.readFile dayout) daysOut)}
+            '';
       in
       { inherit reflections; days = daysOut; }
     )
-    allDays;
+    # allDays;
+    (lib.filterAttrs (_: ym: builtins.isAttrs ym && builtins.hasAttr "days" ym) allDays);
+  site = symlinkJoin {
+    name = "advent-of-code-site";
+    paths = [ ./static ] ++ lib.mapAttrsToList (_: y: y.reflections) renderedMap;
+  };
 in
-renderedMap
+{ inherit renderedMap site; }
