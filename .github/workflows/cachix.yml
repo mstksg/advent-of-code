@@ -12,9 +12,61 @@ jobs:
     - uses: cachix/install-nix-action@v22
       with:
         nix_path: nixpkgs=channel:nixos-unstable
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+        extra_nix_config: |
+          trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= loony-tools:pr9m4BkM/5/eSTZlkQyRt57Jz7OMBxNSUiMC4FkcNfk=
+          allow-import-from-derivation = true
+          auto-optimise-store = true
+          substituters = https://hydra.iohk.io https://cache.nixos.org/ https://cache.iog.io https://cache.zw3rk.com https://mstksg.cachix.org
     - uses: cachix/cachix-action@v13
       with:
         name: mstksg
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - run: nix build
     - run: nix develop . --command bash -c "echo OK"
+
+  build-site:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: cachix/install-nix-action@v22
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+        extra_nix_config: |
+          trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= loony-tools:pr9m4BkM/5/eSTZlkQyRt57Jz7OMBxNSUiMC4FkcNfk=
+          allow-import-from-derivation = true
+          auto-optimise-store = true
+          substituters = https://hydra.iohk.io https://cache.nixos.org/ https://cache.iog.io https://cache.zw3rk.com https://mstksg.cachix.org
+    - uses: cachix/cachix-action@v13
+      with:
+        name: mstksg
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - run: nix build .#site
+    - name: Artifact pages
+      uses: actions/upload-artifact@v4.0.0
+      with:
+        name: pages
+        path: result
+
+  deploy-site:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [build-site]
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4.1.0
+        with:
+          name: pages
+          path: result
+
+      - name: Deploy to GitHub Pages
+        if: success()
+        uses: crazy-max/ghaction-github-pages@v4.0.0
+        with:
+          build_dir: result
+          target_branch: main
+          repo: mstksg/advent-of-code.wiki
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
