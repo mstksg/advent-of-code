@@ -5,12 +5,12 @@ let
   renderedMap = builtins.mapAttrs
     (n: yearmap:
       let
-        year = builtins.substring 3 4 n;
+        year = lib.removePrefix "aoc" n;
         daysOut =
           builtins.mapAttrs
             (d: daymap:
               let
-                daylong = builtins.substring 3 2 d;
+                daylong = lib.removePrefix "day" d;
                 dayshort = lib.removePrefix "0" daylong;
                 benchString =
                   ''
@@ -53,20 +53,20 @@ let
                 dayout: builtins.readFile dayout)
               daysOut));
       in
-      { inherit reflections; days = daysOut; }
+      { inherit reflections year; days = daysOut; }
     )
     (lib.filterAttrs (_: ym: builtins.isAttrs ym && builtins.hasAttr "days" ym) allDays);
   home = 
-    let mkLink = ym:
+    let mkLink = n: ym:
       ''
-        * <https://github.com/${github}/advent-of-code/wiki/${lib.removeSuffix ".md" ym.reflections.name}>
+        * [${ym.year}](https://github.com/${github}/advent-of-code/wiki/${lib.removeSuffix ".md" ym.reflections.name})
       ''
       ; 
     in writeTextDir "Home.md"
     ''
       Check out the reflections page for each year!
       
-      ${lib.concatStrings (lib.mapAttrsToList (_: mkLink) renderedMap)}
+      ${lib.concatStrings (lib.mapAttrsToList mkLink renderedMap)}
     ''
 
     ;

@@ -4,7 +4,7 @@ let
     builtins.mapAttrs
       (n: exe:
         let
-          year = builtins.substring 3 4 n;
+          year = lib.removePrefix "aoc" n;
           generate-benches = writeShellApplication {
             name = "generate-benches-${n}";
             runtimeInputs = [ exe jq ansifilter ];
