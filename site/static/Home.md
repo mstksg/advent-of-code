@@ -1,6 +1,3 @@
-Advent Of Code
-==============
-
 This is my super-repository of Advent of Code -- sources and in-depth
 reflections for all of my solutions!
 

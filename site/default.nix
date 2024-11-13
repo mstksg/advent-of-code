@@ -31,11 +31,10 @@ let
                     `./reflections/${year}/day${daylong}.md`.  If you want to edit this, edit that file instead!
                     -->
 
-                    *[Prompt][d${daylong}p]* / *[Code][d${daylong}g]* / *[Rendered][d${daylong}h]*
+                    *[Prompt][d${daylong}p]* / *[Code][d${daylong}g]*
 
                     [d${daylong}p]: https://adventofcode.com/${year}/day/${dayshort}
-                    [d${daylong}g]: https://github.com/${github}/advent-of-code/blob/master/${year}/AOC/Challenge/Day${daylong}.hs
-                    [d${daylong}h]: https://${github}.github.io/advent-of-code/${year}/AOC.Challenge.Day${daylong}.html
+                    [d${daylong}g]: https://github.com/${github}/advent-of-code/blob/master/${year}/AOC${daylong}/Day${daylong}.hs
 
                     ${lib.optionalString
                         (builtins.hasAttr "reflection" daymap)
@@ -50,18 +49,13 @@ let
             yearmap.days;
         reflections =
           writeTextDir "Reflections-${year}.md"
-            ''
-              Reflections
-              ===========
-
-              ${builtins.concatStringsSep " / " allYears}
-
-              ${builtins.concatStringsSep "\n\n" (lib.mapAttrsToList (d: dayout: builtins.readFile dayout) daysOut)}
-            '';
+            (builtins.concatStringsSep "\n\n" (lib.mapAttrsToList
+              (d:
+                dayout: builtins.readFile dayout)
+              daysOut));
       in
       { inherit reflections; days = daysOut; }
     )
-    # allDays;
     (lib.filterAttrs (_: ym: builtins.isAttrs ym && builtins.hasAttr "days" ym) allDays);
   site = symlinkJoin {
     name = "advent-of-code-site";
