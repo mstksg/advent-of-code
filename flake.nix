@@ -15,6 +15,7 @@
               advent-of-code = {
                 reflections = prev.callPackage ./reflections { };
                 benchmarks = prev.callPackage ./bench-results { };
+                site = prev.callPackage ./site { };
                 project = prev.haskell-nix.project'
                   {
                     name = "advent-of-code";
