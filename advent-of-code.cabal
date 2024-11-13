@@ -372,20 +372,3 @@ benchmark aoc2023-bench
     , ansi-terminal
     , aoc2023-lib
     , aoc-core
-
--- site
-
-library aoc-site-lib
-  import:              common-options
-  build-depends:       base >=4.7 && <5
-                     , hakyll
-  hs-source-dirs: site
-
-executable aoc-site
-  import: executable-options
-  main-is: aoc-site.hs
-  hs-source-dirs: app
-  build-depends:
-      base >=4.7 && <5
-    , filepath
-    , hakyll

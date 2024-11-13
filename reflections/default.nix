@@ -10,8 +10,8 @@ let
         in
         lib.optionalAttrs (lib.hasSuffix ".md" path)
           {
-            ${year}.days = {
-              ${day}.source = writeText "${year}-${day}.md" (builtins.readFile fp);
+            "aoc${year}".days = {
+              ${day}.reflection = writeText "aoc${year}-${day}.md" (builtins.readFile fp);
             };
           }
       )

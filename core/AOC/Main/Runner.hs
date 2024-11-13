@@ -8,6 +8,7 @@ module AOC.Main.Runner (mainFor) where
 
 import AOC.Discover
 import AOC.Run
+import Control.Monad.IO.Class
 import AOC.Run.Config
 import AOC.Util
 import Advent.Types
@@ -32,6 +33,7 @@ data Mode
   = MRun MainRunOpts
   | MView MainViewOpts
   | MSubmit MainSubmitOpts
+  | MList
 
 data Opts = O
   { _oMode :: !Mode
@@ -57,6 +59,7 @@ mainFor cb@CB{..} = do
     MRun mro -> void $ mainRun cb cfg mro
     MView mvo -> void $ mainView cb cfg mvo
     MSubmit mso -> void $ mainSubmit cb cfg mso
+    MList -> liftIO . putStrLn $ concat ["[", availableDays, "]"]
   forOf_ _Left out $ \e -> do
     withColor ANSI.Vivid ANSI.Red $
       putStrLn "[ERROR]"
@@ -155,6 +158,8 @@ parseOpts inputCache = do
           info (MRun <$> parseBench <**> helper) (progDesc "Alias for run --bench")
       , command "countdown" $
           info (MView <$> parseCountdown <**> helper) (progDesc "Alias for view --countdown")
+      , command "list" $
+          info (pure MList) (progDesc "Show available days")
       ]
   pure O{..}
   where
