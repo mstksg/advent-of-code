@@ -6,10 +6,10 @@ Haskell for now, maybe other languages later.
 
 [Advent of Code]: https://adventofcode.com/
 
-Reflections are available on the wiki:
+Reflections and detailed solutions are available on the wiki:
 
-*   [2020](https://github.com/mstksg/advent-of-code/wiki/Reflections-2020)
-*   [2023](https://github.com/mstksg/advent-of-code/wiki/Reflections-2023)
+*   [2020 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2020)
+*   [2023 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2023)
 
 Old Repos
 ---------
