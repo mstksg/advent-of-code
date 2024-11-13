@@ -70,5 +70,6 @@ jobs:
           build_dir: result
           target_branch: master
           repo: mstksg/advent-of-code.wiki
+          keep_history: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
