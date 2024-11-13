@@ -6,7 +6,7 @@ let
         let
           year = builtins.substring 3 4 n;
           generate-benches = writeShellApplication {
-            name = "generate-benches";
+            name = "generate-benches-${n}";
             runtimeInputs = [ exe jq ansifilter ];
             text = ''
               DIR="''${1:-./bench-results}"
