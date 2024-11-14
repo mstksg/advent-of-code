@@ -384,6 +384,74 @@ benchmark aoc2021-bench
     , aoc2021-lib
     , base           >=4.7 && <5
 
+-- 2022
+
+library aoc2022-lib
+  import:          common-options
+  import:          solver-extensions
+  import:          solver-deps
+  exposed-modules:
+    AOC2022
+    AOC2022.Day01
+    AOC2022.Day02
+    AOC2022.Day03
+    AOC2022.Day04
+    AOC2022.Day05
+    AOC2022.Day06
+    AOC2022.Day07
+    AOC2022.Day08
+    AOC2022.Day09
+    AOC2022.Day10
+    AOC2022.Day11
+    AOC2022.Day12
+    AOC2022.Day13
+    AOC2022.Day14
+    AOC2022.Day15
+    AOC2022.Day16
+    AOC2022.Day17
+    AOC2022.Day18
+    AOC2022.Day19
+    AOC2022.Day20
+    AOC2022.Day21
+    AOC2022.Day22
+    AOC2022.Day23
+    AOC2022.Day24
+    AOC2022.Day25
+
+  hs-source-dirs:  2022
+
+executable aoc2022
+  import:         executable-options
+  main-is:        aoc2022.hs
+  hs-source-dirs: app
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2022-lib
+    , base           >=4.7 && <5
+
+test-suite aoc2022-test
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2022-test.hs
+  hs-source-dirs: test
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2022-lib
+    , base           >=4.7 && <5
+
+benchmark aoc2022-bench
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2022-bench.hs
+  hs-source-dirs: bench
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2022-lib
+    , base           >=4.7 && <5
+
 -- 2023
 
 library aoc2023-lib
