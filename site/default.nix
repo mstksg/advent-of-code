@@ -64,8 +64,7 @@ let
                     else " (benchmark only)";
               in
               ''
-                * [Day
-                ${dshort}](https://github.com/${github}/advent-of-code/wiki/Reflections-${year}#day-${dshort})${caveat}
+                * [Day ${dshort}](https://github.com/${github}/advent-of-code/wiki/Reflections-${year}#day-${dshort})${caveat}
               '';
           in
           ''
@@ -74,7 +73,7 @@ let
             Table of Contents
             -----------------
 
-            ${lib.concatStrings (lib.mapAttrsToList tocLink allDays)}
+            ${lib.concatStrings (lib.mapAttrsToList tocLink yearmap.days)}
           ''
         ;
         reflections =
