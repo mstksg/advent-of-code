@@ -9,6 +9,7 @@ Haskell for now, maybe other languages later.
 Reflections and detailed solutions are available on the wiki:
 
 *   [2020 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2020)
+*   [2021 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2021)
 *   [2023 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2023)
 
 Old Repos
@@ -19,6 +20,6 @@ Old Repos
 * [2018](https://github.com/mstksg/advent-of-code-2018)
 * [2019](https://github.com/mstksg/advent-of-code-2019)
 * [2020](https://github.com/mstksg/advent-of-code-2020) (Fully migrated)
-* [2021](https://github.com/mstksg/advent-of-code-2021)
+* [2021](https://github.com/mstksg/advent-of-code-2021) (Fully migrated)
 * [2022](https://github.com/mstksg/advent-of-code-2022)
 * [2023](https://github.com/mstksg/advent-of-code-2023) (Fully migrated)
