@@ -57,11 +57,15 @@ let
             yearLink = n2: _: if n2 == n then year else
             let y2 = lib.removePrefix "aoc" n2;
             in "[${y2}](https://github.com/${github}/advent-of-code/wiki/Reflections-${y2})";
-            tocLink = d: _:
+            tocLink = d: dm:
               let dshort = lib.removePrefix "0" (lib.removePrefix "day" d);
+                  caveat = if builtins.hasAttr "reflection" dm
+                    then ""
+                    else " (benchmark only)";
               in
               ''
-                * [Day ${dshort}](https://github.com/${github}/advent-of-code/wiki/Reflections-${year}#day-${dshort})
+                * [Day
+                ${dshort}](https://github.com/${github}/advent-of-code/wiki/Reflections-${year}#day-${dshort})${caveat}
               '';
           in
           ''
