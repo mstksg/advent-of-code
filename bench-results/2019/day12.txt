@@ -1,0 +1,14 @@
+>> Day 12a
+benchmarking...
+time                 180.0 μs   (179.6 μs .. 180.4 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 180.2 μs   (180.0 μs .. 180.4 μs)
+std dev              748.6 ns   (602.4 ns .. 1.039 μs)
+
+>> Day 12b
+benchmarking...
+time                 10.48 ms   (10.44 ms .. 10.52 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 10.49 ms   (10.47 ms .. 10.51 ms)
+std dev              60.03 μs   (44.43 μs .. 84.98 μs)
+

@@ -8,3 +8,5 @@ variance introduced by outliers: 19% (moderately inflated)
 
 * parsing and formatting times excluded
 
+>> Day 16a
+<< not benchmarked >>

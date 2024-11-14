@@ -1,0 +1,19 @@
+>> Day 13a
+benchmarking...
+time                 34.95 ms   (34.82 ms .. 35.03 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 35.09 ms   (35.02 ms .. 35.20 ms)
+std dev              189.6 μs   (124.8 μs .. 278.2 μs)
+
+* parsing and formatting times excluded
+
+>> Day 13b
+benchmarking...
+time                 1.892 s    (1.879 s .. 1.900 s)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 1.886 s    (1.882 s .. 1.889 s)
+std dev              3.505 ms   (1.773 ms .. 4.504 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
+* parsing and formatting times excluded
+

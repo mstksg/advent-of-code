@@ -1,0 +1,20 @@
+>> Day 15a
+benchmarking...
+time                 141.5 ms   (140.1 ms .. 144.8 ms)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 141.1 ms   (140.0 ms .. 142.0 ms)
+std dev              1.407 ms   (1.038 ms .. 1.882 ms)
+variance introduced by outliers: 12% (moderately inflated)
+
+* parsing and formatting times excluded
+
+>> Day 15b
+benchmarking...
+time                 519.2 ms   (509.2 ms .. 526.5 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 523.5 ms   (520.6 ms .. 528.4 ms)
+std dev              4.804 ms   (394.1 μs .. 6.164 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
+* parsing and formatting times excluded
+
