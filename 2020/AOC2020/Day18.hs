@@ -52,7 +52,7 @@ exprSyntax2 =
     , sPar = P.between "(" ")"
     }
 
-parseSyntax :: forall f a. (MonadPlus f) => Syntax f a -> f a
+parseSyntax :: forall f a. MonadPlus f => Syntax f a -> f a
 parseSyntax Syntax{..} = parseTopLevel
   where
     parseTopLevel :: f a

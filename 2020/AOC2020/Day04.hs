@@ -64,11 +64,11 @@ instance B.TraversableB Passport
 
 instance B.ConstraintsB Passport
 
-deriving stock instance (B.AllBF Show f Passport) => Show (Passport f)
+deriving stock instance B.AllBF Show f Passport => Show (Passport f)
 
-deriving via GMonoid (Passport f) instance (B.AllBF Semigroup f Passport) => Semigroup (Passport f)
+deriving via GMonoid (Passport f) instance B.AllBF Semigroup f Passport => Semigroup (Passport f)
 
-deriving via GMonoid (Passport f) instance (B.AllBF Monoid f Passport) => Monoid (Passport f)
+deriving via GMonoid (Passport f) instance B.AllBF Monoid f Passport => Monoid (Passport f)
 
 newtype Parser a = Parser {runParser :: String -> Maybe a}
 

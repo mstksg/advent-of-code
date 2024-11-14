@@ -46,7 +46,7 @@ opMap = M.fromList $ zip "<=>" [LT, EQ, GT]
 data Result a = Reject | Accept | Defer a
   deriving stock (Eq, Ord, Show, Generic, Functor)
 
-instance (NFData a) => NFData (Result a)
+instance NFData a => NFData (Result a)
 
 result :: b -> b -> (a -> b) -> Result a -> b
 result r a d = \case
@@ -62,7 +62,7 @@ data Rule a = Rule
   }
   deriving stock (Eq, Ord, Show, Generic, Functor)
 
-instance (NFData a) => NFData (Rule a)
+instance NFData a => NFData (Rule a)
 
 data Workflow a = Workflow
   { wfRules :: [Rule a]
@@ -70,7 +70,7 @@ data Workflow a = Workflow
   }
   deriving stock (Eq, Ord, Show, Generic, Functor)
 
-instance (NFData a) => NFData (Workflow a)
+instance NFData a => NFData (Workflow a)
 
 chunky :: String -> (String, [Either String (XMAS, Ordering, Int, Maybe String)])
 chunky str = (inp, map go chunks)

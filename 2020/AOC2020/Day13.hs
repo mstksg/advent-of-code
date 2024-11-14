@@ -23,7 +23,7 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PL
 
-parseTrains :: (Num a) => CharParser [Maybe a]
+parseTrains :: Num a => CharParser [Maybe a]
 parseTrains =
   (Nothing <$ P.char 'x' <|> Just <$> PL.decimal)
     `P.sepBy` P.char ','

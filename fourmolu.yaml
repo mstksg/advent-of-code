@@ -12,6 +12,6 @@ newlines-between-decls: 1
 record-break-space: true
 reexports: []
 respectful: true
-single-constraint-parens: never
+single-constraint-parens: auto
 unicode: detect
 fixities: []

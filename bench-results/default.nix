@@ -41,6 +41,8 @@ let
               (lib.filesystem.listFilesRecursive (./. + "/${year}")));
         }
       )
-      advent-of-code.project.hsPkgs.advent-of-code.components.exes;
+      (lib.filterAttrs
+        (n: exe: builtins.pathExists (./. + "${lib.removePrefix "aoc" n}"))
+        advent-of-code.project.hsPkgs.advent-of-code.components.exes);
 in
 benchmarkMap

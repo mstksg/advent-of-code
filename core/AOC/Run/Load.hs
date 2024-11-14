@@ -253,7 +253,7 @@ showNominalDiffTime (round @Double @Int . realToFrac -> rawSecs) =
 
 -- | Run a countdown on the console.
 countdownConsole ::
-  (MonadIO m) =>
+  MonadIO m =>
   -- | year of challenge
   Integer ->
   -- | day to count down to
@@ -269,7 +269,7 @@ countdownConsole yr d = countdownWith yr d 250000 $ \ttr -> liftIO $ do
 
 -- | Run a countdown with a given callback on each tick.
 countdownWith ::
-  (MonadIO m) =>
+  MonadIO m =>
   -- | year of challenge
   Integer ->
   -- | day to count down to

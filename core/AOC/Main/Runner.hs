@@ -8,7 +8,6 @@ module AOC.Main.Runner (mainFor) where
 
 import AOC.Discover
 import AOC.Run
-import Control.Monad.IO.Class
 import AOC.Run.Config
 import AOC.Util
 import Advent.Types
@@ -17,6 +16,7 @@ import Control.DeepSeq
 import Control.Exception
 import Control.Monad
 import Control.Monad.Except
+import Control.Monad.IO.Class
 import Data.Char
 import Data.IORef
 import qualified Data.List as L

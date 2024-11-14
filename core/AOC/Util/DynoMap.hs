@@ -63,7 +63,7 @@ newtype DynoMap = Dyno {runDyno :: Map String (DSum TestType Identity)}
 
 fromTestType ::
   forall a f.
-  (HasTestType a) =>
+  HasTestType a =>
   DSum TestType f ->
   Maybe (f a)
 fromTestType (tt :=> x) = (`gcastWith` x) <$> (tt `geq` hasTestType @a)
@@ -73,7 +73,7 @@ fromTestType (tt :=> x) = (`gcastWith` x) <$> (tt `geq` hasTestType @a)
 -- > lookupDyno "hello"
 lookupDyno ::
   forall a.
-  (HasTestType a) =>
+  HasTestType a =>
   String ->
   DynoMap ->
   Maybe a
@@ -86,7 +86,7 @@ lookupDyno sm =
 -- is not found or has the wrong type.
 lookupDynoWith ::
   forall a.
-  (HasTestType a) =>
+  HasTestType a =>
   String ->
   a ->
   DynoMap ->

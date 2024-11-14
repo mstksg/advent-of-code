@@ -26,7 +26,7 @@ import Text.Read (readMaybe)
 -- desired is inferred from the desired length of the return type.
 knapsack ::
   forall n.
-  (SNatI n) =>
+  SNatI n =>
   -- | goal sum
   Int ->
   -- | set of options

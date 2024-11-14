@@ -48,7 +48,7 @@ bagParser = do
     bagName :: CharParser Bag
     bagName = (,) <$> (T.pack <$> pWord) <*> (T.pack <$> pWord <* pWord)
 
-flipGraph :: (Ord v) => Graph v e -> Graph v e
+flipGraph :: Ord v => Graph v e -> Graph v e
 flipGraph mp =
   M.fromListWith
     M.union
@@ -74,13 +74,13 @@ foldMapGraph f g gr = res
       M.foldMapWithKey (\s v -> f s <> foldMap (g v) (M.lookup s res))
         <$> gr
 
-allDescendants :: (Ord v) => Graph v e -> Map v (Set v)
+allDescendants :: Ord v => Graph v e -> Map v (Set v)
 allDescendants =
   foldMapGraph
     S.singleton -- the node is embedded as itself
     (\_ -> id) -- ignore the edge
 
-usageCounts :: (Ord v) => Graph v Int -> Map v (Sum Int)
+usageCounts :: Ord v => Graph v Int -> Map v (Sum Int)
 usageCounts =
   foldMapGraph
     (const 0) -- ignore the nodes

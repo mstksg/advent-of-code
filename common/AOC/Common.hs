@@ -275,7 +275,7 @@ loopEither f = go
 -- | Apply monadic function until 'Nothing' is produced, and return last produced
 -- value.
 loopMaybeM ::
-  (Monad m) =>
+  Monad m =>
   (a -> m (Maybe a)) ->
   a ->
   m a
@@ -291,19 +291,19 @@ dup :: a -> (a, a)
 dup x = (x, x)
 
 -- | 'scanl' generalized to all 'Traversable'.
-scanlT :: (Traversable t) => (b -> a -> b) -> b -> t a -> t b
+scanlT :: Traversable t => (b -> a -> b) -> b -> t a -> t b
 scanlT f z = snd . mapAccumL (\x -> dup . f x) z
 
 -- | 'scanr' generalized to all 'Traversable'.
-scanrT :: (Traversable t) => (a -> b -> b) -> b -> t a -> t b
+scanrT :: Traversable t => (a -> b -> b) -> b -> t a -> t b
 scanrT f z = snd . mapAccumR (\x -> dup . flip f x) z
 
 -- | Lazily find the first repeated item.
-firstRepeated :: (Ord a) => [a] -> Maybe a
+firstRepeated :: Ord a => [a] -> Maybe a
 firstRepeated = firstRepeatedBy id
 
 -- | Lazily find the first repeated projection.
-firstRepeatedBy :: (Ord a) => (b -> a) -> [b] -> Maybe b
+firstRepeatedBy :: Ord a => (b -> a) -> [b] -> Maybe b
 firstRepeatedBy f = go S.empty
   where
     go seen (x : xs)
@@ -312,11 +312,11 @@ firstRepeatedBy f = go S.empty
     go _ [] = Nothing
 
 -- | firstRepeated but with a bitset
-firstRepeatedFinitary :: (F.Finitary a) => [a] -> Maybe a
+firstRepeatedFinitary :: F.Finitary a => [a] -> Maybe a
 firstRepeatedFinitary = firstRepeatedByFinitary id
 
 -- | firstRepeatedBy but with a bitset
-firstRepeatedByFinitary :: (F.Finitary a) => (b -> a) -> [b] -> Maybe b
+firstRepeatedByFinitary :: F.Finitary a => (b -> a) -> [b] -> Maybe b
 firstRepeatedByFinitary f xs = runST do
   seen <- UVM.replicate (Bit False)
   res <- runExceptT $ forM_ xs $ \i -> do
@@ -329,7 +329,7 @@ firstRepeatedByFinitary f xs = runST do
     Right _ -> Nothing
 
 -- | Find a "loop", where applying a function repeatedly creates a closed loop
-findLoopBy :: (Ord a) => (b -> a) -> [b] -> Maybe (V2 (Int, b))
+findLoopBy :: Ord a => (b -> a) -> [b] -> Maybe (V2 (Int, b))
 findLoopBy f = go 0 M.empty
   where
     go !i seen (x : xs) = case M.lookup (f x) seen of
@@ -337,10 +337,10 @@ findLoopBy f = go 0 M.empty
       Just (j, y) -> Just (V2 (j, y) (i, x))
     go _ _ [] = Nothing
 
-skipConsecutive :: (Eq a) => [a] -> [a]
+skipConsecutive :: Eq a => [a] -> [a]
 skipConsecutive = skipConsecutiveBy id
 
-skipConsecutiveBy :: (Eq b) => (a -> b) -> [a] -> [a]
+skipConsecutiveBy :: Eq b => (a -> b) -> [a] -> [a]
 skipConsecutiveBy _ [] = []
 skipConsecutiveBy f (x : xs) = x : go x xs
   where
@@ -350,7 +350,7 @@ skipConsecutiveBy f (x : xs) = x : go x xs
       | otherwise = z : go z zs
 
 -- | Repeat a function until you get the same result twice.
-fixedPoint :: (Eq a) => (a -> a) -> a -> a
+fixedPoint :: Eq a => (a -> a) -> a -> a
 fixedPoint f = go
   where
     go !x
@@ -360,7 +360,7 @@ fixedPoint f = go
         y = f x
 
 -- | Count the number of items in a container where the predicate is true.
-countTrue :: (Foldable f) => (a -> Bool) -> f a -> Int
+countTrue :: Foldable f => (a -> Bool) -> f a -> Int
 countTrue p = length . filter p . toList
 
 -- | Given a map of @k@ to possible @a@s for that @k@, find possible
@@ -387,7 +387,7 @@ select = go []
 
 -- | Look up a count from a frequency map, defaulting to zero if item is
 -- not foudn
-lookupFreq :: (Ord a) => a -> Map a Int -> Int
+lookupFreq :: Ord a => a -> Map a Int -> Int
 lookupFreq = M.findWithDefault 0
 
 -- | Build a reverse frequency map
@@ -492,7 +492,7 @@ caeser i = over (_CharFinite . _2) (+ i)
 --         , [ 0,10,101]
 --         ]
 perturbations ::
-  (Traversable f) =>
+  Traversable f =>
   (a -> [a]) ->
   f a ->
   [f a]
@@ -510,7 +510,7 @@ perturbations = perturbationsBy traverse
 --         , [ 0,10,101]
 --         ]
 perturbationsBy ::
-  (Conjoined p) =>
+  Conjoined p =>
   Over p (Bazaar p a a) s t a a ->
   (a -> [a]) ->
   s ->
@@ -548,7 +548,7 @@ slidingWindows n = uncurry go . first Seq.fromList . splitAt n
 -- | sorted windows of a given length
 sortedSlidingWindows ::
   forall k v.
-  (Ord k) =>
+  Ord k =>
   Int ->
   [(k, v)] ->
   [OrdPSQ.OrdPSQ k Int v]
@@ -576,7 +576,7 @@ sortedSlidingWindowsInt n = uncurry go . first IntPSQ.fromList . splitAt n . zip
       _ -> [ws]
 
 -- | Get the key-value pair corresponding to the maximum value in the map
-maximumVal :: (Ord b) => Map a b -> Maybe (a, b)
+maximumVal :: Ord b => Map a b -> Maybe (a, b)
 maximumVal = maximumValBy compare
 
 -- | Get the key-value pair corresponding to the maximum value in the map,
@@ -600,7 +600,7 @@ minimumValBy c =
     . M.toList
 
 -- | Get the key-value pair corresponding to the minimum value in the map
-minimumVal :: (Ord b) => Map a b -> Maybe (a, b)
+minimumVal :: Ord b => Map a b -> Maybe (a, b)
 minimumVal = minimumValBy compare
 
 -- | Version of 'maximumValBy' for nonempty maps.
@@ -610,7 +610,7 @@ maximumValByNE c =
     . NEM.toList
 
 -- | Version of 'maximumVal' for nonempty maps.
-maximumValNE :: (Ord b) => NEMap a b -> (a, b)
+maximumValNE :: Ord b => NEMap a b -> (a, b)
 maximumValNE = maximumValByNE compare
 
 -- | Version of 'minimumValBy' for nonempty maps.
@@ -620,7 +620,7 @@ minimumValByNE c =
     . NEM.toList
 
 -- | Version of 'minimumVal' for nonempty maps.
-minimumValNE :: (Ord b) => NEMap a b -> (a, b)
+minimumValNE :: Ord b => NEMap a b -> (a, b)
 minimumValNE = minimumValByNE compare
 
 foldMapParChunk ::
@@ -636,7 +636,7 @@ foldMapParChunk n f xs =
     parMap rdeepseq (foldMap f) (chunksOf n xs)
 
 binaryFold ::
-  (Monoid m) =>
+  Monoid m =>
   -- | minimum size list
   Int ->
   (a -> m) ->
@@ -655,7 +655,7 @@ binaryFold n f = bigGo (1 :: Int)
         (s, zs) = go (i - 1) ys
 
 binaryFoldPar ::
-  (Monoid m) =>
+  Monoid m =>
   -- | minimum size list
   Int ->
   (a -> m) ->
@@ -735,7 +735,7 @@ _ListV4 = prism' (\(V4 x y z k) -> [x, y, z, k]) $ \case
 
 -- | Delete a potential value from a 'Finite'.
 deleteFinite ::
-  (KnownNat n) =>
+  KnownNat n =>
   Finite (n + 1) ->
   Finite (n + 1) ->
   Maybe (Finite n)
@@ -745,15 +745,15 @@ deleteFinite n m = case n `cmp` m of
   GT -> strengthen m
 
 -- | 'foldMap', but in parallel.
-foldMapPar :: (Monoid b) => (a -> b) -> [a] -> b
+foldMapPar :: Monoid b => (a -> b) -> [a] -> b
 foldMapPar f = runEval . fmap mconcat . traverse (rpar . f)
 
 -- | 'foldMap1', but in parallel.
-foldMapPar1 :: (Semigroup b) => (a -> b) -> NonEmpty a -> b
+foldMapPar1 :: Semigroup b => (a -> b) -> NonEmpty a -> b
 foldMapPar1 f = runEval . fmap sconcat . traverse (rpar . f)
 
 -- | 'F.Fold' for computing mean and variance
-meanVar :: (Fractional a) => F.Fold a (a, a)
+meanVar :: Fractional a => F.Fold a (a, a)
 meanVar = do
   n <- fromIntegral <$> F.length
   x <- F.sum
@@ -765,7 +765,7 @@ meanVar = do
 
 -- | Flood fill from a starting set
 floodFill ::
-  (Ord a) =>
+  Ord a =>
   -- | Expansion (be sure to limit allowed points)
   (a -> Set a) ->
   -- | Start points
@@ -776,7 +776,7 @@ floodFill f = snd . floodFillCount f
 
 -- | Flood fill from a starting set, counting the number of steps
 floodFillCount ::
-  (Ord a) =>
+  Ord a =>
   -- | Expansion (be sure to limit allowed points)
   (a -> Set a) ->
   -- | Start points
@@ -871,7 +871,7 @@ toFGL gr =
 --   gr
 
 sortSizedBy ::
-  (VG.Vector v a) =>
+  VG.Vector v a =>
   (a -> a -> Ordering) ->
   SVG.Vector v n a ->
   SVG.Vector v n a
@@ -882,9 +882,9 @@ sortSizedBy f (SVG.Vector xs) = runST $ do
 {-# INLINE sortSizedBy #-}
 
 withAllSized ::
-  (VG.Vector v a) =>
+  VG.Vector v a =>
   NonEmpty [a] ->
-  (forall n. (KnownNat n) => NonEmpty (SVG.Vector v n a) -> Maybe r) ->
+  (forall n. KnownNat n => NonEmpty (SVG.Vector v n a) -> Maybe r) ->
   Maybe r
 withAllSized (x :| xs) f = SVG.withSizedList x $ \vx ->
   f . (vx :|) =<< traverse SVG.fromList xs
@@ -930,9 +930,9 @@ instance (Ord k, Ord p) => Ixed (OrdPSQ.OrdPSQ k p v) where
 newtype TokStream a = TokStream {getTokStream :: [a]}
   deriving stock (Ord, Eq, Show, Generic, Functor)
 
-instance (Hashable a) => Hashable (TokStream a)
+instance Hashable a => Hashable (TokStream a)
 
-instance (NFData a) => NFData (TokStream a)
+instance NFData a => NFData (TokStream a)
 
 instance (Ord a, Show a) => P.Stream (TokStream a) where
   type Token (TokStream a) = a
@@ -962,7 +962,7 @@ instance (Ord a, Show a) => P.Stream (TokStream a) where
 
 -- | Parse a stream of tokens @s@ purely, returning 'Either'
 parseTokStream ::
-  (Foldable t) =>
+  Foldable t =>
   P.Parsec e (TokStream s) a ->
   t s ->
   Either (P.ParseErrorBundle (TokStream s) e) a
@@ -1025,7 +1025,7 @@ parseWords p = parseMaybeLenient p . TokStream . words
 type TokParser s = P.Parsec Void (TokStream s)
 
 -- | Skip every result until this token matches
-nextMatch :: (P.MonadParsec e s m) => m a -> m a
+nextMatch :: P.MonadParsec e s m => m a -> m a
 nextMatch = P.try . fmap snd . P.manyTill_ (P.try P.anySingle)
 
 traverseLines :: (String -> Maybe a) -> String -> Maybe [a]
@@ -1043,7 +1043,7 @@ mapMaybeLines f = mapMaybe f . lines
 mapMaybeLinesJust :: (String -> Maybe a) -> String -> Maybe [a]
 mapMaybeLinesJust f = Just . mapMaybeLines f
 
-toNatural :: (Integral a) => a -> Maybe Natural
+toNatural :: Integral a => a -> Maybe Natural
 toNatural x = fromIntegral x <$ guard (x >= 0)
 
 factorial :: Int -> Int
@@ -1072,10 +1072,10 @@ triangles = 0 : (pascals !! 2)
 triangleNumber :: Int -> Int
 triangleNumber n = (n * (n + 1)) `div` 2
 
-mapMaybeSet :: (Ord b) => (a -> Maybe b) -> Set a -> Set b
+mapMaybeSet :: Ord b => (a -> Maybe b) -> Set a -> Set b
 mapMaybeSet f = S.fromList . mapMaybe f . S.toList
 
-symDiff :: (Ord a) => Set a -> Set a -> Set a
+symDiff :: Ord a => Set a -> Set a -> Set a
 symDiff x y = (x `S.union` y) S.\\ (x `S.intersection` y)
 
 memo4 ::
@@ -1098,7 +1098,7 @@ newtype Iterate n a = Iterate {runIterate :: a}
 
 unfoldedIterate ::
   forall n a proxy.
-  (N.SNatI n) =>
+  N.SNatI n =>
   proxy n ->
   (a -> a) ->
   a ->
@@ -1110,13 +1110,13 @@ unfoldedIterate _ f x = runIterate (N.induction1 start step :: Iterate n a)
     step :: Iterate m a -> Iterate ('N.S m) a
     step = coerce f
 
-instance (FunctorWithIndex Int v) => FunctorWithIndex (Finite n) (SVG.Vector v n) where
+instance FunctorWithIndex Int v => FunctorWithIndex (Finite n) (SVG.Vector v n) where
   imap f (SVG.Vector xs) = SVG.Vector $ imap (f . Finite . fromIntegral) xs
 
-instance (FoldableWithIndex Int v) => FoldableWithIndex (Finite n) (SVG.Vector v n) where
+instance FoldableWithIndex Int v => FoldableWithIndex (Finite n) (SVG.Vector v n) where
   ifoldMap f (SVG.Vector xs) = ifoldMap (f . Finite . fromIntegral) xs
 
-instance (TraversableWithIndex Int v) => TraversableWithIndex (Finite n) (SVG.Vector v n) where
+instance TraversableWithIndex Int v => TraversableWithIndex (Finite n) (SVG.Vector v n) where
   itraverse f (SVG.Vector xs) = SVG.Vector <$> itraverse (f . Finite . fromIntegral) xs
 
 instance (Functor v, KnownNat n, forall a. VG.Vector v a) => Additive (SVG.Vector v n) where
@@ -1140,21 +1140,21 @@ instance TraversableWithIndex k (NEMap k) where
   itraverse = NEM.traverseWithKey
 
 -- | Generalize a 'Maybe' to any 'Alternative'
-maybeAlt :: (Alternative m) => Maybe a -> m a
+maybeAlt :: Alternative m => Maybe a -> m a
 maybeAlt = maybe empty pure
 
 -- | Like 'traceShowId' but with an extra message
-traceShowIdMsg :: (Show a) => String -> a -> a
+traceShowIdMsg :: Show a => String -> a -> a
 traceShowIdMsg msg x = trace (msg ++ show x) x
 
 -- | Like 'traceShow' but with an extra message
-traceShowMsg :: (Show a) => String -> a -> b -> b
+traceShowMsg :: Show a => String -> a -> b -> b
 traceShowMsg msg x = trace (msg ++ show x)
 
 newtype LCM a = LCM {getLCM :: a}
 
-instance (Integral a) => Monoid (LCM a) where
+instance Integral a => Monoid (LCM a) where
   mempty = LCM 1
 
-instance (Integral a) => Semigroup (LCM a) where
+instance Integral a => Semigroup (LCM a) where
   LCM x <> LCM y = LCM (lcm x y)

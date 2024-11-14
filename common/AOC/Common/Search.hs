@@ -83,7 +83,7 @@ data BFSState n = BS
 -- | Breadth-first search, with loop detection
 bfs ::
   forall n.
-  (Ord n) =>
+  Ord n =>
   -- | neighborhood
   (n -> Set n) ->
   -- | start

@@ -130,7 +130,7 @@ assembleMap tileMap tiles0 =
                   (M.insert pos (tileId, invert o') mp)
     -- \| For a given image, add the given edges into the queue
     toQueue ::
-      (Foldable f) =>
+      Foldable f =>
       Point ->
       -- \^ location of corner
       D8 ->

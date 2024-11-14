@@ -79,22 +79,22 @@ instance (Finitary a, KnownNat (2 ^ Cardinality a)) => Finitary (FinitarySet a)
 
 instance NFData (FinitarySet a)
 
-foldr :: (Finitary a) => (a -> b -> b) -> b -> FinitarySet a -> b
+foldr :: Finitary a => (a -> b -> b) -> b -> FinitarySet a -> b
 foldr f z (FinitarySet xs) =
   V.ifoldr (\i (Bit x) -> if x then f (fromFinite i) else id) z xs
 {-# INLINE foldr #-}
 
-foldr' :: (Finitary a) => (a -> b -> b) -> b -> FinitarySet a -> b
+foldr' :: Finitary a => (a -> b -> b) -> b -> FinitarySet a -> b
 foldr' f z (FinitarySet xs) =
   V.ifoldr' (\i (Bit x) -> if x then f (fromFinite i) else id) z xs
 {-# INLINE foldr' #-}
 
-foldl :: (Finitary a) => (b -> a -> b) -> b -> FinitarySet a -> b
+foldl :: Finitary a => (b -> a -> b) -> b -> FinitarySet a -> b
 foldl f z (FinitarySet xs) =
   V.ifoldl (\r i (Bit x) -> if x then f r (fromFinite i) else r) z xs
 {-# INLINE foldl #-}
 
-foldl' :: (Finitary a) => (b -> a -> b) -> b -> FinitarySet a -> b
+foldl' :: Finitary a => (b -> a -> b) -> b -> FinitarySet a -> b
 foldl' f z (FinitarySet xs) =
   V.ifoldl' (\r i (Bit x) -> if x then f r (fromFinite i) else r) z xs
 {-# INLINE foldl' #-}
@@ -107,7 +107,7 @@ foldMap :: (Finitary a, Monoid m) => (a -> m) -> FinitarySet a -> m
 foldMap f = P.foldMap f . toList
 {-# INLINE foldMap #-}
 
-toList :: (Finitary a) => FinitarySet a -> [a]
+toList :: Finitary a => FinitarySet a -> [a]
 toList = foldr (:) []
 {-# INLINE toList #-}
 
@@ -115,16 +115,16 @@ length :: FinitarySet a -> Int
 length (FinitarySet xs) = V.foldl' (\i (Bit x) -> if x then i P.+ 1 else i) 0 xs
 {-# INLINE length #-}
 
-empty :: (KnownNat (Cardinality a)) => FinitarySet a
+empty :: KnownNat (Cardinality a) => FinitarySet a
 empty = FinitarySet $ V.replicate (Bit False)
 {-# INLINE empty #-}
 
 -- could be made unsafe
-singleton :: (Finitary a) => a -> FinitarySet a
+singleton :: Finitary a => a -> FinitarySet a
 singleton x = FinitarySet $ bit (fromIntegral (toFinite x))
 {-# INLINE singleton #-}
 
-fromList :: (Finitary a) => [a] -> FinitarySet a
+fromList :: Finitary a => [a] -> FinitarySet a
 fromList xs =
   FinitarySet $
     0 V.// fmap go xs
@@ -140,23 +140,23 @@ union :: FinitarySet a -> FinitarySet a -> FinitarySet a
 union (FinitarySet (VG.Vector xs)) (FinitarySet (VG.Vector ys)) = FinitarySet (VG.Vector (xs .|. ys))
 {-# INLINE union #-}
 
-unions :: (Finitary a) => [FinitarySet a] -> FinitarySet a
+unions :: Finitary a => [FinitarySet a] -> FinitarySet a
 unions = L.foldl' union empty
 {-# INLINE unions #-}
 
-insert :: (Finitary a) => a -> FinitarySet a -> FinitarySet a
+insert :: Finitary a => a -> FinitarySet a -> FinitarySet a
 insert x (FinitarySet xs) = FinitarySet $ xs V.// [(toFinite x, Bit True)]
 {-# INLINE insert #-}
 
-delete :: (Finitary a) => a -> FinitarySet a -> FinitarySet a
+delete :: Finitary a => a -> FinitarySet a -> FinitarySet a
 delete x (FinitarySet xs) = FinitarySet $ xs V.// [(toFinite x, Bit False)]
 {-# INLINE delete #-}
 
-member :: (Finitary a) => a -> FinitarySet a -> Bool
+member :: Finitary a => a -> FinitarySet a -> Bool
 member x (FinitarySet xs) = unBit $ xs `V.index` toFinite x
 {-# INLINE member #-}
 
-notMember :: (Finitary a) => a -> FinitarySet a -> Bool
+notMember :: Finitary a => a -> FinitarySet a -> Bool
 notMember x = not . member x
 {-# INLINE notMember #-}
 
@@ -208,7 +208,7 @@ disjointUnion (FinitarySet (VG.Vector xs)) (FinitarySet (VG.Vector ys)) =
 {-# INLINE disjointUnion #-}
 
 partition ::
-  (Finitary a) =>
+  Finitary a =>
   (a -> Bool) ->
   FinitarySet a ->
   (FinitarySet a, FinitarySet a)
@@ -246,12 +246,12 @@ alterF f x xs
         False -> xs
         True -> x `insert` xs
 
-generate :: (Finitary a) => (a -> Bool) -> FinitarySet a
+generate :: Finitary a => (a -> Bool) -> FinitarySet a
 generate f = FinitarySet $ V.generate (Bit . f . fromFinite)
 {-# INLINE generate #-}
 
 filter ::
-  (Finitary a) =>
+  Finitary a =>
   (a -> Bool) ->
   FinitarySet a ->
   FinitarySet a

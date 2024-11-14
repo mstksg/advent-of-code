@@ -50,14 +50,14 @@ parseSeatMap = parseAsciiMap $ \case
 
 compile ::
   Map Point (Set Point, Bool) ->
-  (forall n. (KnownNat n) => V.Vector n [Finite n] -> VU.Vector n Bit -> r) ->
+  (forall n. KnownNat n => V.Vector n [Finite n] -> VU.Vector n Bit -> r) ->
   r
 compile mp f = V.withSizedList (toList mp) $ \xs ->
   f
     (map go . S.toList . fst <$> xs)
     (VG.convert (Bit . snd <$> xs))
   where
-    go :: (KnownNat n) => Point -> Finite n
+    go :: KnownNat n => Point -> Finite n
     go = fromIntegral . (`M.findIndex` mp)
 
 seatRule ::
@@ -88,7 +88,7 @@ seatRule thr ns src targ = traverse_ go finites
 {-# INLINE seatRule #-}
 
 solveWith ::
-  (KnownNat n) =>
+  KnownNat n =>
   -- | exit seat threshold
   Int ->
   -- | neighbors

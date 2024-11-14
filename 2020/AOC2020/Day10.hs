@@ -39,12 +39,12 @@ day10a =
            in (lookupFreq 1 fs, lookupFreq 3 fs)
     }
 
-findOrZero :: (Num a) => Int -> IntMap a -> a
+findOrZero :: Num a => Int -> IntMap a -> a
 findOrZero = IM.findWithDefault 0
 
 -- | A map of numbers to the count of how many paths from that number to
 -- the goal
-pathsToGoal :: (Num a) => IntSet -> IntMap a
+pathsToGoal :: Num a => IntSet -> IntMap a
 pathsToGoal is = res
   where
     res = flip IM.fromSet is $ \i ->

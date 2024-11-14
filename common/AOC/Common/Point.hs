@@ -55,12 +55,15 @@ module AOC.Common.Point (
   ScanPoint (..),
   displayAsciiMap,
   displayAsciiSet,
+  parseLetters,
+  parseLettersSafe,
 
   -- * Util
   centeredFinite,
 )
 where
 
+import qualified Advent.OCR as OCR
 import Control.DeepSeq
 import qualified Control.Foldl as F
 import Control.Lens
@@ -77,6 +80,7 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Map.Lens
 import qualified Data.Map.NonEmpty as NEM
+import Data.Maybe
 import Data.MemoCombinators (Memo)
 import qualified Data.MemoCombinators as Memo
 import Data.Monoid
@@ -231,7 +235,7 @@ contiguousShapes s0 =
 -- | The set of unconnected shapes, sorted against some function on their
 -- original center of masses
 contiguousShapesBy ::
-  (Ord a) =>
+  Ord a =>
   (V2 Double -> a) ->
   Set Point ->
   [NESet Point]
@@ -249,7 +253,7 @@ mannNorm :: (Foldable f, Num a, Num (f a)) => f a -> a
 mannNorm x = mannDist x x
 
 -- | Treat as complex number multiplication. useful for rotations
-mulPoint :: (Num a) => V2 a -> V2 a -> V2 a
+mulPoint :: Num a => V2 a -> V2 a -> V2 a
 mulPoint (V2 x y) (V2 u v) = V2 (x * u - y * v) (x * v + y * u)
 
 data Dir = North | East | South | West
@@ -261,7 +265,7 @@ instance NFData Dir
 
 instance Finitary Dir
 
-dirPoint :: (Num a) => Dir -> V2 a
+dirPoint :: Num a => Dir -> V2 a
 dirPoint = \case
   North -> V2 0 1
   East -> V2 1 0
@@ -269,7 +273,7 @@ dirPoint = \case
   West -> V2 (-1) 0
 
 -- | 'dirPoint' but with inverted y axis
-dirPoint' :: (Num a) => Dir -> V2 a
+dirPoint' :: Num a => Dir -> V2 a
 dirPoint' = \case
   North -> V2 0 (-1)
   East -> V2 1 0
@@ -277,7 +281,7 @@ dirPoint' = \case
   West -> V2 (-1) 0
 
 -- | Rotate a point by a direction
-rotPoint :: (Num a) => Dir -> V2 a -> V2 a
+rotPoint :: Num a => Dir -> V2 a -> V2 a
 rotPoint = \case
   North -> id
   East -> \(V2 x y) -> V2 y (-x)
@@ -285,10 +289,10 @@ rotPoint = \case
   South -> negate
 
 -- | Rotate a point by a direction
-rotFin :: (KnownNat n) => Dir -> FinPoint n -> FinPoint n
+rotFin :: KnownNat n => Dir -> FinPoint n -> FinPoint n
 rotFin d = over (mapping centeredFinite) (rotPoint d)
 
-centeredFinite :: forall n. (KnownNat n) => Iso' (Finite n) Rational
+centeredFinite :: forall n. KnownNat n => Iso' (Finite n) Rational
 centeredFinite =
   iso
     (subtract d . (% 1) . getFinite)
@@ -403,7 +407,7 @@ allD8Set :: NESet D8
 allD8Set = NES.fromDistinctAscList allD8
 
 -- | Rotate and flip a point by a 'D8'
-orientPoint :: (Num a) => D8 -> V2 a -> V2 a
+orientPoint :: Num a => D8 -> V2 a -> V2 a
 orientPoint = \case
   D8 North False -> id
   D8 East False -> \(V2 x y) -> V2 y (-x)
@@ -414,7 +418,7 @@ orientPoint = \case
   D8 West True -> \(V2 x y) -> V2 (-y) (-x)
   D8 South True -> \(V2 x y) -> V2 x (-y)
 
-orientFin :: (KnownNat n) => D8 -> FinPoint n -> FinPoint n
+orientFin :: KnownNat n => D8 -> FinPoint n -> FinPoint n
 orientFin d = over (mapping centeredFinite) (orientPoint d)
 
 -- | It's 'Point', but with a newtype wrapper so we have an 'Ord' that
@@ -478,15 +482,15 @@ displayAsciiSet ::
   String
 displayAsciiSet x y = displayAsciiMap x . M.fromSet (const y)
 
--- parseLetters
---     :: Set Point
---     -> String
--- parseLetters = fromMaybe (error "parseLetters: no parse") . parseLettersSafe
+parseLetters ::
+  Set Point ->
+  String
+parseLetters = fromMaybe (error "parseLetters: no parse") . parseLettersSafe
 
--- parseLettersSafe
---     :: Set Point
---     -> Maybe String
--- parseLettersSafe = OCR.parseLettersWith (view _x) (view _y)
+parseLettersSafe ::
+  Set Point ->
+  Maybe String
+parseLettersSafe = OCR.parseLettersWith (view _x) (view _y)
 
 -- | Lattice points for line between points, not including endpoints
 lineTo :: Point -> Point -> [Point]

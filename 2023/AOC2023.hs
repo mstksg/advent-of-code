@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
 -- |
--- Module      : AOC.Challenge
+-- Module      : AOC2023
 -- Copyright   : (c) Justin Le 2021
 -- License     : BSD3
 --

@@ -25,7 +25,7 @@ import qualified Data.Text as T
 -- | Like 'find', but instead of taking an @a -> Bool@, takes an @a ->
 -- Maybe b@ and returns the first success.
 firstJust ::
-  (Foldable t) =>
+  Foldable t =>
   (a -> Maybe b) ->
   t a ->
   Maybe b
@@ -41,10 +41,10 @@ stripNewline = reverse . dropWhile (== '\n') . reverse
 
 -- | Convert an 'Either' into a 'Maybe', or any 'Alternative' instance,
 -- forgetting the error value.
-eitherToMaybe :: (Alternative m) => Either e a -> m a
+eitherToMaybe :: Alternative m => Either e a -> m a
 eitherToMaybe = either (const empty) pure
 
 -- | Convert a 'Maybe' into an 'Either', or any 'MonadError' instance, by
 -- providing an error value in case 'Nothing' was given.
-maybeToEither :: (MonadError e m) => e -> Maybe a -> m a
+maybeToEither :: MonadError e m => e -> Maybe a -> m a
 maybeToEither e = maybe (throwError e) pure
