@@ -1,10 +1,15 @@
 Advent of Code
 ==============
 
-Master-repo of my [Advent of Code][] solutions and reflections -- mostly
-Haskell for now, maybe other languages later.
+It's the most wonderful time of the year!
+
+This is my mega-repo of [Advent of Code][] solutions here, along with an
+automated fetching, testing, running environment (powered by the
+*[advent-of-code-api][]* library). So far only Haskell solutions are here, but
+maybe more will come later?
 
 [Advent of Code]: https://adventofcode.com/
+[advent-of-code-api]: https://hackage.haskell.org/package/advent-of-code-api
 
 Reflections and detailed solutions are available on the wiki:
 
