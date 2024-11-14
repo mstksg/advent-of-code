@@ -5,6 +5,7 @@ let
       (n: exe:
         let
           year = lib.removePrefix "aoc" n;
+          bench-results = ./. + "/${year}";
           generate-benches = writeShellApplication {
             name = "generate-benches-${n}";
             runtimeInputs = [ exe jq ansifilter ];
@@ -27,22 +28,23 @@ let
         in
         {
           inherit generate-benches;
-          days = builtins.listToAttrs
-            (builtins.map
-              (fp:
-                let day = lib.removeSuffix ".txt" (builtins.baseNameOf fp);
-                in {
-                  name = day;
-                  value = {
-                    benchmark = writeText "${n}-${day}-bench.txt" (builtins.readFile fp);
-                  };
-                }
-              )
-              (lib.filesystem.listFilesRecursive (./. + "/${year}")));
-        }
+        } //
+        lib.optionalAttrs (builtins.pathExists bench-results)
+          {
+            days = builtins.listToAttrs
+              (builtins.map
+                (fp:
+                  let day = lib.removeSuffix ".txt" (builtins.baseNameOf fp);
+                  in {
+                    name = day;
+                    value = {
+                      benchmark = writeText "${n}-${day}-bench.txt" (builtins.readFile fp);
+                    };
+                  }
+                )
+                (lib.filesystem.listFilesRecursive bench-results));
+          }
       )
-      (lib.filterAttrs
-        (n: exe: builtins.pathExists (./. + "${lib.removePrefix "aoc" n}"))
-        advent-of-code.project.hsPkgs.advent-of-code.components.exes);
+      advent-of-code.project.hsPkgs.advent-of-code.components.exes;
 in
 benchmarkMap
