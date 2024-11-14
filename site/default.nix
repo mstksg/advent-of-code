@@ -74,7 +74,7 @@ let
             Table of Contents
             -----------------
 
-            ${lib.concatStrings (lib.mapAttrsToList tocLink daysOut)}
+            ${lib.concatStrings (lib.mapAttrsToList tocLink allDays)}
           ''
         ;
         reflections =
@@ -91,7 +91,7 @@ let
     let
       mkLink = n: ym:
         ''
-          * [${ym.year}](https://github.com/${github}/advent-of-code/wiki/${lib.removeSuffix ".md" ym.reflections.name})
+          * [${ym.year} Reflections](https://github.com/${github}/advent-of-code/wiki/${lib.removeSuffix ".md" ym.reflections.name})
         ''
       ;
     in
@@ -108,4 +108,4 @@ let
     paths = [ home ] ++ lib.mapAttrsToList (_: y: y.reflections) renderedMap;
   };
 in
-{ inherit renderedMap site; }
+{ inherit allDays renderedMap site; }
