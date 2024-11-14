@@ -1,0 +1,16 @@
+>> Day 22a
+benchmarking...
+time                 29.21 ms   (28.27 ms .. 30.32 ms)
+                     0.995 R²   (0.991 R² .. 0.999 R²)
+mean                 29.07 ms   (28.43 ms .. 29.73 ms)
+std dev              1.303 ms   (908.5 μs .. 1.946 ms)
+variance introduced by outliers: 15% (moderately inflated)
+
+>> Day 22b
+benchmarking...
+time                 25.62 ms   (21.80 ms .. 29.74 ms)
+                     0.938 R²   (0.906 R² .. 0.999 R²)
+mean                 22.88 ms   (22.19 ms .. 24.93 ms)
+std dev              2.331 ms   (903.9 μs .. 4.235 ms)
+variance introduced by outliers: 46% (moderately inflated)
+

@@ -1,0 +1,16 @@
+>> Day 21a
+benchmarking...
+time                 7.190 ms   (6.772 ms .. 7.722 ms)
+                     0.972 R²   (0.946 R² .. 0.997 R²)
+mean                 6.956 ms   (6.823 ms .. 7.178 ms)
+std dev              528.2 μs   (293.3 μs .. 785.5 μs)
+variance introduced by outliers: 46% (moderately inflated)
+
+>> Day 21b
+benchmarking...
+time                 6.463 ms   (6.296 ms .. 6.728 ms)
+                     0.982 R²   (0.953 R² .. 0.997 R²)
+mean                 6.382 ms   (6.244 ms .. 6.573 ms)
+std dev              456.7 μs   (211.6 μs .. 709.1 μs)
+variance introduced by outliers: 42% (moderately inflated)
+

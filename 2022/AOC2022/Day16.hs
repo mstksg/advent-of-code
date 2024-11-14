@@ -10,7 +10,7 @@
 -- Day 16.  See "AOC.Solver" for the types used in this module!
 module AOC2022.Day16 (
   day16a,
-  day16b,
+  -- day16b,
 )
 where
 

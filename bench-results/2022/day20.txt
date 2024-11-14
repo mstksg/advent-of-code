@@ -1,0 +1,20 @@
+>> Day 20a
+benchmarking...
+time                 121.1 ms   (116.5 ms .. 125.6 ms)
+                     0.999 R²   (0.995 R² .. 1.000 R²)
+mean                 117.0 ms   (115.2 ms .. 119.0 ms)
+std dev              3.035 ms   (2.007 ms .. 4.190 ms)
+variance introduced by outliers: 11% (moderately inflated)
+
+* parsing and formatting times excluded
+
+>> Day 20b
+benchmarking...
+time                 2.056 s    (1.989 s .. 2.144 s)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 2.032 s    (2.018 s .. 2.044 s)
+std dev              15.90 ms   (2.254 ms .. 19.96 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
+* parsing and formatting times excluded
+
