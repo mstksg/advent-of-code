@@ -3,6 +3,8 @@
 module AOC.Common.Point (
   -- * Points
   Point,
+  Point3,
+  Point4,
   FinPoint,
   cardinalNeighbs,
   cardinalNeighbsSet,
@@ -184,7 +186,8 @@ fullNeighbs ::
   f a ->
   [f a]
 fullNeighbs p =
-  tail
+  drop
+    1
     [ liftA2 (+) p d
     | d <- sequence (pure [0, -1, 1])
     ]

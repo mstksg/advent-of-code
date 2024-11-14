@@ -1,0 +1,240 @@
+{-# LANGUAGE Strict #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE UndecidableInstances #-}
+
+-- |
+-- Module      : AOC2019.Day18
+-- License     : BSD3
+--
+-- Stability   : experimental
+-- Portability : non-portable
+--
+-- Day 18.  See "AOC.Solver" for the types used in this module!
+module AOC2019.Day18 (
+  day18a,
+  day18b,
+) where
+
+import AOC.Common (
+  Letter,
+  charFinite,
+  _CharFinite,
+ )
+import AOC.Common.FinitarySet (FinitarySet)
+import qualified AOC.Common.FinitarySet as FS
+import AOC.Common.Point (
+  Point,
+  cardinalNeighbsSet,
+  parseAsciiMap,
+ )
+import AOC.Common.Search (aStar)
+import AOC.Solver ((:~>) (..))
+import Control.DeepSeq (NFData)
+import Control.Lens (preview, review, (?~), (^.))
+import Data.Bifunctor (second)
+import Data.Foldable (toList)
+import Data.Function ((&))
+import Data.Functor ((<&>))
+import Data.Functor.Rep as R
+import Data.Generics.Labels ()
+import Data.List (intercalate)
+import Data.Map (Map)
+import qualified Data.Map as M
+import Data.Semigroup (First (..))
+import Data.Set (Set)
+import qualified Data.Set as S
+import Data.Tuple (swap)
+import GHC.Generics (Generic)
+import Linear (V1 (..), V2 (..), V4 (..))
+import Linear.Vector (E (..))
+import Text.Printf (printf)
+
+data Maze f = Maze
+  { mWalls :: Set Point
+  , mKeys :: Map Point Letter
+  , mDoors :: Map Point Letter
+  , mKeyLoc :: Map Letter Point
+  , mStart :: f Point
+  }
+  deriving stock (Generic)
+deriving stock instance Eq (f Point) => Eq (Maze f)
+deriving stock instance Ord (f Point) => Ord (Maze f)
+deriving stock instance Show (f Point) => Show (Maze f)
+deriving anyclass instance NFData (f Point) => NFData (Maze f)
+
+-- | From a given point, a map to every visible key, with the distance and
+-- the set of keys and doors in the way.
+type KeyMap = Map Letter (Int, FinitarySet Letter)
+
+-- | Do a DFS to build the key map
+keysFrom :: Maze f -> Point -> KeyMap
+keysFrom Maze{..} = go 0 mWalls FS.empty
+  where
+    go !dist seen doors p =
+      addKey
+        . M.unionsWith better
+        $ map (go (dist + 1) seen' doors') neighbs
+      where
+        neighbs = S.toList $ cardinalNeighbsSet p `S.difference` seen
+        seen' = S.insert p seen
+        doors' = addDoor $ case M.lookup p mDoors of
+          Nothing -> doors
+          Just d -> FS.insert d doors
+        keyHere = M.lookup p mKeys
+        addDoor = case keyHere of
+          Nothing -> id
+          Just c -> FS.insert c
+        addKey = case keyHere of
+          Nothing -> id
+          Just c -> M.insertWith better c (dist, doors)
+    better (a, x) (b, y)
+      | b < a = (b, y)
+      | otherwise = (a, x)
+
+data KeyToKey f = K
+  { kStart :: f KeyMap
+  , kKeys :: Map Letter KeyMap
+  }
+  deriving stock (Generic)
+deriving stock instance Show (f KeyMap) => Show (KeyToKey f)
+deriving anyclass instance NFData (f KeyMap) => NFData (KeyToKey f)
+
+keyToKey :: Functor f => Maze f -> KeyToKey f
+keyToKey mz@Maze{..} =
+  K
+    { kStart = keysFrom mz <$> mStart
+    , kKeys = M.mapWithKey (\c -> M.delete c . keysFrom mz) mKeyLoc
+    }
+
+data AState f = AS
+  { aKeys :: !(FinitarySet Letter)
+  , aPos :: !(f (Maybe Letter))
+  }
+  deriving stock (Generic)
+deriving stock instance Eq (f (Maybe Letter)) => Eq (AState f)
+deriving stock instance Ord (f (Maybe Letter)) => Ord (AState f)
+deriving anyclass instance NFData (f (Maybe Letter)) => NFData (AState f)
+
+aHeuristic :: Maze f -> AState f -> Int
+aHeuristic Maze{..} AS{..} = M.size mKeyLoc - FS.size aKeys
+
+aStep ::
+  forall f.
+  (Foldable f, Representable f, Rep f ~ E f, Ord (AState f)) =>
+  KeyToKey f ->
+  AState f ->
+  Map (AState f) Int
+aStep K{..} AS{..} =
+  M.fromList
+    [ (AS aKeys' aPos', cost)
+    | e <- toList $ tabulate @f id
+    , let p = aPos ^. el e
+    , (goal, (cost, doors)) <- M.toList $ case p of
+        Nothing -> kStart ^. el e
+        Just c -> kKeys M.! c
+    , goal `FS.notMember` aKeys
+    , FS.null $ doors `FS.difference` aKeys
+    , let aKeys' = FS.insert goal aKeys
+          aPos' = aPos & el e ?~ goal
+    ]
+
+day18a :: Maze V1 :~> Int
+day18a =
+  MkSol
+    { sParse = parseMaze
+    , sShow = show
+    , sSolve = \mz ->
+        fst
+          <$> aStar
+            (aHeuristic mz)
+            (aStep (keyToKey mz))
+            (AS FS.empty (pure Nothing))
+            ((== 0) . aHeuristic mz)
+    }
+
+reMaze :: Maze V1 -> Maze V4
+reMaze m@Maze{..} =
+  m
+    { mWalls = S.union (cardinalNeighbsSet p0) . S.insert p0 $ mWalls
+    , mStart =
+        (+ p0)
+          <$> V4
+            (V2 (-1) (-1))
+            (V2 1 (-1))
+            (V2 (-1) 1)
+            (V2 1 1)
+    }
+  where
+    V1 p0 = mStart
+
+day18b :: Maze V4 :~> Int
+day18b =
+  MkSol
+    { sParse = fmap reMaze . parseMaze
+    , sShow = show
+    , sSolve = \mz ->
+        fst
+          <$> aStar
+            (aHeuristic mz)
+            (aStep (keyToKey mz))
+            (AS FS.empty (pure Nothing))
+            ((== 0) . aHeuristic mz)
+    }
+
+-- utilities
+
+instance Foldable f => Show (AState f) where
+  showsPrec _ AS{..} =
+    showString "AS<"
+      . showString (FS.foldMap ((: []) . dispKey) aKeys)
+      . showString ","
+      . showString (foldMap ((: []) . maybe '@' dispKey) aPos)
+      . showString ">"
+
+dispKey :: Letter -> Char
+dispKey = review _CharFinite . (False,)
+
+dispDoor :: Letter -> Char
+dispDoor = review _CharFinite . (True,)
+
+_dispKeyMap :: KeyMap -> String
+_dispKeyMap = intercalate ", " . map go . M.toList
+  where
+    go (c, (d, xs)) = printf "%c:%d[%s]" (dispKey c) d (FS.foldMap ((: []) . dispDoor) xs)
+
+data Item
+  = IKey Letter
+  | IDoor Letter
+  | IWall
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData)
+
+toMaze :: Map Point Item -> Point -> Maze V1
+toMaze mp p = Maze{..}
+  where
+    mWalls = M.keysSet . M.filter (== IWall) $ mp
+    mKeys = M.mapMaybe (preview #_IKey) mp
+    mDoors = M.mapMaybe (preview #_IDoor) mp
+    mKeyLoc = M.fromList . map swap . M.toList $ mKeys
+    mStart = V1 p
+
+parseMap :: String -> (Map Point Item, Maybe Point)
+parseMap str = second (fmap getFirst)
+  . swap
+  . flip M.traverseMaybeWithKey mp
+  $ \p -> \case
+    Nothing -> (Just (First p), Nothing)
+    Just t -> (mempty, Just t)
+  where
+    mp = flip parseAsciiMap str $ \case
+      '#' -> Just $ Just IWall
+      '@' -> Just Nothing
+      c ->
+        charFinite c <&> \(up, d) ->
+          Just $
+            if up
+              then IDoor d
+              else IKey d
+
+parseMaze :: String -> Maybe (Maze V1)
+parseMaze = fmap (uncurry toMaze) . sequenceA . parseMap
