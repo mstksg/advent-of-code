@@ -1,0 +1,14 @@
+>> Day 08a
+benchmarking...
+time                 1.057 ms   (1.056 ms .. 1.060 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 1.055 ms   (1.054 ms .. 1.057 ms)
+std dev              3.503 μs   (2.867 μs .. 4.433 μs)
+
+>> Day 08b
+benchmarking...
+time                 1.210 ms   (1.207 ms .. 1.212 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 1.203 ms   (1.202 ms .. 1.206 ms)
+std dev              7.519 μs   (4.238 μs .. 13.65 μs)
+

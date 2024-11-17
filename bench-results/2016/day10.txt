@@ -1,0 +1,15 @@
+>> Day 10a
+benchmarking...
+time                 1.080 ms   (1.074 ms .. 1.087 ms)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 1.081 ms   (1.075 ms .. 1.088 ms)
+std dev              23.26 μs   (14.65 μs .. 34.05 μs)
+variance introduced by outliers: 11% (moderately inflated)
+
+>> Day 10b
+benchmarking...
+time                 1.074 ms   (1.071 ms .. 1.077 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 1.071 ms   (1.069 ms .. 1.073 ms)
+std dev              6.079 μs   (5.186 μs .. 7.357 μs)
+

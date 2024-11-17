@@ -13,12 +13,19 @@ maybe more will come later?
 
 Reflections and detailed solutions are available on the wiki:
 
+*   [2016 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2016)
 *   [2018 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2018)
 *   [2019 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2019)
 *   [2020 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2020)
 *   [2021 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2021)
 *   [2022 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2022)
 *   [2023 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2023)
+
+
+I have fully migrated everything here except for [2017][] (my first year
+participating), which used a different organization system.
+
+[2017]: https://github.com/mstksg/advent-of-code-2017
 
 ## `:~>` type
 
@@ -245,7 +252,7 @@ All networking features are powered by *[advent-of-code-api][]*.
 Old Repos
 ---------
 
-* [2016](https://github.com/mstksg/advent-of-code-2016)
+* [2016](https://github.com/mstksg/advent-of-code-2016) (Fully migrated)
 * [2017](https://github.com/mstksg/advent-of-code-2017)
 * [2018](https://github.com/mstksg/advent-of-code-2018) (Fully migrated)
 * [2019](https://github.com/mstksg/advent-of-code-2019) (Fully migrated)
