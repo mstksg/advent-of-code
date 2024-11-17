@@ -1,0 +1,15 @@
+>> Day 05a
+benchmarking...
+time                 2.975 ms   (2.936 ms .. 3.007 ms)
+                     0.999 R²   (0.999 R² .. 0.999 R²)
+mean                 2.773 ms   (2.729 ms .. 2.811 ms)
+std dev              130.0 μs   (104.5 μs .. 151.8 μs)
+variance introduced by outliers: 30% (moderately inflated)
+
+>> Day 05b
+benchmarking...
+time                 22.61 ms   (22.49 ms .. 22.73 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 22.54 ms   (22.41 ms .. 22.61 ms)
+std dev              200.0 μs   (99.94 μs .. 362.1 μs)
+

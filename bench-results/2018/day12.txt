@@ -1,0 +1,18 @@
+>> Day 12a
+benchmarking...
+time                 707.6 μs   (703.2 μs .. 720.5 μs)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 706.4 μs   (704.9 μs .. 710.1 μs)
+std dev              7.595 μs   (3.659 μs .. 13.36 μs)
+
+* parsing and formatting times excluded
+
+>> Day 12b
+benchmarking...
+time                 15.84 ms   (15.82 ms .. 15.87 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 15.82 ms   (15.80 ms .. 15.85 ms)
+std dev              52.70 μs   (38.16 μs .. 86.85 μs)
+
+* parsing and formatting times excluded
+

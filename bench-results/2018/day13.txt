@@ -1,0 +1,14 @@
+>> Day 13a
+benchmarking...
+time                 7.862 ms   (7.760 ms .. 7.998 ms)
+                     0.998 R²   (0.996 R² .. 1.000 R²)
+mean                 7.825 ms   (7.780 ms .. 7.892 ms)
+std dev              151.0 μs   (100.3 μs .. 223.5 μs)
+
+>> Day 13b
+benchmarking...
+time                 13.63 ms   (13.55 ms .. 13.70 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 13.56 ms   (13.52 ms .. 13.62 ms)
+std dev              123.4 μs   (90.91 μs .. 180.1 μs)
+

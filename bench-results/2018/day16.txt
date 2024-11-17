@@ -1,0 +1,15 @@
+>> Day 16a
+benchmarking...
+time                 5.526 ms   (5.496 ms .. 5.567 ms)
+                     0.999 R²   (0.999 R² .. 1.000 R²)
+mean                 5.536 ms   (5.500 ms .. 5.579 ms)
+std dev              102.7 μs   (75.91 μs .. 144.8 μs)
+
+>> Day 16b
+benchmarking...
+time                 214.7 ms   (213.9 ms .. 215.6 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 214.5 ms   (214.1 ms .. 214.9 ms)
+std dev              537.6 μs   (326.9 μs .. 791.3 μs)
+variance introduced by outliers: 14% (moderately inflated)
+

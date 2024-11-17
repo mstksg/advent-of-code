@@ -1,0 +1,16 @@
+>> Day 19a
+benchmarking...
+time                 335.8 ms   (313.7 ms .. 358.0 ms)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 338.9 ms   (335.7 ms .. 344.5 ms)
+std dev              5.320 ms   (100.3 μs .. 6.466 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
+>> Day 19b
+benchmarking...
+time                 3.873 s    (3.857 s .. 3.912 s)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 3.889 s    (3.882 s .. 3.897 s)
+std dev              9.604 ms   (3.697 ms .. 12.62 ms)
+variance introduced by outliers: 19% (moderately inflated)
+

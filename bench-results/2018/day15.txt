@@ -1,0 +1,16 @@
+>> Day 15a
+benchmarking...
+time                 2.538 s    (2.496 s .. 2.567 s)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 2.534 s    (2.527 s .. 2.541 s)
+std dev              8.059 ms   (554.1 μs .. 11.28 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
+>> Day 15b
+benchmarking...
+time                 13.27 s    (13.21 s .. 13.37 s)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 13.26 s    (13.24 s .. 13.27 s)
+std dev              13.45 ms   (5.983 ms .. 18.75 ms)
+variance introduced by outliers: 19% (moderately inflated)
+

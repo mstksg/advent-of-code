@@ -1,0 +1,15 @@
+>> Day 18a
+benchmarking...
+time                 19.05 ms   (18.91 ms .. 19.21 ms)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 18.98 ms   (18.87 ms .. 19.05 ms)
+std dev              213.9 μs   (163.1 μs .. 303.9 μs)
+
+>> Day 18b
+benchmarking...
+time                 2.273 s    (2.138 s .. 2.491 s)
+                     0.999 R²   (0.998 R² .. NaN R²)
+mean                 2.241 s    (2.214 s .. 2.260 s)
+std dev              29.24 ms   (16.74 ms .. 41.24 ms)
+variance introduced by outliers: 19% (moderately inflated)
+

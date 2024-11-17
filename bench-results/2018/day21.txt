@@ -1,0 +1,15 @@
+>> Day 21a
+benchmarking...
+time                 57.54 μs   (57.44 μs .. 57.60 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 57.49 μs   (57.43 μs .. 57.56 μs)
+std dev              233.9 ns   (202.5 ns .. 274.9 ns)
+
+>> Day 21b
+benchmarking...
+time                 208.3 ms   (205.3 ms .. 212.4 ms)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 206.9 ms   (206.1 ms .. 208.1 ms)
+std dev              1.363 ms   (883.3 μs .. 1.747 ms)
+variance introduced by outliers: 14% (moderately inflated)
+

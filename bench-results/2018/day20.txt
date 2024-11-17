@@ -1,0 +1,15 @@
+>> Day 20a
+benchmarking...
+time                 25.45 ms   (25.20 ms .. 25.69 ms)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 25.59 ms   (25.34 ms .. 26.05 ms)
+std dev              716.3 μs   (416.3 μs .. 1.107 ms)
+
+>> Day 20b
+benchmarking...
+time                 371.5 ms   (362.3 ms .. 378.7 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 370.9 ms   (369.3 ms .. 372.4 ms)
+std dev              1.803 ms   (1.174 ms .. 2.123 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
