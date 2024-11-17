@@ -38,19 +38,19 @@ data Time = T
   , _tHour :: Finite 24
   , _tMinute :: Minute
   }
-  deriving (Show, Eq, Ord)
+  deriving stock (Show, Eq, Ord)
 
 -- | A guard ID.  It's a newtype to prevent us from accidentally mixing up
 -- all of the integer types involved.
 newtype Guard = G {_gId :: Int}
-  deriving (Show, Eq, Ord)
+  deriving stock (Show, Eq, Ord)
 
 -- | A logged action
 data Action
   = AShift Guard
   | ASleep
   | AWake
-  deriving (Show, Eq, Ord)
+  deriving stock (Show, Eq, Ord)
 
 -- | Parse a stream of @('Time', 'Action')@ events
 type Parser = P.Parsec [(Time, Action)] ()

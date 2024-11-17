@@ -1061,7 +1061,7 @@ integerFactorial n = go 2 1
       | otherwise = go (i + 1) (x * i)
 
 pascals :: [[Int]]
-pascals = repeat 1 : map (tail . L.scanl' (+) 0) pascals
+pascals = repeat 1 : map (drop 1 . L.scanl' (+) 0) pascals
 
 -- | the triangular numbers
 --

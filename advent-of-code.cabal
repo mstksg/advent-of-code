@@ -118,6 +118,7 @@ common solver-extensions
     MultiWayIf
     NoStarIsType
     NumDecimals
+    NumericUnderscores
     OverloadedLabels
     PartialTypeSignatures
     PatternGuards
@@ -194,9 +195,11 @@ common solver-deps
     , barbies
     , base                       >=4.7   && <5
     , bitvec
+    , bytestring
     , comonad
     , conduino                   >=0.2.4
     , containers
+    , crypton
     , data-default
     , data-default-class
     , data-fix
@@ -221,6 +224,7 @@ common solver-deps
     , lens
     , linear
     , megaparsec
+    , memory
     , microlens-th
     , monad-loops
     , monoid-extras
@@ -258,6 +262,74 @@ common solver-deps
 common executable-options
   import:      common-options
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
+
+-- 2016
+
+library aoc2016-lib
+  import:          common-options
+  import:          solver-extensions
+  import:          solver-deps
+  exposed-modules:
+    AOC2016
+    AOC2016.Day01
+    AOC2016.Day02
+    AOC2016.Day03
+    AOC2016.Day04
+    AOC2016.Day05
+    AOC2016.Day06
+    AOC2016.Day07
+    AOC2016.Day08
+    AOC2016.Day09
+    AOC2016.Day10
+    AOC2016.Day11
+    AOC2016.Day12
+    AOC2016.Day13
+    AOC2016.Day14
+    AOC2016.Day15
+    AOC2016.Day16
+    AOC2016.Day17
+    AOC2016.Day18
+    AOC2016.Day19
+    AOC2016.Day20
+    AOC2016.Day21
+    AOC2016.Day22
+    AOC2016.Day23
+    AOC2016.Day24
+    AOC2016.Day25
+
+  hs-source-dirs:  2016
+
+executable aoc2016
+  import:         executable-options
+  main-is:        aoc2016.hs
+  hs-source-dirs: app
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2016-lib
+    , base           >=4.7 && <5
+
+test-suite aoc2016-test
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2016-test.hs
+  hs-source-dirs: test
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2016-lib
+    , base           >=4.7 && <5
+
+benchmark aoc2016-bench
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2016-bench.hs
+  hs-source-dirs: bench
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2016-lib
+    , base           >=4.7 && <5
 
 -- 2018
 
