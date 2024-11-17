@@ -35,7 +35,7 @@ let
                     `./reflections/${year}/day${daylong}.md`.  If you want to edit this, edit that file instead!
                     -->
 
-                    *[Prompt][d${daylong}p]* / *[Code][d${daylong}g]* / *[Standalone][d${daylong}s]*
+                    *[Top](#)* / *[Prompt][d${daylong}p]* / *[Code][d${daylong}g]* / *[Standalone][d${daylong}s]*
 
                     [d${daylong}p]: https://adventofcode.com/${year}/day/${dayshort}
                     [d${daylong}g]: https://github.com/${github}/advent-of-code/blob/master/${year}/AOC${year}/Day${daylong}.hs
