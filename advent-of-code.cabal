@@ -199,6 +199,7 @@ common solver-deps
     , containers
     , data-default
     , data-default-class
+    , data-fix
     , data-interval
     , data-memocombinators
     , deepseq
@@ -210,6 +211,7 @@ common solver-deps
     , finitary
     , finite-typelits
     , foldl
+    , free-algebras
     , generic-lens
     , ghc-typelits-natnormalise
     , graphviz
@@ -227,6 +229,7 @@ common solver-deps
     , nonempty-containers
     , one-liner-instances
     , parallel
+    , parsec
     , parser-combinators
     , pointedlist
     , primitive
@@ -238,6 +241,7 @@ common solver-deps
     , semialign
     , semigroupoids
     , split
+    , statistics
     , strict-tuple
     , text
     , these
@@ -254,6 +258,75 @@ common solver-deps
 common executable-options
   import:      common-options
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
+
+-- 2018
+
+library aoc2018-lib
+  import:          common-options
+  import:          solver-extensions
+  import:          solver-deps
+  exposed-modules:
+    AOC2018
+    AOC2018.Common.Elfcode
+    AOC2018.Day01
+    AOC2018.Day02
+    AOC2018.Day03
+    AOC2018.Day04
+    AOC2018.Day05
+    AOC2018.Day06
+    AOC2018.Day07
+    AOC2018.Day08
+    AOC2018.Day09
+    AOC2018.Day10
+    AOC2018.Day11
+    AOC2018.Day12
+    AOC2018.Day13
+    AOC2018.Day14
+    AOC2018.Day15
+    AOC2018.Day16
+    AOC2018.Day17
+    AOC2018.Day18
+    AOC2018.Day19
+    AOC2018.Day20
+    AOC2018.Day21
+    AOC2018.Day22
+    AOC2018.Day23
+    AOC2018.Day24
+    AOC2018.Day25
+
+  hs-source-dirs:  2018
+
+executable aoc2018
+  import:         executable-options
+  main-is:        aoc2018.hs
+  hs-source-dirs: app
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2018-lib
+    , base           >=4.7 && <5
+
+test-suite aoc2018-test
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2018-test.hs
+  hs-source-dirs: test
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2018-lib
+    , base           >=4.7 && <5
+
+benchmark aoc2018-bench
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2018-bench.hs
+  hs-source-dirs: bench
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2018-lib
+    , base           >=4.7 && <5
 
 -- 2019
 
