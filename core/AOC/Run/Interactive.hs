@@ -212,7 +212,7 @@ submitSolution_ = void . submitSolution
 loadParseInput :: Integer -> ChallengeSpec -> a :~> b -> IO a
 loadParseInput yr cs s = eitherIO $ do
   i <- liftIO $ loadInput yr cs
-  maybeToEither ["No parse"] $ sParse s i
+  maybeToEither ["No parse"] $ sParse s $ stripNewline i
 
 -- | Run the parser of a solution on test data, given its 'ChallengeSpec'.
 --
@@ -234,7 +234,7 @@ loadInput yr cs = eitherIO $ do
 loadTests :: Integer -> ChallengeSpec -> IO [(String, TestMeta)]
 loadTests yr cs = do
   Cfg{..} <- configFile defConfPath
-  _cdTests <$> challengeData _cfgSession yr cs
+  map (first stripNewline) . _cdTests <$> challengeData _cfgSession yr cs
 
 -- | Unsafely create a 'ChallengeSpec' from a day number and part.
 --

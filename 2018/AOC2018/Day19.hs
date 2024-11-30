@@ -51,7 +51,7 @@ addIfIsFactor ::
   Peephole [Instr]
 addIfIsFactor i = do
   a <- currPeepPos
-  let a' = fromIntegral a
+  let a' = a
   I OSetI _ _ n <- peep (Just 1) Nothing Nothing
   let n' = fromIntegral n
   I OMulR m _ z <- peep Nothing (Just n') Nothing
@@ -67,7 +67,7 @@ addIfIsFactor i = do
   I OAddR _ _ _ <- peep (Just i') (Just z') (Just i)
   I OSetI _ _ _ <- peep (Just a') Nothing (Just i)
   b <- currPeepPos
-  let t' = fromIntegral t
+  let t' = t
       o' = fromIntegral o
   pure . take (b - a) $
     [ I OModR t' m z -- store (t `mod` m) to z

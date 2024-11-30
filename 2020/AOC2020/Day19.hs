@@ -14,7 +14,8 @@ module AOC2020.Day19 (
 )
 where
 
-import AOC.Common (countTrue, pTok)
+import AOC.Common (countTrue)
+import AOC.Common.Parser (pTok)
 import AOC.Solver ((:~>) (..))
 import Control.Applicative (empty)
 import Control.DeepSeq (NFData)

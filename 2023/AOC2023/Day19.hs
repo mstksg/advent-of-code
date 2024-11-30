@@ -12,11 +12,21 @@ module AOC2023.Day19 (
 )
 where
 
-import AOC.Common (countTrue, listTup)
+import AOC.Common (countTrue)
+import AOC.Common.Parser (
+  CharParser,
+  fullLine,
+  manyTill',
+  pDecimal,
+  parseMaybe',
+  sepBy',
+  tokenAssoc,
+  tokenMap,
+ )
 import AOC.Solver (noFail, (:~>) (..))
+import Control.Applicative (Alternative ((<|>)))
 import Control.DeepSeq (NFData)
-import Control.Lens (unsnoc)
-import Data.Char (isDigit)
+import Data.Either (partitionEithers)
 import Data.Functor.Foldable (hylo)
 import Data.Interval (Interval)
 import qualified Data.Interval as IV
@@ -24,13 +34,11 @@ import Data.IntervalMap.Strict (IntervalMap)
 import qualified Data.IntervalMap.Strict as IVM
 import Data.IntervalSet (IntervalSet)
 import qualified Data.IntervalSet as IVS
-import Data.List.Split (splitOn)
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Traversable (for)
 import GHC.Generics (Generic)
-import Safe (tailMay)
-import Text.Read (readMaybe)
+import qualified Text.Megaparsec as P
+import qualified Text.Megaparsec.Char as P
 
 data XMAS = X | M | A | S
   deriving stock (Eq, Ord, Show, Generic, Enum)
@@ -72,39 +80,31 @@ data Workflow a = Workflow
 
 instance NFData a => NFData (Workflow a)
 
-chunky :: String -> (String, [Either String (XMAS, Ordering, Int, Maybe String)])
-chunky str = (inp, map go chunks)
+workflowParser :: CharParser (String, Workflow String)
+workflowParser = do
+  key <- manyTill' P.anySingle "{"
+  workflow <- P.between "{" "}" do
+    (wfRules, wfDefault : _) <-
+      partitionEithers <$> sepBy' (Left <$> parseRule <|> Right <$> parseResult) ","
+    pure Workflow{..}
+  pure (key, workflow)
   where
-    (inp, str') = span (/= '{') str
-    chunks = splitOn "," $ filter (`notElem` "{}") str'
-    go x = maybe (Left x) Right do
-      a : o : x' <- pure x
-      a' <- M.lookup a xmasMap
-      o' <- M.lookup o opMap
-      let (b, x'') = span isDigit x'
-      b' <- readMaybe b
-      pure (a', o', b', tailMay x'')
+    parseRule :: CharParser (Rule String)
+    parseRule = P.try do
+      rXmas <- tokenMap xmasMap
+      rOp <- tokenMap opMap
+      rVal <- pDecimal
+      ":"
+      rResult <- parseResult
+      pure Rule{..}
+    parseResult :: CharParser (Result String)
+    parseResult = tokenAssoc [('R', Reject), ('A', Accept)] <|> (Defer <$> P.many P.letterChar)
 
-parseWorkflow :: String -> Maybe (String, Workflow String)
-parseWorkflow str = do
-  (conds, Left backup) <- unsnoc filterParts
-  rules <- for conds \case
-    Right (a, b, c, Just d) -> Just $ Rule a b c (classify d)
-    _ -> Nothing
-  pure (key, Workflow rules (classify backup))
-  where
-    (key, filterParts) = chunky str
-    classify = \case
-      "R" -> Reject
-      "A" -> Accept
-      p -> Defer p
-
-parseBag :: String -> Maybe (Map XMAS Int)
-parseBag = fmap M.fromList . traverse go . snd . chunky
-  where
-    go = \case
-      Right (x, _, n, _) -> Just (x, n)
-      _ -> Nothing
+bagParser :: CharParser (Map XMAS Int)
+bagParser = fmap M.fromList . P.between "{" "}" . flip sepBy' "," $ do
+  x <- tokenMap xmasMap
+  "="
+  (x,) <$> pDecimal
 
 evalWorkflow :: Map XMAS Int -> Workflow Bool -> Bool
 evalWorkflow mp = go
@@ -118,11 +118,11 @@ evalWorkflow mp = go
 day19a :: (Map String (Workflow String), [Map XMAS Int]) :~> Int
 day19a =
   MkSol
-    { sParse = \inp -> do
-        (a, b) <- listTup $ splitOn "\n\n" inp
-        (,)
-          <$> fmap M.fromList (traverse parseWorkflow (lines a))
-          <*> traverse parseBag (lines b)
+    { sParse = parseMaybe' do
+        workflows <- M.fromList <$> P.many (fullLine workflowParser)
+        "\n"
+        bags <- P.many (fullLine bagParser)
+        pure (workflows, bags)
     , sShow = show
     , sSolve = noFail $ \(wfs, xs) ->
         sum
@@ -229,7 +229,7 @@ workflowInterval Workflow{..} = foldr xmasRule (unResult wfDefault) wfRules
 day19b :: Map String (Workflow String) :~> Int
 day19b =
   MkSol
-    { sParse = fmap M.fromList . traverse parseWorkflow . takeWhile (not . null) . lines
+    { sParse = parseMaybe' $ M.fromList <$> P.many (fullLine workflowParser)
     , sShow = show
     , sSolve =
         noFail $ \wfs ->

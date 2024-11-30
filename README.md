@@ -83,11 +83,11 @@ re-compile. If you edit your solution programs, they are automatically updated
 when you hit `:r` in ghci.
 
 ```haskell
-ghci> execSolution_   $ solSpec 'day02a   -- get answer for challenge based on solution
-ghci> testSolution_   $ solSpec 'day02a   -- run solution against test suite
-ghci> viewPrompt_     $ solSpec 'day02a   -- view the prompt for a part
-ghci> waitForPrompt_  $ solSpec 'day02a   -- count down to the prompt for a part
-ghci> submitSolution_ $ solSpec 'day02a   -- submit a solution, and retry after cooldown automatically
+ghci> execSolution_   $(fromSol 'day02a)  -- get answer for challenge based on solution
+ghci> testSolution_   $(fromSol 'day02a)  -- run solution against test suite
+ghci> viewPrompt_     $(fromSol 'day02a)  -- view the prompt for a part
+ghci> waitForPrompt_  $(fromSol 'day02a)  -- count down to the prompt for a part
+ghci> submitSolution_ $(fromSol 'day02a)  -- submit a solution, and retry after cooldown automatically
 ```
 
 These are loaded with session key stored in the configuration file (see next

@@ -13,7 +13,7 @@ module AOC2018.Day20 (
   day20b,
 ) where
 
-import AOC.Common (TokStream, parseTokStreamT_)
+import AOC.Common.Parser (TokStream, parseTokStreamT_)
 import AOC.Common.Point (Point, cardinalNeighbs)
 import AOC.Solver ((:~>) (..))
 import Control.Monad (guard)

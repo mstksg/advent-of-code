@@ -13,7 +13,7 @@ module AOC2018.Day12 (
   day12b,
 ) where
 
-import AOC.Common ((!!!))
+import AOC.Common (asString, (!!!))
 import AOC.Solver ((:~>) (..))
 import Data.Bifunctor (bimap)
 import Data.Finite (Finite, finites)
@@ -91,7 +91,7 @@ makeState =
     . M.filter (== '#')
     . M.fromList
     . zip [0 ..]
-    . filter (`elem` "#.")
+    . filter (`elem` asString "#.")
 
 makeCtxs :: String -> Set Ctx
 makeCtxs =
@@ -102,7 +102,7 @@ makeCtxs =
       ( bimap parseLine head
           . splitAt 5
           . map (== '#')
-          . filter (`elem` "#.")
+          . filter (`elem` asString "#.")
       )
     . lines
   where

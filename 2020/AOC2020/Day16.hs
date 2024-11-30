@@ -14,7 +14,8 @@ module AOC2020.Day16 (
 )
 where
 
-import AOC.Common (CharParser, pickUnique, withAllSized)
+import AOC.Common (pickUnique, withAllSized)
+import AOC.Common.Parser (CharParser)
 import AOC.Solver (dyno_, (:~>) (..))
 import Control.DeepSeq (NFData)
 import Data.Char (isAlpha, isSpace)

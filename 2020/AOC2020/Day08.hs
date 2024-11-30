@@ -12,7 +12,8 @@ module AOC2020.Day08 (
 )
 where
 
-import AOC.Common (CharParser, pDecimal, parseLines, perturbationsBy)
+import AOC.Common (perturbationsBy)
+import AOC.Common.Parser (CharParser, pDecimal, parseLines)
 import AOC.Solver ((:~>) (..))
 import Control.DeepSeq (NFData)
 import Control.Lens (Index, IxValue, Ixed (..), (^?), _1)

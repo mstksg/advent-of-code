@@ -12,7 +12,8 @@ module AOC2020.Day02 (
 )
 where
 
-import AOC.Common (CharParser, countTrue, parseLines)
+import AOC.Common (countTrue)
+import AOC.Common.Parser (CharParser, parseLines)
 import AOC.Solver ((:~>) (..))
 import Control.DeepSeq (NFData)
 import Control.Monad.Combinators (some)

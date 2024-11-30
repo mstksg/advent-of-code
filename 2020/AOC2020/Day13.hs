@@ -12,7 +12,7 @@ module AOC2020.Day13 (
 )
 where
 
-import AOC.Common (CharParser, parseMaybeLenient)
+import AOC.Common.Parser (CharParser, parseMaybeLenient)
 import AOC.Solver ((:~>) (..))
 import Control.Applicative ((<|>))
 import Data.Foldable (minimumBy)

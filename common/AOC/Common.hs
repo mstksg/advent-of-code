@@ -19,6 +19,7 @@ module AOC.Common (
   trace',
   traceShowIdMsg,
   traceShowMsg,
+  asString,
 
   -- * Loops and searches
   iterateMaybe,
@@ -119,25 +120,6 @@ module AOC.Common (
   memo4,
   LCM (..),
 
-  -- * Parsers
-  TokStream (..),
-  parseTokStream,
-  parseTokStream_,
-  parseTokStreamT,
-  parseTokStreamT_,
-  TokParser,
-  parseWords,
-  nextMatch,
-  parseMaybeLenient,
-  parseOrFail,
-  CharParser,
-  pWord,
-  pHWord,
-  pDecimal,
-  pTok,
-  pSpace,
-  parseLines,
-
   -- * Normal simple line-based
   mapMaybeLines,
   mapMaybeLinesJust,
@@ -159,7 +141,6 @@ import Control.Comonad.Store
 import qualified Control.Foldl as F
 import Control.Lens
 import Control.Monad
-import qualified Control.Monad.Combinators as P
 import Control.Monad.ST
 import Control.Monad.State
 import Control.Monad.Trans.Except
@@ -176,7 +157,6 @@ import Data.Function
 import Data.Functor.Compose
 import qualified Data.Functor.Foldable as R
 import qualified Data.Graph.Inductive as G
-import Data.Hashable
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import qualified Data.IntPSQ as IntPSQ
@@ -206,20 +186,18 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Sized as SVG
 import qualified Data.Vector.Generic.Sized.Internal as SVG
 import qualified Data.Vector.Unboxed.Mutable.Sized as UVM
-import Data.Void
 import Data.Word
 import Debug.Trace
-import GHC.Generics (Generic)
 import GHC.TypeNats
 import Linear (Additive (..), R1 (..), R2 (..), R3 (..), R4 (..), V2 (..), V3 (..), V4 (..))
 import qualified Numeric.Lens as L
-import qualified Text.Megaparsec as P
-import qualified Text.Megaparsec.Char as P
-import qualified Text.Megaparsec.Char.Lexer as PL
 
 -- | trace but only after something has evaluated to WHNF
 trace' :: String -> a -> a
 trace' str x = trace (x `seq` str) x
+
+asString :: String -> String
+asString = id
 
 -- | Strict (!!)
 (!!!) :: [a] -> Int -> a
@@ -440,7 +418,7 @@ charFinite (ord -> c) =
     ]
 
 digitToIntSafe :: Char -> Maybe Int
-digitToIntSafe c = digitToInt c <$ guard (isDigit c || toLower c `elem` "abcdef")
+digitToIntSafe c = digitToInt c <$ guard (isDigit c || toLower c `elem` ("abcdef" :: String))
 
 parseBinary :: [Bool] -> Int
 parseBinary = foldl' (\i b -> if b then i * 2 + 1 else i * 2) 0
@@ -925,112 +903,6 @@ instance (Ord k, Ord p) => Ixed (OrdPSQ.OrdPSQ k p v) where
     Nothing -> pure q
     Just (p, x) -> flip (OrdPSQ.insert i p) q <$> f x
 
--- | Use a stream of tokens @a@ as the underlying parser stream.  Note that
--- error messages for parser errors are going necessarily to be wonky.
-newtype TokStream a = TokStream {getTokStream :: [a]}
-  deriving stock (Ord, Eq, Show, Generic, Functor)
-
-instance Hashable a => Hashable (TokStream a)
-
-instance NFData a => NFData (TokStream a)
-
-instance (Ord a, Show a) => P.Stream (TokStream a) where
-  type Token (TokStream a) = a
-  type Tokens (TokStream a) = Seq a
-
-  tokensToChunk _ = Seq.fromList
-  chunkToTokens _ = toList
-  chunkLength _ = Seq.length
-  take1_ = coerce . L.uncons . getTokStream
-  takeN_ n (TokStream xs) =
-    bimap Seq.fromList TokStream (splitAt n xs)
-      <$ guard (not (null xs))
-  takeWhile_ p = bimap Seq.fromList TokStream . span p . getTokStream
-
--- showTokens _ = show
--- reachOffset o ps = ("<token stream>", ps')
---   where
---     step = o - P.pstateOffset ps
---     ps' = ps { P.pstateOffset    = o
---              , P.pstateInput     = TokStream ys
---              , P.pstateSourcePos = (P.pstateSourcePos ps) {
---                   P.sourceColumn = P.sourceColumn (P.pstateSourcePos ps)
---                                 <> P.mkPos step
---                 }
---              }
---     ys = drop step (getTokStream (P.pstateInput ps))
-
--- | Parse a stream of tokens @s@ purely, returning 'Either'
-parseTokStream ::
-  Foldable t =>
-  P.Parsec e (TokStream s) a ->
-  t s ->
-  Either (P.ParseErrorBundle (TokStream s) e) a
-parseTokStream p = runIdentity . parseTokStreamT p
-
--- | Parse a stream of tokens @s@ purely
-parseTokStream_ ::
-  (Alternative m, Foldable t) =>
-  P.Parsec e (TokStream s) a ->
-  t s ->
-  m a
-parseTokStream_ p = runIdentity . parseTokStreamT_ p
-
--- | Parse a stream of tokens @s@ over an underlying monad, returning 'Either'
-parseTokStreamT ::
-  (Foldable t, Monad m) =>
-  P.ParsecT e (TokStream s) m a ->
-  t s ->
-  m (Either (P.ParseErrorBundle (TokStream s) e) a)
-parseTokStreamT p = P.runParserT p "" . TokStream . toList
-
--- | Parse a stream of tokens @s@ over an underlying monad
-parseTokStreamT_ ::
-  (Alternative f, Foldable t, Monad m) =>
-  P.ParsecT e (TokStream s) m a ->
-  t s ->
-  m (f a)
-parseTokStreamT_ p = fmap eitherToMaybe . parseTokStreamT p
-
-type CharParser = P.Parsec Void String
-
-pWord :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s String
-pWord = pTok $ P.many (P.satisfy (not . isSpace))
-
-pHWord :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s String
-pHWord = P.many (P.satisfy (not . isSpace)) <* P.many (P.satisfy (== ' '))
-
-pDecimal :: (P.Stream s, P.Token s ~ Char, Ord e, Num a) => P.Parsec e s a
-pDecimal = PL.signed P.space PL.decimal
-
-pTok :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s a -> P.Parsec e s a
-pTok p = p <* pSpace
-
-pSpace :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s ()
-pSpace = P.skipMany (P.char ' ')
-
-parseMaybeLenient :: P.Parsec Void s a -> s -> Maybe a
-parseMaybeLenient p = eitherToMaybe . P.parse p "parseMaybeLenient"
-
-parseOrFail ::
-  (P.ShowErrorComponent e, P.VisualStream s, P.TraversableStream s) => P.Parsec e s a -> s -> a
-parseOrFail p = either (error . P.errorBundlePretty) id . P.parse p "parseMaybeLenient"
-
-parseLines :: P.Parsec Void String a -> String -> Maybe [a]
-parseLines p = Just . mapMaybe (parseMaybeLenient p) . lines
-
-parseWords :: P.Parsec Void (TokStream String) a -> String -> Maybe a
-parseWords p = parseMaybeLenient p . TokStream . words
-
-type TokParser s = P.Parsec Void (TokStream s)
-
--- | Skip every result until this token matches
-nextMatch :: P.MonadParsec e s m => m a -> m a
-nextMatch = P.try . fmap snd . P.manyTill_ (P.try P.anySingle)
-
-traverseLines :: (String -> Maybe a) -> String -> Maybe [a]
-traverseLines f = traverse f . lines
-
 -- | parse a binary string
 --
 -- this is just here for me to remember that i can use lens combinators lol
@@ -1042,6 +914,9 @@ mapMaybeLines f = mapMaybe f . lines
 
 mapMaybeLinesJust :: (String -> Maybe a) -> String -> Maybe [a]
 mapMaybeLinesJust f = Just . mapMaybeLines f
+
+traverseLines :: (String -> Maybe a) -> String -> Maybe [a]
+traverseLines f = traverse f . lines
 
 toNatural :: Integral a => a -> Maybe Natural
 toNatural x = fromIntegral x <$ guard (x >= 0)

@@ -14,7 +14,7 @@ module AOC2020.Day14 (
 )
 where
 
-import AOC.Common (CharParser, parseLines)
+import AOC.Common.Parser (CharParser, parseLines)
 import AOC.Solver ((:~>) (..))
 import Control.DeepSeq (NFData)
 import Control.Lens.Indexed (ifoldl', ifoldlM)

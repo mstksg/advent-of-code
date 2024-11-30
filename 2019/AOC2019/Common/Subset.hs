@@ -15,7 +15,6 @@ module AOC2019.Common.Subset (
 ) where
 
 import AOC.Common
-import AOC.Util
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Trans.Maybe
@@ -170,7 +169,7 @@ printGraph f = GV.printIt . GV.graphToDot params
     params =
       GV.nonClusteredParams
         { GV.fmtNode = \(_, xs) -> [GV.toLabel (f xs)]
-        , GV.fmtEdge = \(_, _, b) -> [GV.toLabel $ if b then "GT" else "LT"]
+        , GV.fmtEdge = \(_, _, b) -> [GV.toLabel $ asString if b then "GT" else "LT"]
         }
 
 dTreeGraph :: forall a. DTree a -> Gr (Set a) Bool

@@ -34,7 +34,7 @@ import Text.Read (readMaybe)
 
 parseLine :: String -> Maybe (String, (Int, Set String))
 parseLine xs = do
-  (a, bs) <- uncons $ words $ clearOut (not . isUpper) (tail xs)
+  (a, bs) <- uncons $ words $ clearOut (not . isUpper) (drop 1 xs)
   r <- readMaybe $ clearOut (not . isDigit) xs
   pure (a, (r, S.fromList bs))
 

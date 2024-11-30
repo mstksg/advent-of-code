@@ -63,7 +63,6 @@ import Data.Void
 import GHC.Generics
 import GHC.Natural
 import Linear
-import Numeric.Natural (Natural)
 import Text.Read (readMaybe)
 
 type VM = Pipe Int Int Void
@@ -71,25 +70,25 @@ type VM = Pipe Int Int Void
 type AsciiVM = Pipe Text Text Void
 
 data Mode = Pos | Imm | Rel
-  deriving (Eq, Ord, Enum, Show, Generic)
+  deriving stock (Eq, Ord, Enum, Show, Generic)
 instance NFData Mode
 
 data Instr = Add | Mul | Get | Put | Jnz | Jez | Clt | Ceq | ChB | Hlt
-  deriving (Eq, Ord, Enum, Show, Generic)
+  deriving stock (Eq, Ord, Enum, Show, Generic)
 instance NFData Instr
 
 data VMErr
   = VMEBadMode Int
   | VMEBadInstr Int
   | VMEBadPos Int
-  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Typeable, Generic)
 instance Exception VMErr
 makeClassyPrisms ''VMErr
 
 data IErr
   = IENoInput
   | IEVM VMErr
-  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Typeable, Generic)
 instance Exception IErr
 makeClassyPrisms ''IErr
 
@@ -141,7 +140,7 @@ withInput ::
   Int ->
   (t Int -> m r) ->
   m (r, Mode)
-withInput mo f = withInputLazy mo ((f =<<) . sequenceA)
+withInput mo f = withInputLazy mo (f <=< sequenceA)
 
 intMode :: Int -> Maybe Mode
 intMode = \case
@@ -173,7 +172,7 @@ data InstrRes
     IRNop
   | -- | halt
     IRHalt
-  deriving (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
 
 step ::
   (AsVMErr e, MonadError e m, MonadMem m) =>

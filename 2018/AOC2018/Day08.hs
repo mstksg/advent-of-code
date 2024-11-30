@@ -13,7 +13,7 @@ module AOC2018.Day08 (
   day08b,
 ) where
 
-import AOC.Common (TokStream, parseTokStream_)
+import AOC.Common.Parser (TokStream, parseTokStream_)
 import AOC.Solver ((:~>) (..))
 import Control.Lens (ix, (^?))
 import Control.Monad (replicateM)

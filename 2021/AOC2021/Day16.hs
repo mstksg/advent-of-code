@@ -11,12 +11,8 @@ module AOC2021.Day16 (
   day16b,
 ) where
 
-import AOC.Common (
-  TokStream (..),
-  digitToIntSafe,
-  parseBinary,
-  toBinaryFixed,
- )
+import AOC.Common (digitToIntSafe, parseBinary, toBinaryFixed)
+import AOC.Common.Parser (TokStream (..))
 import AOC.Solver ((:~>) (..))
 import Control.Applicative (empty)
 import Control.DeepSeq (NFData)
@@ -55,7 +51,7 @@ day16 alg =
     { sParse =
         Just
           . TokStream
-          . concatMap (maybe [] id . fmap (toBinaryFixed 4) . digitToIntSafe)
+          . concatMap (maybe [] (toBinaryFixed 4) . digitToIntSafe)
     , sShow = show
     , sSolve = fmap (cata alg . snd) . preview _Right . P.runParser parsePacket ""
     }

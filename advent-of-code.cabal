@@ -120,6 +120,7 @@ common solver-extensions
     NumDecimals
     NumericUnderscores
     OverloadedLabels
+    OverloadedStrings
     PartialTypeSignatures
     PatternGuards
     PatternSynonyms
@@ -153,6 +154,7 @@ library aoc-common
     , finitary
     , finite-typelits
     , foldl
+    , free
     , generic-lens
     , ghc-typelits-natnormalise
     , groups
@@ -180,6 +182,7 @@ library aoc-common
   exposed-modules:
     AOC.Common
     AOC.Common.FinitarySet
+    AOC.Common.Parser
     AOC.Common.Point
     AOC.Common.Search
     AOC.Prelude

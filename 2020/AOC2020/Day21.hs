@@ -14,7 +14,8 @@ module AOC2020.Day21 (
 )
 where
 
-import AOC.Common (countTrue, parseLines, pickUnique)
+import AOC.Common (countTrue, pickUnique)
+import AOC.Common.Parser (parseLines)
 import AOC.Solver ((:~>) (..))
 import Data.Foldable (toList)
 import Data.Functor ((<&>))

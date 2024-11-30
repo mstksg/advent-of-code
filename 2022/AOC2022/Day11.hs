@@ -61,7 +61,7 @@ parseMonkey :: String -> Maybe MonkeyData
 parseMonkey blob = do
   [_, a, b, c, d, e] <- pure $ lines blob
   mdItems <- traverse readMaybe $ words (clearOut (not . isDigit) a)
-  [_, x, y] <- pure $ words . tail $ dropWhile (/= '=') b
+  [_, x, y] <- pure $ words . drop 1 $ dropWhile (/= '=') b
   let mdTrans = (if x == "*" then Mul else Add, readMaybe y)
   mdCond <- readMaybe $ clearOut (not . isDigit) c
   mdTrue <- readMaybe $ clearOut (not . isDigit) d

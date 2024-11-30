@@ -28,7 +28,6 @@ import Control.Monad
 import Control.Monad.Primitive
 import qualified Control.Monad.ST as STS
 import qualified Control.Monad.ST.Lazy as STL
-import Control.Monad.Writer
 import Data.Bits
 import Data.Char
 import Data.Finite
@@ -54,7 +53,7 @@ data Instr = I
   , _iInB :: Int
   , _iOut :: Finite 6
   }
-  deriving (Show, Eq, Ord)
+  deriving stock (Show, Eq, Ord)
 
 data OpCode
   = OAddR
@@ -79,7 +78,7 @@ data OpCode
   | ONoOp
   | OOutR
   | OOutI
-  deriving (Show, Eq, Ord, Enum, Bounded)
+  deriving stock (Show, Eq, Ord, Enum, Bounded)
 
 execOp :: (PrimMonad m, PrimState m ~ s) => Instr -> Mem s -> m (Maybe Int)
 execOp I{..} = case _iOp of
@@ -243,7 +242,7 @@ elfcodeParser =
   where
     lineParser =
       P.try (Just <$> instrParser)
-        <|> Nothing <$ (P.char '#' *> P.many (P.noneOf "\n"))
+        <|> Nothing <$ (P.char '#' *> P.many (P.anySingleBut '\n'))
 
 instrParser :: Parser Instr
 instrParser =

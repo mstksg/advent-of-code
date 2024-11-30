@@ -106,7 +106,7 @@ day23b =
     , sShow = show
     , sSolve =
         firstJust (\(x, y) -> x <$ guard (x == y))
-          . (zip `ap` tail)
+          . (zip `ap` drop 1)
           . mapMaybe natted
           . iterate stepNetwork
           . initNetwork

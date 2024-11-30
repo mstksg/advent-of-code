@@ -15,7 +15,7 @@ module AOC2020.Day07 (
 )
 where
 
-import AOC.Common (CharParser, pWord, parseLines)
+import AOC.Common.Parser (CharParser, pWord, parseLines)
 import AOC.Solver ((:~>) (..))
 import Control.Applicative (many)
 import Data.Map (Map)
@@ -46,7 +46,11 @@ bagParser = do
   pure (nm, bs)
   where
     bagName :: CharParser Bag
-    bagName = (,) <$> (T.pack <$> pWord) <*> (T.pack <$> pWord <* pWord)
+    bagName = do
+      x <- T.pack <$> pWord
+      y <- T.pack <$> pWord
+      pWord
+      pure (x, y)
 
 flipGraph :: Ord v => Graph v e -> Graph v e
 flipGraph mp =
@@ -78,7 +82,7 @@ allDescendants :: Ord v => Graph v e -> Map v (Set v)
 allDescendants =
   foldMapGraph
     S.singleton -- the node is embedded as itself
-    (\_ -> id) -- ignore the edge
+    (const id) -- ignore the edge
 
 usageCounts :: Ord v => Graph v Int -> Map v (Sum Int)
 usageCounts =
