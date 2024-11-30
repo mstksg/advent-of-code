@@ -12,35 +12,32 @@ module AOC2023.Day02 (
 )
 where
 
-import AOC.Common (listTup)
+import AOC.Common.Parser (CharParser, pDecimal, pTok, pTokMany, parseLines, sepBy')
 import AOC.Solver ((:~>) (..))
-import Control.Monad (guard, (<=<))
-import Data.List.Split (splitOn)
+import Control.Monad (guard)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (mapMaybe)
-import Text.Read (readMaybe)
+import qualified Text.Megaparsec.Char as P
 
-parseLine :: String -> Maybe (Int, Map String Int)
-parseLine fullLine = do
-  (gameNum, specs) <- listTup $ splitOn ": " fullLine
-  ("Game", n) <- listTup $ words gameNum
-  i <- readMaybe n
-  sets <-
-    fmap (M.unionsWith max)
-      . traverse
-        ( fmap M.fromList
-            . traverse (traverse readMaybe <=< listTup . reverse . words)
-            . splitOn ","
-        )
-      . splitOn ";"
-      $ specs
-  pure (i, sets)
+lineParser :: CharParser (Int, Map String Int)
+lineParser = do
+  "Game"
+  n <- pDecimal
+  ":"
+  maps <-
+    flip sepBy' ";" $
+      M.fromList <$> do
+        flip sepBy' (pTok ",") do
+          i <- pDecimal
+          color <- pTokMany P.letterChar
+          pure (color, i)
+  pure (n, M.unionsWith max maps)
 
 day02a :: [(Int, Map String Int)] :~> Int
 day02a =
   MkSol
-    { sParse = traverse parseLine . lines
+    { sParse = parseLines lineParser
     , sShow = show
     , sSolve = Just . sum . mapMaybe (\(a, b) -> a <$ guard (isLegal b))
     }
@@ -56,7 +53,7 @@ day02a =
 day02b :: [Map String Int] :~> Int
 day02b =
   MkSol
-    { sParse = fmap (map snd) . traverse parseLine . lines
+    { sParse = fmap (map snd) . parseLines lineParser
     , sShow = show
     , sSolve = Just . sum . map product
     }

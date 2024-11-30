@@ -16,6 +16,7 @@ module AOC.Common.Parser (
   pHWord,
   pDecimal,
   pTok,
+  pTokMany,
   pSpace,
   parseLines,
   sepBy',
@@ -23,6 +24,7 @@ module AOC.Common.Parser (
   sepBy1',
   manyTill',
   someTill',
+  pDropUntil,
   between',
   tokenMap,
   tokenAssoc,
@@ -117,17 +119,23 @@ pWord = pTok $ P.many (P.satisfy (not . isSpace))
 pHWord :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s String
 pHWord = P.many (P.satisfy (not . isSpace)) <* P.many (P.satisfy (== ' '))
 
-pDecimal :: (P.Stream s, P.Token s ~ Char, Ord e, Num a) => P.Parsec e s a
-pDecimal = PL.signed P.space PL.decimal
+pDecimal :: forall a e s. (P.Stream s, P.Token s ~ Char, Ord e, Num a) => P.Parsec e s a
+pDecimal = pTok $ PL.signed P.space PL.decimal
 
 pTok :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s a -> P.Parsec e s a
-pTok p = p <* pSpace
+pTok p = pSpace *> p <* pSpace
+
+pTokMany :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s a -> P.Parsec e s [a]
+pTokMany = pTok . P.many
 
 pSpace :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s ()
 pSpace = P.skipMany (P.char ' ')
 
 parseMaybeLenient :: P.Parsec Void s a -> s -> Maybe a
 parseMaybeLenient p = eitherToMaybe . P.parse p "parseMaybeLenient"
+
+pDropUntil :: (P.Stream s, Ord e) => P.Parsec e s end -> P.Parsec e s end
+pDropUntil = fmap snd . P.manyTill_ P.anySingle
 
 -- | Alias for 'parseMaybeLenient'
 parseMaybe' :: P.Parsec Void s a -> s -> Maybe a
@@ -174,7 +182,7 @@ tokenAssoc :: (P.Stream s, Ord e) => [(P.Token s, a)] -> P.Parsec e s a
 tokenAssoc = tokenMap . M.fromList
 
 fullLine :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s a -> P.Parsec e s a
-fullLine p = P.try p <* P.optional (P.char '\n')
+fullLine p = P.try p <* P.optional P.newline
 
 type TokParser s = P.Parsec Void (TokStream s)
 

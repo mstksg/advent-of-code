@@ -14,15 +14,14 @@ module AOC2023.Day07 (
 )
 where
 
-import AOC.Common (freqs, listTup)
+import AOC.Common (freqs)
+import AOC.Common.Parser (CharParser, pDecimal, parseLines, tokenMap)
 import AOC.Solver (noFail, (:~>) (..))
-import Control.Monad ((<=<))
-import Data.Bitraversable (bitraverse)
+import Control.Monad (replicateM)
 import Data.List (sortOn)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Ord (Down (..))
-import Text.Read (readMaybe)
 
 data Card
   = Joker
@@ -59,12 +58,16 @@ handType cs = maybe id addJoker numJokers $ sortOn Down (M.elems fs')
       [] -> [n]
       x : xs -> (x + n) : xs
 
+parseLine :: Map Char Card -> CharParser ([Card], Int)
+parseLine mp =
+  (,)
+    <$> replicateM 5 (tokenMap mp)
+    <*> pDecimal
+
 day07 :: Map Char Card -> [([Card], Int)] :~> Int
 day07 parseCard =
   MkSol
-    { sParse =
-        traverse (bitraverse (traverse (`M.lookup` parseCard)) readMaybe <=< listTup . words)
-          . lines
+    { sParse = parseLines $ parseLine parseCard
     , sShow = show
     , sSolve =
         noFail $

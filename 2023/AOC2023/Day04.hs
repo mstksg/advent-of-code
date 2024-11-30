@@ -12,23 +12,23 @@ module AOC2023.Day04 (
 )
 where
 
-import AOC.Common (listTup)
+import AOC.Common.Parser (CharParser, pDecimal, parseLines)
 import AOC.Solver (noFail, (:~>) (..))
-import Control.Monad ((<=<))
+import qualified Control.Monad.Combinators as P
 import Control.Monad.State (evalState, state)
-import Data.List.Split (splitOn)
 import qualified Data.Map as M
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Traversable (for)
-import Safe (tailMay)
-import Text.Read (readMaybe)
 
-parseCard :: String -> Maybe (Set Int, Set Int)
-parseCard =
-  listTup
-    <=< traverse (fmap S.fromList . traverse readMaybe . words) . splitOn "|"
-    <=< tailMay . dropWhile (/= ':')
+cardParser :: CharParser (Set Int, Set Int)
+cardParser = do
+  "Card"
+  _ <- pDecimal @Int
+  ":"
+  xs <- S.fromList <$> P.manyTill pDecimal "|"
+  ys <- S.fromList <$> P.many pDecimal
+  pure (xs, ys)
 
 cardWins :: (Set Int, Set Int) -> Int
 cardWins = S.size . uncurry S.intersection
@@ -36,7 +36,7 @@ cardWins = S.size . uncurry S.intersection
 day04a :: [(Set Int, Set Int)] :~> Int
 day04a =
   MkSol
-    { sParse = traverse parseCard . lines
+    { sParse = parseLines cardParser
     , sShow = show
     , sSolve =
         noFail $
@@ -46,7 +46,7 @@ day04a =
 day04b :: [(Set Int, Set Int)] :~> Int
 day04b =
   MkSol
-    { sParse = traverse parseCard . lines
+    { sParse = parseLines cardParser
     , sShow = show
     , sSolve = noFail \cards ->
         let ixedCards = M.fromList $ zip [1 ..] cards
