@@ -20,6 +20,7 @@ Reflections and detailed solutions are available on the wiki:
 *   [2021 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2021)
 *   [2022 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2022)
 *   [2023 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2023)
+*   [2024 Reflections](https://github.com/mstksg/advent-of-code/wiki/Reflections-2024)
 
 
 I have fully migrated everything here except for [2017][] (my first year
