@@ -28,7 +28,7 @@ parseOpts =
       (O.long "force" <> O.short 'f' <> O.help "Overwrite files if present")
 
 outRoot :: Integer -> FilePath
-outRoot yr = show yr <> "/src/AOC" <> show yr
+outRoot yr = show yr <> "/AOC" <> show yr
 
 main :: IO ()
 main = do
