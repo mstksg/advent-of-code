@@ -18,6 +18,7 @@ where
 import AOC.Common as P
 import AOC.Common.Point as P
 import AOC.Common.Search as P
+import AOC.Common.Parser as P
 import AOC.Solver as P
 import AOC.Util as P
 import Control.Applicative as P
@@ -33,7 +34,7 @@ import Data.Either as P
 import Data.Finite as P (Finite, finites, getFinite, modulo, packFinite)
 import Data.Foldable as P
 import Data.Function as P
-import Data.Functor as P
+import Data.Functor as P hiding (unzip)
 import Data.Functor.Foldable as P (ana, cata, hylo)
 import Data.Functor.Foldable.TH as P (makeBaseFunctor)
 import Data.Generics.Labels ()
