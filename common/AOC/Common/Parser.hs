@@ -14,6 +14,8 @@ module AOC.Common.Parser (
   CharParser,
   pWord,
   pHWord,
+  pAlphaWord,
+  pAlphaNumWord,
   pDecimal,
   pTok,
   pTokMany,
@@ -29,6 +31,7 @@ module AOC.Common.Parser (
   tokenMap,
   tokenAssoc,
   fullLine,
+  optionalEnd,
 ) where
 
 import AOC.Util
@@ -116,6 +119,12 @@ type CharParser = P.Parsec Void String
 pWord :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s String
 pWord = pTok $ P.many (P.satisfy (not . isSpace))
 
+pAlphaWord :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s String
+pAlphaWord = pTok $ P.many P.letterChar
+
+pAlphaNumWord :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s String
+pAlphaNumWord = pTok $ P.many P.alphaNumChar
+
 pHWord :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s String
 pHWord = P.many (P.satisfy (not . isSpace)) <* P.many (P.satisfy (== ' '))
 
@@ -162,6 +171,13 @@ sepByLines = flip sepBy' (P.char '\n')
 sepBy1' :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s sep -> P.Parsec e s (NonEmpty a)
 sepBy1' x sep = PNE.sepBy1 (P.notFollowedBy sep *> P.try x) sep
 
+-- can we make this work for potentially finite traversals?
+-- sequenceSepBy :: (P.Stream s, Ord e) => t (P.Parsec e s a) -> P.Parsec e s sep -> P.Parsec e s (t a)
+-- sequenceSepBy xs sep = _
+
+optionalEnd :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> P.Parsec e s a
+optionalEnd x end = P.try x <* P.optional (P.try end)
+
 -- | 'manyTill' but do not parse the end token
 manyTill' :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> P.Parsec e s [a]
 manyTill' x end = P.many (P.notFollowedBy end *> P.try x)
@@ -182,7 +198,7 @@ tokenAssoc :: (P.Stream s, Ord e) => [(P.Token s, a)] -> P.Parsec e s a
 tokenAssoc = tokenMap . M.fromList
 
 fullLine :: (P.Stream s, P.Token s ~ Char, Ord e) => P.Parsec e s a -> P.Parsec e s a
-fullLine p = P.try p <* P.optional P.newline
+fullLine p = optionalEnd p P.newline
 
 type TokParser s = P.Parsec Void (TokStream s)
 

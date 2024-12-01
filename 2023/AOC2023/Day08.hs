@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- |
 -- Module      : AOC.Challenge.Day08
 -- License     : BSD3
@@ -15,28 +12,37 @@ module AOC2023.Day08 (
 )
 where
 
-import AOC.Common (LCM (..))
+import AOC.Common.Parser (
+  CharParser,
+  between',
+  fullLine,
+  pAlphaWord,
+  pTok,
+  pWord,
+  parseMaybe',
+  tokenAssoc,
+ )
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad (guard)
-import Data.Char (isAlphaNum)
+import qualified Control.Monad.Combinators as P
 import Data.Functor (($>))
-import Data.List (foldl')
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (mapMaybe)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
+import qualified Text.Megaparsec.Char as P
 
-parseMe :: [String] -> Maybe ([Bool], [(String, String, String)])
-parseMe = \case
-  x : _ : xs ->
-    let path = map (== 'R') x
-        mp =
-          [ (a, filter isAlphaNum b, filter isAlphaNum c)
-          | [a, "=", b, c] <- words <$> xs
-          ]
-     in Just (path, mp)
-  _ -> Nothing
+puzzleParse :: CharParser ([Bool], [(String, String, String)])
+puzzleParse = do
+  ts <- fullLine . P.many $ tokenAssoc [('L', False), ('R', True)]
+  P.newline
+  rules <- P.many . fullLine $ do
+    x <- pWord
+    pTok "="
+    (y, z) <- between' "(" ")" $ (,) <$> pAlphaWord <* "," <*> pAlphaWord
+    pure (x, y, z)
+  pure (ts, rules)
 
 stateMachine :: (String -> Bool) -> [Bool] -> [(String, String, String)] -> Map String (Seq String)
 stateMachine isValid lrs xs =
@@ -65,7 +71,7 @@ ixMod xs i = xs `Seq.index` (i `mod` Seq.length xs)
 day08a :: ([Bool], [(String, String, String)]) :~> Int
 day08a =
   MkSol
-    { sParse = parseMe . lines
+    { sParse = parseMaybe' puzzleParse
     , sShow = show
     , sSolve = noFail \(xs, mp) ->
         let sm = stateMachine (/= "ZZZ") xs mp
@@ -75,7 +81,7 @@ day08a =
 day08b :: ([Bool], [(String, String, String)]) :~> Int
 day08b =
   MkSol
-    { sParse = parseMe . lines
+    { sParse = parseMaybe' puzzleParse
     , sShow = show
     , sSolve = noFail \(xs, mp) ->
         foldr lcm 1
