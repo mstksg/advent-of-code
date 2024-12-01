@@ -745,3 +745,71 @@ benchmark aoc2023-bench
     , aoc-core
     , aoc2023-lib
     , base           >=4.7 && <5
+
+-- 2024
+
+library aoc2024-lib
+  import:          common-options
+  import:          solver-extensions
+  import:          solver-deps
+  exposed-modules:
+    AOC2024
+    AOC2024.Day01
+    AOC2024.Day02
+    AOC2024.Day03
+    AOC2024.Day04
+    AOC2024.Day05
+    AOC2024.Day06
+    AOC2024.Day07
+    AOC2024.Day08
+    AOC2024.Day09
+    AOC2024.Day10
+    AOC2024.Day11
+    AOC2024.Day12
+    AOC2024.Day13
+    AOC2024.Day14
+    AOC2024.Day15
+    AOC2024.Day16
+    AOC2024.Day17
+    AOC2024.Day18
+    AOC2024.Day19
+    AOC2024.Day20
+    AOC2024.Day21
+    AOC2024.Day22
+    AOC2024.Day23
+    AOC2024.Day24
+    AOC2024.Day25
+
+  hs-source-dirs:  2024
+
+executable aoc2024
+  import:         executable-options
+  main-is:        aoc2024.hs
+  hs-source-dirs: app
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2024-lib
+    , base           >=4.7 && <5
+
+test-suite aoc2024-test
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2024-test.hs
+  hs-source-dirs: test
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2024-lib
+    , base           >=4.7 && <5
+
+benchmark aoc2024-bench
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2024-bench.hs
+  hs-source-dirs: bench
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2024-lib
+    , base           >=4.7 && <5

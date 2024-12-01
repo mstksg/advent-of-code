@@ -1,10 +1,6 @@
 #!/usr/bin/env nix-shell
 #!nix-shell --pure -i runghc -p "haskellPackages.ghcWithPackages (pkgs: [ pkgs.text pkgs.template pkgs.optparse-applicative ])"
 
--- #! /usr/bin/env nix-shell
--- #! nix-shell -i bash -p bash
--- #!/usr/bin/env stack
--- stack --install-ghc runghc --resolver lts-16 --package template --package text --package filepath --package directory -- -Wall
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -43,7 +39,7 @@ main = do
         (O.fullDesc <> O.progDesc "Generate haskell daily challenge files" <> O.header "generate_days")
   temp <- template <$> T.readFile "template/DayXX.hs.template"
   forM_ [1 .. 25] $ \i -> do
-    let newFilePath = outRoot y </> printf "Day%02d.hs" i
+    let newFilePath = outRoot oYear </> printf "Day%02d.hs" i
         Just newFile = renderA temp (ctx oYear i)
     alreadyExists <- doesFileExist newFilePath
     skip <-

@@ -1,5 +1,5 @@
 {
-  description = "aoc2023";
+  description = "advent-of-code";
   inputs = {
     haskellNix.url = "github:input-output-hk/haskell.nix";
     nixpkgs.follows = "haskellNix/nixpkgs-unstable";
@@ -54,7 +54,7 @@
         packages = advent-of-code.components.exes //
           {
             inherit (pkgs.advent-of-code.site) site;
-            default = advent-of-code.components.exes.aoc2023;
+            default = advent-of-code.components.exes.aoc2024;
           };
         devShells.default = advent-of-code-project.shell;
         legacyPackages = pkgs;
