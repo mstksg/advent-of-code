@@ -37,3 +37,24 @@ part2 = countTrue \xs ->
 xs)` gives us `[2,3]`, `[3]`, and `[]`.  So we can zip those up to get
 `[2,3]`, `[1,3]`, and `[2,3]`.  We just need to make sure we add back in our
 original `xs`.
+
+This is probably the simplest way to write, but, there's something
+cute/recursive we can do using the list "monad" to generate all possibilities:
+for each `x:xs`, we can either "drop here" or "drop later":
+
+
+```haskell
+tryDrops :: [a] -> [[a]]
+tryDrops = \case
+  [] -> [[]]
+  x : xs -> xs : ((x :) <$> tryDrop xs)
+        --  ^ drop here
+        --        ^ drop later
+```
+
+And this simplifies part 2 significantly:
+
+```haskell
+part2 :: [[Int]] -> Int
+part2 = countTrue $ predicate . tryDrops
+```

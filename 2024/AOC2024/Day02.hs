@@ -17,7 +17,11 @@ import AOC.Common.Parser (pDecimal, parseLines)
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Applicative (many)
 import Data.Ix (inRange)
-import Data.List (inits, tails)
+
+tryDrops :: [a] -> [[a]]
+tryDrops = \case
+  [] -> [[]]
+  x : xs -> xs : ((x :) <$> tryDrops xs)
 
 predicate :: [Int] -> Bool
 predicate xs = any (all (inRange (1, 3))) [diffies, negate <$> diffies]
@@ -38,8 +42,5 @@ day02b =
     { sParse = sParse day02a
     , sShow = show
     , sSolve =
-        noFail $
-          countTrue \xs ->
-            let possibilities = xs : zipWith (++) (inits xs) (drop 1 $ tails xs)
-             in any predicate possibilities
+        noFail . countTrue $ any predicate . tryDrops
     }
