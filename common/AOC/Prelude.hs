@@ -16,9 +16,9 @@ module AOC.Prelude (
 where
 
 import AOC.Common as P
+import AOC.Common.Parser as P
 import AOC.Common.Point as P
 import AOC.Common.Search as P
-import AOC.Common.Parser as P
 import AOC.Solver as P
 import AOC.Util as P
 import Control.Applicative as P
@@ -42,6 +42,7 @@ import Data.IntMap as P (IntMap)
 import Data.IntMap.NonEmpty as P (NEIntMap)
 import Data.IntSet as P (IntSet)
 import Data.IntSet.NonEmpty as P (NEIntSet)
+import Data.Ix as P hiding (index)
 import Data.Kind as P
 import Data.List as P (
   group,
