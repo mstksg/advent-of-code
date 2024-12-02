@@ -47,7 +47,7 @@ for each `x:xs`, we can either "drop here" or "drop later":
 tryDrops :: [a] -> [[a]]
 tryDrops = \case
   [] -> [[]]
-  x : xs -> xs : ((x :) <$> tryDrop xs)
+  x : xs -> xs : ((x :) <$> tryDrops xs)
         --  ^ drop here
         --        ^ drop later
 ```
@@ -56,5 +56,5 @@ And this simplifies part 2 significantly:
 
 ```haskell
 part2 :: [[Int]] -> Int
-part2 = countTrue $ predicate . tryDrops
+part2 = countTrue $ any predicate . tryDrops
 ```
