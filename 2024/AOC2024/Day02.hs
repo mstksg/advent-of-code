@@ -22,8 +22,8 @@
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day02
   ( 
-    -- day02a,
-    -- day02b
+    day02a,
+    day02b
   )
 where
 
@@ -53,14 +53,15 @@ import qualified Text.Megaparsec.Char.Lexer as PP
 day02a :: _ :~> _
 day02a =
   MkSol
-    { sParse =
-        noFail $
-          lines
+    { sParse = parseLines (P.many pDecimal)
     ,
       sShow = show,
       sSolve =
         noFail $
-          id
+          countTrue \xs -> 
+            let diffies = zipWith subtract xs (drop 1 xs)
+             in all (\x -> x `elem` [1,2,3]) (abs <$> diffies)
+                  && (all (> 0) diffies || all (< 0) diffies)
     }
 
 day02b :: _ :~> _
@@ -70,5 +71,13 @@ day02b =
       sShow = show,
       sSolve =
         noFail $
-          id
+          countTrue \xs -> 
+            let possibilities = xs : zipWith (++) (inits xs) (drop 1 $ tails xs)
+             in any pred possibilities
+
     }
+  where
+    pred xs = 
+            let diffies = zipWith subtract xs (drop 1 xs)
+             in all (\x -> x `elem` [1,2,3]) (abs <$> diffies)
+                  && (all (> 0) diffies || all (< 0) diffies)
