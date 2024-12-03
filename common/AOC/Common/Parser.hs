@@ -24,8 +24,8 @@ module AOC.Common.Parser (
   sepBy',
   sepByLines,
   sepBy1',
-  manyTill',
-  someTill',
+  manyTillWithout,
+  someTillWithout,
   pDropUntil,
   between',
   tokenMap,
@@ -144,7 +144,7 @@ parseMaybeLenient :: P.Parsec Void s a -> s -> Maybe a
 parseMaybeLenient p = eitherToMaybe . P.parse p "parseMaybeLenient"
 
 pDropUntil :: (P.Stream s, Ord e) => P.Parsec e s end -> P.Parsec e s end
-pDropUntil = fmap snd . P.manyTill_ P.anySingle
+pDropUntil = P.try . P.skipManyTill P.anySingle . P.try
 
 -- | Alias for 'parseMaybeLenient'
 parseMaybe' :: P.Parsec Void s a -> s -> Maybe a
@@ -179,12 +179,12 @@ optionalEnd :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> P.Pa
 optionalEnd x end = P.try x <* P.optional (P.try end)
 
 -- | 'manyTill' but do not parse the end token
-manyTill' :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> P.Parsec e s [a]
-manyTill' x end = P.many (P.notFollowedBy end *> P.try x)
+manyTillWithout :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> P.Parsec e s [a]
+manyTillWithout x end = P.many (P.notFollowedBy end *> P.try x)
 
 -- | 'someTill' but do not parse the end token
-someTill' :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> P.Parsec e s (NonEmpty a)
-someTill' x end = PNE.some (P.notFollowedBy end *> P.try x)
+someTillWithout :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> P.Parsec e s (NonEmpty a)
+someTillWithout x end = PNE.some (P.notFollowedBy end *> P.try x)
 
 -- | 'between' but automatically exclude the separator from the internal parser. does this make sense?
 between' ::

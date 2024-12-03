@@ -16,7 +16,7 @@ import AOC.Common (countTrue)
 import AOC.Common.Parser (
   CharParser,
   fullLine,
-  manyTill',
+  manyTillWithout,
   pDecimal,
   parseMaybe',
   sepBy',
@@ -82,7 +82,7 @@ instance NFData a => NFData (Workflow a)
 
 workflowParser :: CharParser (String, Workflow String)
 workflowParser = do
-  key <- manyTill' P.anySingle "{"
+  key <- manyTillWithout P.anySingle "{"
   workflow <- P.between "{" "}" do
     (wfRules, wfDefault : _) <-
       partitionEithers <$> sepBy' (Left <$> parseRule <|> Right <$> parseResult) ","
