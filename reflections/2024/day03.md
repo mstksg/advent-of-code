@@ -1,5 +1,5 @@
 You can think of the whole thing is essentially a state machine / finite
-automat. For part 1 it's straightforward: chump as many `mul(x,y)` as
+automata. For part 1 it's straightforward: chump as many `mul(x,y)` as
 possible, summing the muls:
 
 ```haskell
