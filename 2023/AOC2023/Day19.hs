@@ -12,7 +12,7 @@ module AOC2023.Day19 (
 )
 where
 
-import AOC.Common (countTrue)
+import AOC.Common (chooseEither, countTrue)
 import AOC.Common.Parser (
   CharParser,
   fullLine,
@@ -85,7 +85,7 @@ workflowParser = do
   key <- manyTillWithout P.anySingle "{"
   workflow <- P.between "{" "}" do
     (wfRules, wfDefault : _) <-
-      partitionEithers <$> sepBy' (Left <$> parseRule <|> Right <$> parseResult) ","
+      partitionEithers <$> sepBy' (parseRule `chooseEither` parseResult) ","
     pure Workflow{..}
   pure (key, workflow)
   where

@@ -24,6 +24,7 @@ module AOC.Common.Parser (
   sepBy',
   sepByLines,
   sepBy1',
+  sequenceSepBy,
   manyTillWithout,
   someTillWithout,
   pDropUntil,
@@ -58,6 +59,7 @@ import Data.Void
 import GHC.Generics (Generic)
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
+import Data.Traversable
 import qualified Text.Megaparsec.Char.Lexer as PL
 
 -- | Use a stream of tokens @a@ as the underlying parser stream.  Note that
@@ -171,9 +173,12 @@ sepByLines = flip sepBy' (P.char '\n')
 sepBy1' :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s sep -> P.Parsec e s (NonEmpty a)
 sepBy1' x sep = PNE.sepBy1 (P.notFollowedBy sep *> P.try x) sep
 
--- can we make this work for potentially finite traversals?
--- sequenceSepBy :: (P.Stream s, Ord e) => t (P.Parsec e s a) -> P.Parsec e s sep -> P.Parsec e s (t a)
--- sequenceSepBy xs sep = _
+sequenceSepBy :: (Traversable t, P.Stream s, Ord e) => t (P.Parsec e s a) -> P.Parsec e s sep -> P.Parsec e s (t a)
+sequenceSepBy xs sep = sequenceA . snd $ mapAccumR go False xs
+  where
+    go addSep x = (True, if addSep then x' <* sep else x')
+      where
+        x' = P.notFollowedBy sep *> P.try x
 
 optionalEnd :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> P.Parsec e s a
 optionalEnd x end = P.try x <* P.optional (P.try end)

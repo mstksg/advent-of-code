@@ -20,6 +20,7 @@ import AOC.Common.Parser (
   pTok,
   pWord,
   parseMaybe',
+  sequenceSepBy,
   tokenAssoc,
  )
 import AOC.Solver (noFail, (:~>) (..))
@@ -31,6 +32,7 @@ import qualified Data.Map as M
 import Data.Maybe (mapMaybe)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
+import Linear.V2 (V2 (..))
 import qualified Text.Megaparsec.Char as P
 
 puzzleParse :: CharParser ([Bool], [(String, String, String)])
@@ -40,7 +42,7 @@ puzzleParse = do
   rules <- P.many . fullLine $ do
     x <- pWord
     pTok "="
-    (y, z) <- between' "(" ")" $ (,) <$> pAlphaWord <* "," <*> pAlphaWord
+    V2 y z <- between' "(" ")" $ pure pAlphaWord `sequenceSepBy` ","
     pure (x, y, z)
   pure (ts, rules)
 

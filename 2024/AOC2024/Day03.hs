@@ -12,14 +12,14 @@ module AOC2024.Day03 (
 )
 where
 
-import AOC.Common.Parser (CharParser, pDropUntil, parseMaybe')
+import AOC.Common.Parser (CharParser, pDropUntil, parseMaybe', sequenceSepBy)
 import AOC.Solver (type (:~>) (..))
 import Control.Applicative (Alternative (many))
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char.Lexer as PL
 
 parseMul :: CharParser Int
-parseMul = product <$> P.between "mul(" ")" (PL.decimal `P.sepBy` ",")
+parseMul = product <$> P.between "mul(" ")" (replicate 2 PL.decimal `sequenceSepBy` ",")
 
 day03a :: String :~> Int
 day03a =

@@ -19,7 +19,6 @@ module AOC.Common (
   trace',
   traceShowIdMsg,
   traceShowMsg,
-  asString,
 
   -- * Loops and searches
   iterateMaybe,
@@ -107,7 +106,7 @@ module AOC.Common (
   parseBinary,
   caeser,
   eitherItem,
-  -- , getDown
+  chooseEither,
   toNatural,
   factorial,
   integerFactorial,
@@ -119,6 +118,7 @@ module AOC.Common (
   unfoldedIterate,
   memo4,
   LCM (..),
+  asString,
 
   -- * Normal simple line-based
   mapMaybeLines,
@@ -384,8 +384,8 @@ eitherItem :: Lens' (Either a a) a
 eitherItem f (Left x) = Left <$> f x
 eitherItem f (Right x) = Right <$> f x
 
--- getDown :: Down a -> a
--- getDown (Down x) = x
+chooseEither :: Alternative f => f a -> f b -> f (Either a b)
+chooseEither x y = (Left <$> x) <|> (Right <$> y)
 
 splitWord :: Word8 -> (Finite 16, Finite 16)
 splitWord = swap . separateProduct . F.toFinite
