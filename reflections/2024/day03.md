@@ -25,7 +25,7 @@ continue on, or the next `don't` and continue off.
 
 ```haskell
 part2 :: P.Parsec v String Int
-part2 = sum <$> goDisabled
+part2 = sum <$> goEnabled
   where
     goDisabled = P.option [] . dropUntil $ "do()" *> goEnabled
     goEnabled = P.option [] . dropUntil $

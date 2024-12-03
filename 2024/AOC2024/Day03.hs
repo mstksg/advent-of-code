@@ -30,7 +30,7 @@ day03a =
     }
 
 doOrDoNot :: CharParser Int
-doOrDoNot = sum <$> goDisabled
+doOrDoNot = sum <$> goEnabled
   where
     goDisabled :: CharParser [Int]
     goDisabled = P.option [] . pDropUntil $ "do()" *> goEnabled
