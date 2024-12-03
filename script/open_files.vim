@@ -29,7 +29,7 @@ function! OpenAoC(year,day)
                   \"test-data/" . l:yearstr . "/" . l:daystr . "a.txt",
                   \"test-data/" . l:yearstr . "/" . l:daystr . "b.txt",
                   \"reflections/" . l:yearstr . "/day" . l:daystr . ".md",
-                  \"bench-out/" . l:yearstr . "/day" . l:daystr . ".txt"
+                  \"bench-results/" . l:yearstr . "/day" . l:daystr . ".txt"
                   \]
 
     for fn in reverse(l:files)
