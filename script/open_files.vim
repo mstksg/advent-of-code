@@ -20,7 +20,7 @@
 function! OpenAoC(year,day)
     let l:daystr  = printf("%02d",a:day)
     let l:yearstr = printf("%04d",a:year)
-    let l:files = [l:yearstr . "/src/AOC" . l:yearstr . "/Day" . l:daystr . ".hs",
+    let l:files = [l:yearstr . "/AOC" . l:yearstr . "/Day" . l:daystr . ".hs",
                   \"data/" . l:yearstr . "/" . l:daystr . ".txt",
                   \"prompt/" . l:yearstr . "/" . l:daystr . "a.md",
                   \"prompt/" . l:yearstr . "/" . l:daystr . "b.md",
