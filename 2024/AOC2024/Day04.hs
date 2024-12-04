@@ -29,10 +29,12 @@ xmas =
     ]
 
 crossMas :: Set (Map Point Char)
-crossMas = S.fromList . map (M.insert 0 'A') $ M.union <$> diag1 <*> diag2
-  where
-    diag1 = M.fromList . zip [V2 (-1) (-1), V2 1 1] <$> ["MS", "SM"]
-    diag2 = M.fromList . zip [V2 1 (-1), V2 (-1) 1] <$> ["MS", "SM"]
+crossMas =
+  S.fromList
+    [ M.insert 0 'A' (diag1 <> diag2)
+    | diag1 <- M.fromList . zip [V2 (-1) (-1), V2 1 1] <$> ["MS", "SM"]
+    , diag2 <- M.fromList . zip [V2 1 (-1), V2 (-1) 1] <$> ["MS", "SM"]
+    ]
 
 matchAnyMap :: (Num k, Eq a, Foldable f) => f (Map k a) -> Store k (Maybe a) -> Int
 matchAnyMap mps x = countTrue (`matchMap` x) mps

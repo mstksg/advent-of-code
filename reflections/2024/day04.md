@@ -11,6 +11,8 @@ I use for most of these.
 Our stencils are (centered around 0,0):
 
 ```haskell
+import Linear.V2 (V2(..), (*^))
+
 xmas :: [Map (V2 Int) Char]
 xmas =
     [ M.fromList [(i *^ step, x) | (i, x) <- zip [0 ..] "XMAS"]
@@ -19,10 +21,11 @@ xmas =
     ]
 
 crossMas :: [Map (V2 Int) Char]
-crossMas = map (M.insert 0 'A') $ M.union <$> diag1 <*> diag2
-  where
-    diag1 = M.fromList . zip [V2 (-1) (-1), V2 1 1] <$> ["MS", "SM"]
-    diag2 = M.fromList . zip [V2 1 (-1), V2 (-1) 1] <$> ["MS", "SM"]
+crossMas =
+    [ M.insert 0 'A' (diag1 <> diag2)
+    | diag1 <- M.fromList . zip [V2 (-1) (-1), V2 1 1] <$> ["MS", "SM"]
+    , diag2 <- M.fromList . zip [V2 1 (-1), V2 (-1) 1] <$> ["MS", "SM"]
+    ]
 ```
 
 Now some utility functions to wrap and unwrap our `Map (V2 Int) Char` into a
