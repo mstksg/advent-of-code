@@ -19,6 +19,7 @@ module AOC.Common (
   trace',
   traceShowIdMsg,
   traceShowMsg,
+  preNewline,
 
   -- * Loops and searches
   iterateMaybe,
@@ -91,6 +92,7 @@ module AOC.Common (
   withAllSized,
   binaryFold,
   binaryFoldPar,
+  rotSquare,
 
   -- * Simple type util
   deleteFinite,
@@ -119,6 +121,13 @@ module AOC.Common (
   memo4,
   LCM (..),
   asString,
+
+  -- * Comonad stuff
+  matchMap,
+  matchAnyMap,
+  storeMapNeighborhood,
+  mapToStore,
+  mapFromStore,
 
   -- * Normal simple line-based
   mapMaybeLines,
@@ -655,7 +664,11 @@ binaryFoldPar n f = runEval . bigGo (1 :: Int)
       (r, ys) <- go (i - 1) xs
       (s, zs) <- go (i - 1) ys
       let !t = r <> s
-      pure $ (t, zs)
+      pure (t, zs)
+
+-- | Flip list 90 degrees CCW
+rotSquare :: [[a]] -> [[a]]
+rotSquare = reverse . L.transpose
 
 listTup :: [a] -> Maybe (a, a)
 listTup (x : y : _) = Just (x, y)
@@ -909,6 +922,22 @@ instance (Ord k, Ord p) => Ixed (OrdPSQ.OrdPSQ k p v) where
 parseBin :: String -> Maybe Int
 parseBin = preview (L.base 2)
 
+matchMap :: (Num k, Eq a) => Map k a -> Store k (Maybe a) -> Bool
+matchMap mp = getAll . storeMapNeighborhood (fmap All . (==) . Just <$> mp)
+
+matchAnyMap :: (Num k, Eq a, Foldable f) => f (Map k a) -> Store k (Maybe a) -> Int
+matchAnyMap mps x = countTrue (`matchMap` x) mps
+
+-- | 'extend' this to get a convolution
+storeMapNeighborhood :: (Num k, Monoid b) => Map k (Maybe a -> b) -> Store k (Maybe a) -> b
+storeMapNeighborhood mp x = M.foldMapWithKey (\p f -> f $ peeks (+ p) x) mp
+
+mapToStore :: (Ord k, Num k) => Map k a -> Store k (Maybe a)
+mapToStore mp = store (`M.lookup` mp) 0
+
+mapFromStore :: Num k => Set k -> Store k a -> Map k a
+mapFromStore ks = experiment (\x -> M.fromSet (+ x) ks)
+
 mapMaybeLines :: (String -> Maybe a) -> String -> [a]
 mapMaybeLines f = mapMaybe f . lines
 
@@ -1025,6 +1054,10 @@ traceShowIdMsg msg x = trace (msg ++ show x) x
 -- | Like 'traceShow' but with an extra message
 traceShowMsg :: Show a => String -> a -> b -> b
 traceShowMsg msg x = trace (msg ++ show x)
+
+-- | Useful for aligning debugger output
+preNewline :: String -> String
+preNewline = ('\n' :)
 
 newtype LCM a = LCM {getLCM :: a}
 
