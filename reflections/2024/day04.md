@@ -61,5 +61,5 @@ part1 :: Map (V2 Int) Char -> Int
 part1 = countMatches xmas
 
 part2 :: Map (V2 Int) Char -> Int
-part2 = countMatches chrossMas
+part2 = countMatches crossMas
 ```
