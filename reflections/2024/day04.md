@@ -16,7 +16,6 @@ xmas =
     [ M.fromList [(i *^ step, x) | (i, x) <- zip [0 ..] "XMAS"]
     | d <- [V2 1 0, V2 0 1, V2 1 1, V2 (-1) 1]
     , step <- [d, negate d]
-
     ]
 
 crossMas :: [Map (V2 Int) Char]
