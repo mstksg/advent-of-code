@@ -20,11 +20,10 @@
 --     types @_ :~> _@ with the actual types of inputs and outputs of the
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
-module AOC2024.Day04
-  ( 
-    -- day04a,
-    -- day04b
-  )
+module AOC2024.Day04 (
+  day04a,
+  day04b,
+)
 where
 
 import AOC.Prelude
@@ -56,19 +55,36 @@ day04a =
     { sParse =
         noFail $
           lines
-    ,
-      sShow = show,
-      sSolve =
-        noFail $
-          id
+    , sShow = show
+    , sSolve = noFail \xs ->
+        let findxms = countTrue p . tails
+              where
+                p x = "XMAS" `isPrefixOf` x || "SAMX" `isPrefixOf` x
+         in sum . map (sum . map findxms) $
+              [ xs
+              , transpose xs
+              , transpose . zipWith drop [0 ..] $ xs
+              , drop 1 . transpose . zipWith drop [0 ..] . reverse . map reverse $ xs
+              , transpose . zipWith drop [0 ..] . reverse $ xs
+              , drop 1 . transpose . zipWith drop [0 ..] . map reverse $ xs
+              ]
     }
 
 day04b :: _ :~> _
 day04b =
   MkSol
-    { sParse = sParse day04a,
-      sShow = show,
-      sSolve =
-        noFail $
-          id
+    { sParse = noFail $ parseAsciiMap Just
+    , sShow = show
+    , sSolve = noFail \mp -> flip countTrue (M.toList mp) \(p, x) ->
+        case x of
+          'A' ->
+            let nw = mfilter (`elem` asString "SM") $ M.lookup (p - V2 1 1) mp
+                ne = mfilter (`elem` asString "SM") $ M.lookup (p + V2 1 (-1)) mp
+                sw = mfilter (`elem` asString "SM") $ M.lookup (p + V2 (-1) 1) mp
+                se = mfilter (`elem` asString "SM") $ M.lookup (p + V2 1 1) mp
+                xmas1 = (/=) <$> nw <*> se
+                xmas2 = (/=) <$> ne <*> sw
+                xmas = (&&) <$> xmas1 <*> xmas2
+            in  fromMaybe False xmas
+          _   -> False
     }
