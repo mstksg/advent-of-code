@@ -4,8 +4,9 @@ to use comonads for this. That's because
 on windows (the `w a -> b`) to a `w a -> w b`, the application across every
 window.
 
-First we parse our input into a `Map Point Char`, where `data V2 a = V2 a
-a`, a tuple type with the correct `Num` instance that I use for most of these.
+First we parse our input into a `Map Point Char`, where `data V2 a = V2 a a`
+(from the *linear* library), a tuple type with the correct `Num` instance that
+I use for most of these.
 
 Our stencils are (centered around 0,0):
 
