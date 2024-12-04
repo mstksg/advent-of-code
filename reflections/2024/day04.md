@@ -34,7 +34,7 @@ mapToStore :: (Ord k, Num k) => Map k a -> Store k (Maybe a)
 mapToStore mp = store (`M.lookup` mp) 0
 
 mapFromStore :: Num k => Set k -> Store k a -> Map k a
-mapFromStore ks = experiment (\x -> M.fromSet (+ x) ks)
+mapFromStore ks = experiment \x -> M.fromSet (+ x) ks
 ```
 
 Now a function to check if a stencil matches a neighborhood:
