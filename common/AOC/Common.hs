@@ -124,7 +124,6 @@ module AOC.Common (
 
   -- * Comonad stuff
   matchMap,
-  matchAnyMap,
   storeMapNeighborhood,
   mapToStore,
   mapFromStore,
@@ -924,9 +923,6 @@ parseBin = preview (L.base 2)
 
 matchMap :: (Num k, Eq a) => Map k a -> Store k (Maybe a) -> Bool
 matchMap mp = getAll . storeMapNeighborhood (fmap All . (==) . Just <$> mp)
-
-matchAnyMap :: (Num k, Eq a, Foldable f) => f (Map k a) -> Store k (Maybe a) -> Int
-matchAnyMap mps x = countTrue (`matchMap` x) mps
 
 -- | 'extend' this to get a convolution
 storeMapNeighborhood :: (Num k, Monoid b) => Map k (Maybe a -> b) -> Store k (Maybe a) -> b

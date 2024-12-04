@@ -12,10 +12,10 @@ module AOC2024.Day04 (
 )
 where
 
-import AOC.Common (mapFromStore, mapToStore, matchAnyMap)
+import AOC.Common (countTrue, mapFromStore, mapToStore, matchMap)
 import AOC.Common.Point (Point, V2 (..), fullNeighbs, parseAsciiMap, (*^))
 import AOC.Solver (noFail, type (:~>) (..))
-import Control.Comonad.Store (Comonad (extend))
+import Control.Comonad.Store (Comonad (extend), Store)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Set (Set)
@@ -33,6 +33,9 @@ crossMas = S.fromList . map (M.insert 0 'A') $ M.union <$> diag1 <*> diag2
   where
     diag1 = M.fromList . zip [V2 (-1) (-1), V2 1 1] <$> ["MS", "SM"]
     diag2 = M.fromList . zip [V2 1 (-1), V2 (-1) 1] <$> ["MS", "SM"]
+
+matchAnyMap :: (Num k, Eq a, Foldable f) => f (Map k a) -> Store k (Maybe a) -> Int
+matchAnyMap mps x = countTrue (`matchMap` x) mps
 
 day04 :: Set (Map Point Char) -> Map Point Char :~> Int
 day04 stencils =
