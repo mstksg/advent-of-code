@@ -18,7 +18,7 @@ sortByRules rules = \xs ->
     ruleGraph =
       G.mkUGraph
         (nubOrd $ foldMap (\(x,y) -> [x,y]) rules)
-        [(x, y) | V2 x y <- rules]
+        rules
 
 part1 :: [(Int, Int)] -> [[Int]] -> Int
 part1 rules pages = sum
