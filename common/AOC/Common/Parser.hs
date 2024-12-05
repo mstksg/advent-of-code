@@ -22,8 +22,11 @@ module AOC.Common.Parser (
   pSpace,
   parseLines,
   sepBy',
+  sepEndBy',
   sepByLines,
+  sepEndByLines,
   sepBy1',
+  sepEndBy1',
   sequenceSepBy,
   manyTillWithout,
   someTillWithout,
@@ -166,12 +169,23 @@ parseWords p = parseMaybeLenient p . TokStream . words
 sepBy' :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s sep -> P.Parsec e s [a]
 sepBy' x sep = P.sepBy (P.notFollowedBy sep *> P.try x) sep
 
+-- | 'sepEndBy' but automatically exclude the separator from the internal parser
+sepEndBy' :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s sep -> P.Parsec e s [a]
+sepEndBy' x sep = P.sepEndBy (P.notFollowedBy sep *> P.try x) sep
+
 sepByLines :: (P.Stream s, Ord e, P.Token s ~ Char) => P.Parsec e s a -> P.Parsec e s [a]
-sepByLines = flip sepBy' (P.char '\n')
+sepByLines = flip sepBy' P.newline
+
+sepEndByLines :: (P.Stream s, Ord e, P.Token s ~ Char) => P.Parsec e s a -> P.Parsec e s [a]
+sepEndByLines = flip sepEndBy' P.newline
 
 -- | 'PNE.sepBy1' but automatically exclude the separator from the internal parser
 sepBy1' :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s sep -> P.Parsec e s (NonEmpty a)
 sepBy1' x sep = PNE.sepBy1 (P.notFollowedBy sep *> P.try x) sep
+
+-- | 'PNE.sepEndBy1' but automatically exclude the separator from the internal parser
+sepEndBy1' :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s sep -> P.Parsec e s (NonEmpty a)
+sepEndBy1' x sep = PNE.sepEndBy1 (P.notFollowedBy sep *> P.try x) sep
 
 sequenceSepBy :: (Traversable t, P.Stream s, Ord e) => t (P.Parsec e s a) -> P.Parsec e s sep -> P.Parsec e s (t a)
 sequenceSepBy xs sep = sequenceA . snd $ mapAccumR go False xs

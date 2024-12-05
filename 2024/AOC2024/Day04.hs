@@ -13,7 +13,8 @@ module AOC2024.Day04 (
 where
 
 import AOC.Common (countTrue, mapFromStore, mapToStore, matchMap)
-import AOC.Common.Point (Point, V2 (..), fullNeighbs, parseAsciiMap, (*^))
+import AOC.Common.Point (Point, fullNeighbs, parseAsciiMap, (*^))
+import Linear.V2 (V2(..))
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Comonad.Store (Comonad (extend), Store)
 import Data.Map (Map)

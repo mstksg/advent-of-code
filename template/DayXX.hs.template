@@ -30,7 +30,7 @@ where
 import AOC.Prelude
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as IM
+import qualified Data.IntMap.NonEmpty as NEIM
 import qualified Data.IntSet as IS
 import qualified Data.IntSet.NonEmpty as NEIS
 import qualified Data.List.NonEmpty as NE

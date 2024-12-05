@@ -112,6 +112,7 @@ common solver-extensions
     GeneralizedNewtypeDeriving
     ImplicitParams
     KindSignatures
+    ParallelListComp
     LambdaCase
     MonadComprehensions
     MultiParamTypeClasses
