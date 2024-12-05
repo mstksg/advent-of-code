@@ -44,8 +44,8 @@ We write `sortByRules` with a lambda closure (and name `sorters`) to ensure
 that the graph is generated only once and then the closure re-applied for
 every page list.
 
-One cute way to find the middle value is to traverse the list "in parallel",
-but one list twice as quickly as the other:
+One cute way to find the middle value is to traverse the list twice at the
+same time "in parallel", but one list twice as quickly as the other:
 
 ```haskell
 middleVal :: [a] -> a
