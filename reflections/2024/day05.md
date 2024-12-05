@@ -11,30 +11,37 @@ page list, and then toposort it:
 import qualified Data.Graph.Inductive as G
 
 sortByRules :: [(Int, Int)] -> [Int] -> [Int]
-sortByRules rules xs =
-  G.topsort . G.nfilter (`S.member` S.fromList xs) $
-    G.mkUGraph @G.Gr
+sortByRules rules = \xs ->
+  G.topsort . G.nfilter (`S.member` S.fromList xs) $ ruleGraph
+  where
+  ruleGraph :: G.Gr () ()
+  ruleGraph =
+    G.mkUGraph
       (nubOrd $ foldMap (\(x,y) -> [x,y]) rules)
       [(x, y) | V2 x y <- rules]
 
 part1 :: [(Int, Int)] -> [[Int]] -> Int
-part1 = sum
+part1 rules pages = sum
     [ middleVal orig
     | orig <- pages
-    , orig == sortByRules rules orig
+    , orig == sorter orig
     ]
+  where
+    sorter = sortByRules rules
 
 part2 :: [(Int, Int)] -> [[Int]] -> Int
-part2 = sum
+part2 rules pages = sum
     [ middleVal sorted
     | orig <- pages
-    , let sorted = sortByRules rules orig
+    , let sorted = sorter orig
     , orig /= sorted
     ]
+  where
+    sorter = sortByRules rules
 ```
 
-Ideally `sortByRules` can evaluate the graph only once for the entire puzzle
-for any given rule set, and then `nfilter` it for each different page list.
+We write `sortByRules` (and name `sorters`) to ensure that the graph is
+generated only once and then the closure re-applied for every page list.
 
 One cute way to find the middle value is to traverse the list "in parallel",
 but one list twice as quickly as the other:
