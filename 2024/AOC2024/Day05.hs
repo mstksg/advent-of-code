@@ -20,11 +20,10 @@
 --     types @_ :~> _@ with the actual types of inputs and outputs of the
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
-module AOC2024.Day05
-  ( 
-    -- day05a,
-    -- day05b
-  )
+module AOC2024.Day05 (
+  day05a,
+  day05b,
+)
 where
 
 import AOC.Prelude
@@ -50,25 +49,59 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
-day05a :: _ :~> _
+middleVal :: Seq a -> a
+middleVal xs = Seq.index xs (Seq.length xs `div` 2)
+
+day05a :: ([V2 Int], [Seq Int]) :~> _
 day05a =
   MkSol
-    { sParse =
-        noFail $
-          lines
-    ,
-      sShow = show,
-      sSolve =
-        noFail $
-          id
+    { sParse = parseMaybe' do
+        rules <- many $ P.try . fullLine . P.try $ sequenceSepBy (V2 pDecimal pDecimal) "|"
+        P.newline
+        pages <- map Seq.fromList <$> ((pDecimal `sepBy'` ",") `sepBy'` P.newline)
+        pure (rules, pages)
+    , sShow = show
+    , sSolve =
+        noFail \(rules, pages) ->
+          let good xs = flip all rules \(V2 a b) -> fromMaybe True do
+                  i <- M.lookup a ixMap
+                  j <- M.lookup b ixMap
+                  pure $ i < j
+                where
+                  ixMap = M.fromList $ zip (toList xs) [0..]
+          in  sum . map middleVal . filter good $ pages
     }
 
 day05b :: _ :~> _
 day05b =
   MkSol
-    { sParse = sParse day05a,
-      sShow = show,
-      sSolve =
-        noFail $
-          id
+    { sParse = sParse day05a
+    , sShow = show
+    , sSolve =
+        noFail \(rules, pages) ->
+          let good xs = flip all rules \(V2 a b) -> fromMaybe True do
+                  i <- M.lookup a ixMap
+                  j <- M.lookup b ixMap
+                  pure $ i < j
+                where
+                  ixMap = M.fromList $ zip (toList xs) [0..]
+              rulesGraph = G.mkGraph @G.Gr
+                  (nubOrd [ (x, ()) | x <- foldMap toList rules ])
+                  [ (x, y, ()) | V2 x y <- rules ]
+              buildUp xs = Seq.fromList . G.topsort . G.nfilter (`S.member` xs) $ rulesGraph
+          -- let mkGood xs = xs' <$ guard (xs /= xs')
+          --       -- flip all rules \(V2 a b) -> fromMaybe True do
+          --       --   i <- M.lookup a ixMap
+          --       --   j <- M.lookup b ixMap
+          --       --   pure $ i < j
+          --       where
+          --         ixMap = M.fromList $ zip (toList xs) [0..]
+          --         ixMap' = flip execState ixMap $ for (rules) \(V2 a b) -> modify \s ->
+          --           fromMaybe s do
+          --             i <- M.lookup a s
+          --             j <- M.lookup b s
+          --             guard (j > i)
+          --             pure $ M.fromList [(b,i),(a,j)] <> s
+          --         xs' = Seq.fromList . map fst . sortBy (comparing snd) $ M.toList ixMap'
+          in  sum . map (middleVal . buildUp . S.fromList . toList) . filter (not . good) $ pages
     }
