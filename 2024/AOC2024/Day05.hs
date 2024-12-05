@@ -39,11 +39,13 @@ parseInput = do
   pure (rules, pages)
 
 sortByRules :: [V2 Int] -> [Int] -> [Int]
-sortByRules rules xs =
-  G.topsort . G.nfilter (`S.member` S.fromList xs) $
-    G.mkUGraph @G.Gr
-      (nubOrd $ foldMap toList rules)
-      [(x, y) | V2 x y <- rules]
+sortByRules rules = \xs ->
+  G.topsort . G.nfilter (`S.member` S.fromList xs) $ rulesGraph
+  where
+    rulesGraph =
+      G.mkUGraph @G.Gr
+        (nubOrd $ foldMap toList rules)
+        [(x, y) | V2 x y <- rules]
 
 day05a :: ([V2 Int], [[Int]]) :~> Int
 day05a =
@@ -52,11 +54,12 @@ day05a =
     , sShow = show
     , sSolve =
         noFail \(rules, pages) ->
-          sum
-            [ fromMaybe 0 $ middleVal orig
-            | orig <- pages
-            , orig == sortByRules rules orig
-            ]
+          let sbr = sortByRules rules
+           in sum
+                [ fromMaybe 0 $ middleVal orig
+                | orig <- pages
+                , orig == sbr orig
+                ]
     }
 
 day05b :: ([V2 Int], [[Int]]) :~> Int
@@ -66,10 +69,11 @@ day05b =
     , sShow = show
     , sSolve =
         noFail \(rules, pages) ->
-          sum
-            [ fromMaybe 0 $ middleVal sorted
-            | orig <- pages
-            , let sorted = sortByRules rules orig
-            , orig /= sorted
-            ]
+          let sbr = sortByRules rules
+           in sum
+                [ fromMaybe 0 $ middleVal sorted
+                | orig <- pages
+                , let sorted = sbr orig
+                , orig /= sorted
+                ]
     }
