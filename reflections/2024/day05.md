@@ -53,5 +53,4 @@ middleVal xs0 = go xs0 xs0
   where
     go (_:xs) (_:_:ys) = go xs ys
     go (x:_) _ = x
-    go [] _ = error "this should return a Maybe probably"
 ```
