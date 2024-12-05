@@ -42,10 +42,9 @@ sortByRules :: [V2 Int] -> [Int] -> [Int]
 sortByRules rules = \xs ->
   G.topsort . G.nfilter (`S.member` S.fromList xs) $ rulesGraph
   where
+    rulesGraph :: G.Gr () ()
     rulesGraph =
-      G.mkUGraph @G.Gr
-        (nubOrd $ foldMap toList rules)
-        [(x, y) | V2 x y <- rules]
+      G.mkUGraph (nubOrd $ foldMap toList rules) [(x, y) | V2 x y <- rules]
 
 day05a :: ([V2 Int], [[Int]]) :~> Int
 day05a =
