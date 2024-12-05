@@ -33,6 +33,9 @@ part2 = sum
     ]
 ```
 
+Ideally `sortByRules` can evaluate the graph only once for the entire puzzle
+for any given rule set, and then `nfilter` it for each different page list.
+
 One cute way to find the middle value is to traverse the list "in parallel",
 but one list twice as quickly as the other:
 
