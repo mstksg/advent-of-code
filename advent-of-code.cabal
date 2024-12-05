@@ -112,7 +112,6 @@ common solver-extensions
     GeneralizedNewtypeDeriving
     ImplicitParams
     KindSignatures
-    ParallelListComp
     LambdaCase
     MonadComprehensions
     MultiParamTypeClasses
@@ -122,6 +121,7 @@ common solver-extensions
     NumericUnderscores
     OverloadedLabels
     OverloadedStrings
+    ParallelListComp
     PartialTypeSignatures
     PatternGuards
     PatternSynonyms

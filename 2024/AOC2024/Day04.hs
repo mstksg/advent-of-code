@@ -14,13 +14,13 @@ where
 
 import AOC.Common (countTrue, mapFromStore, mapToStore, matchMap)
 import AOC.Common.Point (Point, fullNeighbs, parseAsciiMap, (*^))
-import Linear.V2 (V2(..))
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Comonad.Store (Comonad (extend), Store)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Set (Set)
 import qualified Data.Set as S
+import Linear.V2 (V2 (..))
 
 xmas :: Set (Map Point Char)
 xmas =

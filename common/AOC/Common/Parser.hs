@@ -58,11 +58,11 @@ import Data.Maybe
 import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
+import Data.Traversable
 import Data.Void
 import GHC.Generics (Generic)
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
-import Data.Traversable
 import qualified Text.Megaparsec.Char.Lexer as PL
 
 -- | Use a stream of tokens @a@ as the underlying parser stream.  Note that
@@ -187,7 +187,8 @@ sepBy1' x sep = PNE.sepBy1 (P.notFollowedBy sep *> P.try x) sep
 sepEndBy1' :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s sep -> P.Parsec e s (NonEmpty a)
 sepEndBy1' x sep = PNE.sepEndBy1 (P.notFollowedBy sep *> P.try x) sep
 
-sequenceSepBy :: (Traversable t, P.Stream s, Ord e) => t (P.Parsec e s a) -> P.Parsec e s sep -> P.Parsec e s (t a)
+sequenceSepBy ::
+  (Traversable t, P.Stream s, Ord e) => t (P.Parsec e s a) -> P.Parsec e s sep -> P.Parsec e s (t a)
 sequenceSepBy xs sep = sequenceA . snd $ mapAccumR go False xs
   where
     go addSep x = (True, if addSep then x' <* sep else x')
@@ -202,7 +203,8 @@ manyTillWithout :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> 
 manyTillWithout x end = P.many (P.notFollowedBy end *> P.try x)
 
 -- | 'someTill' but do not parse the end token
-someTillWithout :: (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> P.Parsec e s (NonEmpty a)
+someTillWithout ::
+  (P.Stream s, Ord e) => P.Parsec e s a -> P.Parsec e s end -> P.Parsec e s (NonEmpty a)
 someTillWithout x end = PNE.some (P.notFollowedBy end *> P.try x)
 
 -- | 'between' but automatically exclude the separator from the internal parser. does this make sense?

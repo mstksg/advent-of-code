@@ -566,8 +566,8 @@ sortedSlidingWindowsInt n = uncurry go . first IntPSQ.fromList . splitAt n . zip
 middleVal :: [a] -> Maybe a
 middleVal xs0 = go xs0 xs0
   where
-    go (_:xs) (_:_:ys) = go xs ys
-    go (x:_) _ = Just x
+    go (_ : xs) (_ : _ : ys) = go xs ys
+    go (x : _) _ = Just x
     go [] _ = Nothing
 
 -- | Get the key-value pair corresponding to the maximum value in the map
