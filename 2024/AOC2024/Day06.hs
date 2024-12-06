@@ -21,16 +21,15 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day06 (
--- day06a,
--- day06b
-
+  day06a,
+  day06b,
 )
 where
 
 import AOC.Prelude
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as IM
+import qualified Data.IntMap.NonEmpty as NEIM
 import qualified Data.IntSet as IS
 import qualified Data.IntSet.NonEmpty as NEIS
 import qualified Data.List.NonEmpty as NE
@@ -55,11 +54,21 @@ day06a =
   MkSol
     { sParse =
         noFail $
-          lines
+          parseAsciiMap \case '#' -> Just True; '^' -> Just False; _ -> Nothing
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \mp ->
+          let boulds = M.keysSet $ M.filter id mp
+              startPos = S.findMin . M.keysSet $ M.filter not mp
+              Just bb = boundingBox' $ M.keysSet mp
+              path = flip iterateMaybe (startPos, South) \(x, d) ->
+                let newpos = x + dirPoint d
+                    good = inBoundingBox bb newpos
+                 in guard good
+                      $> if newpos `S.member` boulds
+                        then (x, d <> West)
+                        else (newpos, d)
+           in S.size . S.fromList $ fst <$> path
     }
 
 day06b :: _ :~> _
@@ -68,6 +77,17 @@ day06b =
     { sParse = sParse day06a
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \mp ->
+          let boulds = M.keysSet $ M.filter id mp
+              startPos = S.findMin . M.keysSet $ M.filter not mp
+              Just bb = boundingBox' $ M.keysSet mp
+              findLoop boulds' = findLoopBy id $ flip iterateMaybe (startPos, South) $ \(x, d) ->
+                let newpos = x + dirPoint d
+                    good = inBoundingBox bb newpos
+                 in guard good
+                      $> if newpos `S.member` boulds'
+                        then (x, d <> West)
+                        else (newpos, d)
+           in flip countTrue (fillBoundingBox bb) \p -> traceShow p $
+                not (p `M.member` mp) && isJust (findLoop (S.insert p boulds))
     }
