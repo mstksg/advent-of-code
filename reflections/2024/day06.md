@@ -52,7 +52,7 @@ part2 :: Set Point -> Point -> Int
 part2 boulders p0 = length . filter goodBoulder . nubOrd $ stepPath maxCoord boulders
   where
     maxCoord = maximum (foldMap toList boulders)
-    goodBoulder p = candidate /= p0 && hasLoop (stepPath maxCoord (S.insert p boulders))
+    goodBoulder p = p /= p0 && hasLoop (stepPath maxCoord (S.insert p boulders))
 ```
 
 Overall runs in about 1 second on my machine. You could optimize it a bit by
