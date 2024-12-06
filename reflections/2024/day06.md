@@ -17,7 +17,7 @@ stepInDir :: Finite 4 -> Point
 stepInDir = SV.index $ SV.fromTuple (V2 0 (-1), V2 1 0, V2 0 1, V2 (-1) 0)
 
 stepPath :: Int -> S.Set Point -> Point -> [(Point, Finite 4)]
-stepPath maxCoord boulders = takeWhile inBounds . iterate go . (,0))
+stepPath maxCoord boulders = takeWhile inBounds . iterate go . (,0)
   where
     go (x, d)
       | x' `S.member` boulders = (x, d + 1)
@@ -52,9 +52,43 @@ part2 :: Set Point -> Point -> Int
 part2 boulders p0 = length . filter goodBoulder . nubOrd $ stepPath maxCoord boulders
   where
     maxCoord = maximum (foldMap toList boulders)
-    goodBoulder p = p /= p0 && hasLoop (stepPath maxCoord (S.insert p boulders))
+    goodBoulder p = p /= p0 && hasLoop (stepPath maxCoord (S.insert p boulders) p)
 ```
 
 Overall runs in about 1 second on my machine. You could optimize it a bit by
-jumping directly to the next boulder, and that reduced the time by a factor of
-about 0.03 for me, but the simple stepper is definitely clean and fast enough.
+jumping directly to the next boulder. Basically you'd keep a map of x to the
+y's of all boulders in that column so you can move vertically, and then a map
+of y to the x's of all boulders in that row so you can move horizontally.
+
+```haskell
+collapseAxes :: Foldable f => f Point -> V2 (Map Int (Set Int))
+collapseAxes = foldl' (flip addAxesMap) mempty
+
+addAxesMap :: Point -> V2 (Map Int (Set Int)) -> V2 (Map Int (Set Int))
+addAxesMap (V2 x y) (V2 xMaps yMaps) =
+  V2
+    (M.insertWith (<>) x (S.singleton y) xMaps)
+    (M.insertWith (<>) y (S.singleton x) yMaps)
+
+slideAxes :: V2 (Map Int (Set Int)) -> Point -> Finite 4 -> Maybe Point
+slideAxes (V2 xMap yMap) (V2 x y) = SV.index $ SV.fromTuple
+  ( S.lookupLT y (M.findWithDefault mempty x xMap) <&> \y' -> V2 x (y' + 1)
+  , S.lookupGT x (M.findWithDefault mempty y yMap) <&> \x' -> V2 (x' - 1) y
+  , S.lookupGT y (M.findWithDefault mempty x xMap) <&> \y' -> V2 x (y' - 1)
+  , S.lookupLT x (M.findWithDefault mempty y yMap) <&> \x' -> V2 (x' + 1) y
+  )
+
+stepPath' :: V2 (Map Int (Set Int)) -> Point -> [(Point, Finite 4)]
+stepPath' as = unfoldr go . (,0)
+  where
+    go (p, d) = do 
+      p' <- slideAxes as p d>
+      pure ((p', d + 1), (p', d + 1))
+
+part2' :: Set Point -> Point -> Int
+part2' boulders p0 = length . filter goodBoulder . nubOrd $ stepPath maxCoord boulders
+  where
+    maxCoord = maximum (foldMap toList boulders)
+    axesMap0 = collapseAxes boulders
+    goodBoulder p = p /= p0 && hasLoop (stepPath' (addAxesMap p axesMap0) p)
+```
