@@ -40,6 +40,8 @@ module AOC.Common (
   firstRepeatedByFinitary,
   findLoopBy,
   findLoop,
+  findLoopBy_,
+  findLoop_,
   skipConsecutive,
   skipConsecutiveBy,
   fixedPoint,
@@ -328,6 +330,19 @@ findLoopBy f = go 0 M.empty
       Nothing -> go (i + 1) (M.insert (f x) (i, x) seen) xs
       Just (j, y) -> Just (V2 (j, y) (i, x))
     go _ _ [] = Nothing
+
+findLoop_ :: Eq a => [a] -> Bool
+findLoop_ = findLoopBy_ id
+
+-- | Only indicates if a loop exists. Uses tortoise and hare. 'findLoop' by
+-- could probably use that too but I haven't implemented it yet using T&H
+findLoopBy_ :: Eq a => (b -> a) -> [b] -> Bool
+findLoopBy_ f xs0 = go (drop 1 xs0) (drop 2 xs0)
+  where
+    go (x:xs) (y:_:ys)
+      | f x == f y = True
+      | otherwise = go xs ys
+    go _ _ = False
 
 skipConsecutive :: Eq a => [a] -> [a]
 skipConsecutive = skipConsecutiveBy id

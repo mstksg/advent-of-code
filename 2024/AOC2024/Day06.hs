@@ -90,7 +90,6 @@ day06b =
         noFail \(boulders, startPos) ->
           let bb = boundingBox boulders
               origPath = S.fromList $ fst <$> stepPath bb boulders startPos
-           in flip countTrue origPath \p -> isJust do
-                guard $ p /= startPos
-                firstRepeated (stepPath bb (NES.insert p boulders) startPos)
+           in flip countTrue origPath \p ->
+                p /= startPos && findLoop_ (stepPath bb (NES.insert p boulders) startPos)
     }
