@@ -81,7 +81,7 @@ slideAxes (V2 xMap yMap) (V2 x y) = SV.index $ SV.fromTuple
 stepPath' :: V2 (Map Int (Set Int)) -> Point -> [(Point, Finite 4)]
 stepPath' as = unfoldr go . (,0)
   where
-    go (p, d) = do 
+    go (p, d) = do
       p' <- slideAxes as p d
       pure ((p', d + 1), (p', d + 1))
 
