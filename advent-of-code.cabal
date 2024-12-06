@@ -165,6 +165,7 @@ library aoc-common
     , megaparsec
     , mtl
     , nonempty-containers
+    , adjunctions
     , parallel
     , parser-combinators
     , psqueues

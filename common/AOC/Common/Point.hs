@@ -46,6 +46,7 @@ module AOC.Common.Point (
   fillBoundingBox,
   minCorner,
   minCorner',
+  collapseAxes,
   contiguousRegions,
   contiguousShapes,
   contiguousShapesBy,
@@ -127,6 +128,14 @@ boundingBox =
 -- | A version of 'boundingBox' that works for normal possibly-empty lists.
 boundingBox' :: (Foldable f, Applicative g, Ord a) => f (g a) -> Maybe (V2 (g a))
 boundingBox' = fmap boundingBox . NE.nonEmpty . toList
+
+collapseAxes :: Foldable f => f Point -> V2 (Map Int (Set Int))
+collapseAxes = foldl' go mempty
+  where
+    go (V2 xMaps yMaps) (V2 x y) =
+      V2
+        (M.insertWith (<>) x (S.singleton y) xMaps)
+        (M.insertWith (<>) y (S.singleton x) yMaps)
 
 fillBoundingBox ::
   (Foldable f, Applicative g, Ord a, Ord (g a), Traversable g, Enum a) =>

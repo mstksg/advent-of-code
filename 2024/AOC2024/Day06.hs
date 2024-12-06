@@ -32,6 +32,8 @@ import qualified Data.IntMap as IM
 import qualified Data.IntMap.NonEmpty as NEIM
 import qualified Data.IntSet as IS
 import qualified Data.IntSet.NonEmpty as NEIS
+import qualified Data.Interval as IV
+import qualified Data.IntervalSet as IVS
 import qualified Data.List.NonEmpty as NE
 import qualified Data.List.PointedList as PL
 import qualified Data.List.PointedList.Circular as PLC
@@ -70,16 +72,38 @@ stepPath bb boulders = iterateMaybe go . (,South)
         x' :: Point
         x' = x + dirPoint d
 
-day06a :: (NESet Point, Point) :~> Int
+day06a :: (NESet Point, Point) :~> _
 day06a =
   MkSol
     { sParse = parseMap
     , sShow = show
     , sSolve =
         noFail \(boulders, startPos) ->
-          S.size . S.fromList $
+          subtract 1 . S.size . S.fromList $
             fst <$> stepPath (boundingBox boulders) boulders startPos
     }
+
+-- | Could be infinite
+stepPath' :: V2 (Map Int (Set Int)) -> Point -> [(Point, Dir)]
+stepPath' (V2 xMap yMap) = iterateMaybe go . (,South)
+  where
+    go (V2 x y, d) = case d of
+      North -> do
+        let ys = M.findWithDefault mempty x xMap
+        y' <- subtract 1 <$> S.lookupGT y ys
+        pure (V2 x y', West)
+      East -> do
+        let xs = M.findWithDefault mempty y yMap
+        x' <- subtract 1 <$> S.lookupGT x xs
+        pure (V2 x' y, North)
+      South -> do
+        let ys = M.findWithDefault mempty x xMap
+        y' <- (+ 1) <$> S.lookupLT y ys
+        pure (V2 x y', East)
+      West -> do
+        let xs = M.findWithDefault mempty y yMap
+        x' <- (+ 1) <$> S.lookupLT x xs
+        pure (V2 x' y, South)
 
 day06b :: (NESet Point, Point) :~> Int
 day06b =
@@ -90,6 +114,9 @@ day06b =
         noFail \(boulders, startPos) ->
           let bb = boundingBox boulders
               origPath = S.fromList $ fst <$> stepPath bb boulders startPos
-           in flip countTrue origPath \p ->
-                p /= startPos && findLoop_ (stepPath bb (NES.insert p boulders) startPos)
+              V2 xMap yMap = collapseAxes boulders
+           in flip countTrue origPath \(V2 x y) ->
+                let xMap' = M.insertWith (<>) x (S.singleton y) xMap
+                    yMap' = M.insertWith (<>) y (S.singleton x) yMap
+                 in V2 x y /= startPos && findLoop_ (stepPath' (V2 xMap' yMap') startPos)
     }

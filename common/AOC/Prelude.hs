@@ -37,6 +37,7 @@ import Data.Function as P
 import Data.Functor as P hiding (unzip)
 import Data.Functor.Foldable as P (ana, cata, hylo)
 import Data.Functor.Foldable.TH as P (makeBaseFunctor)
+import Data.Functor.Rep as P (Representable(tabulate))
 import Data.Generics.Labels ()
 import Data.IntMap as P (IntMap)
 import Data.IntMap.NonEmpty as P (NEIntMap)
