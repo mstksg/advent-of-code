@@ -82,7 +82,7 @@ stepPath' :: V2 (Map Int (Set Int)) -> Point -> [(Point, Finite 4)]
 stepPath' as = unfoldr go . (,0)
   where
     go (p, d) = do 
-      p' <- slideAxes as p d>
+      p' <- slideAxes as p d
       pure ((p', d + 1), (p', d + 1))
 
 part2' :: Set Point -> Point -> Int
