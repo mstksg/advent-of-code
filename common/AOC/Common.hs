@@ -203,6 +203,7 @@ import Debug.Trace
 import GHC.TypeNats
 import Linear (Additive (..), R1 (..), R2 (..), R3 (..), R4 (..), V2 (..), V3 (..), V4 (..))
 import qualified Numeric.Lens as L
+import Safe
 
 -- | trace but only after something has evaluated to WHNF
 trace' :: String -> a -> a
@@ -324,25 +325,29 @@ findLoop = findLoopBy id
 
 -- | Find a "loop", where applying a function repeatedly creates a closed loop
 findLoopBy :: Ord a => (b -> a) -> [b] -> Maybe (V2 (Int, b))
-findLoopBy f = go 0 M.empty
+findLoopBy f xs0 =
+  torthare xs0 (drop 1 xs0) <&> \(x, xs) ->
+    let allLoopVals = S.insert (f x) . S.fromList $ takeWhile (/= f x) (f <$> xs)
+        res = do
+          (i, restOfLoop) <- uncons $ dropWhile ((`S.notMember` allLoopVals) . f . snd) (zip [0 ..] xs0)
+          j <- lastMay $ takeWhile ((`S.member` allLoopVals) . f . snd) restOfLoop
+          pure $ V2 i j
+     in case res of
+          Nothing -> error "findLoopBy: this cannot be"
+          Just r -> r
   where
-    go !i seen (x : xs) = case M.lookup (f x) seen of
-      Nothing -> go (i + 1) (M.insert (f x) (i, x) seen) xs
-      Just (j, y) -> Just (V2 (j, y) (i, x))
-    go _ _ [] = Nothing
+    torthare (x : xs) (y : _ : ys)
+      | f x == f y = Just (x, xs)
+      | otherwise = torthare xs ys
+    torthare _ _ = Nothing
 
-findLoop_ :: Eq a => [a] -> Bool
+-- | Only indicates if a loop exists.
+findLoop_ :: Ord a => [a] -> Bool
 findLoop_ = findLoopBy_ id
 
--- | Only indicates if a loop exists. Uses tortoise and hare. 'findLoop' by
--- could probably use that too but I haven't implemented it yet using T&H
-findLoopBy_ :: Eq a => (b -> a) -> [b] -> Bool
-findLoopBy_ f xs0 = go (drop 1 xs0) (drop 2 xs0)
-  where
-    go (x:xs) (y:_:ys)
-      | f x == f y = True
-      | otherwise = go xs ys
-    go _ _ = False
+-- | Only indicates if a loop exists.
+findLoopBy_ :: Ord a => (b -> a) -> [b] -> Bool
+findLoopBy_ f = isJust . findLoopBy f
 
 skipConsecutive :: Eq a => [a] -> [a]
 skipConsecutive = skipConsecutiveBy id
