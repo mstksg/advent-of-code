@@ -40,14 +40,6 @@ module AOC.Common.Point (
 
   -- * 2D Maps
   memoPoint,
-  boundingBox,
-  boundingBox',
-  inBoundingBox,
-  fillBoundingBox,
-  minCorner,
-  minCorner',
-  collapseAxes,
-  addAxesMap,
   contiguousRegions,
   contiguousShapes,
   contiguousShapesBy,
@@ -61,6 +53,19 @@ module AOC.Common.Point (
   displayAsciiSet,
   parseLetters,
   parseLettersSafe,
+
+  -- ** Bounding boxes
+  boundingBox,
+  boundingBox',
+  inBoundingBox,
+  fillBoundingBox,
+  minCorner,
+  minCorner',
+
+  -- ** Axes map
+  collapseAxes,
+  addAxesMap,
+  slideAxes,
 
   -- * Util
   centeredFinite,
@@ -130,15 +135,6 @@ boundingBox =
 boundingBox' :: (Foldable f, Applicative g, Ord a) => f (g a) -> Maybe (V2 (g a))
 boundingBox' = fmap boundingBox . NE.nonEmpty . toList
 
-collapseAxes :: Foldable f => f Point -> V2 (Map Int (Set Int))
-collapseAxes = foldl' (flip addAxesMap) mempty
-
-addAxesMap :: Point -> V2 (Map Int (Set Int)) -> V2 (Map Int (Set Int))
-addAxesMap (V2 x y) (V2 xMaps yMaps) =
-  V2
-    (M.insertWith (<>) x (S.singleton y) xMaps)
-    (M.insertWith (<>) y (S.singleton x) yMaps)
-
 fillBoundingBox ::
   (Foldable f, Applicative g, Ord a, Ord (g a), Traversable g, Enum a) =>
   f (g a) ->
@@ -179,6 +175,22 @@ inBoundingBox ::
 inBoundingBox (V2 mn mx) x = and $ go <$> x <*> mn <*> mx
   where
     go x' mn' mx' = x' >= mn' && x' <= mx'
+
+collapseAxes :: Foldable f => f Point -> V2 (Map Int (Set Int))
+collapseAxes = foldl' (flip addAxesMap) mempty
+
+addAxesMap :: Point -> V2 (Map Int (Set Int)) -> V2 (Map Int (Set Int))
+addAxesMap (V2 x y) (V2 xMaps yMaps) =
+  V2
+    (M.insertWith (<>) x (S.singleton y) xMaps)
+    (M.insertWith (<>) y (S.singleton x) yMaps)
+
+slideAxes :: V2 (Map Int (Set Int)) -> Point -> Dir -> Maybe Point
+slideAxes (V2 xMap yMap) (V2 x y) = \case
+  North -> S.lookupGT y (M.findWithDefault mempty x xMap) <&> \y' -> V2 x (y' - 1)
+  East -> S.lookupGT x (M.findWithDefault mempty y yMap) <&> \x' -> V2 (x' - 1) y
+  South -> S.lookupLT y (M.findWithDefault mempty x xMap) <&> \y' -> V2 x (y' + 1)
+  West -> S.lookupLT x (M.findWithDefault mempty y yMap) <&> \x' -> V2 (x' + 1) y
 
 cardinalNeighbs :: Point -> [Point]
 cardinalNeighbs p = (p +) <$> [V2 0 (-1), V2 1 0, V2 0 1, V2 (-1) 0]
