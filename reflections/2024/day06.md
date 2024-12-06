@@ -92,3 +92,5 @@ part2' boulders p0 = length . filter goodBoulder . nubOrd $ stepPath maxCoord bo
     axesMap0 = collapseAxes boulders
     goodBoulder p = p /= p0 && hasLoop (stepPath' (addAxesMap p axesMap0) p)
 ```
+
+This is cuts the time by about 30x.
