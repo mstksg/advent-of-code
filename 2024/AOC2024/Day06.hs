@@ -17,6 +17,7 @@ import AOC.Common.Point (
   Dir (..),
   Point,
   V2 (..),
+  addAxesMap,
   boundingBox,
   collapseAxes,
   dirPoint,
@@ -84,9 +85,7 @@ day06b =
         noFail \(boulders, startPos) ->
           let bb = boundingBox boulders
               origPath = S.fromList $ fst <$> stepPath bb boulders startPos
-              V2 xMap yMap = collapseAxes boulders
-           in flip countTrue origPath \(V2 x y) ->
-                let xMap' = M.insertWith (<>) x (S.singleton y) xMap
-                    yMap' = M.insertWith (<>) y (S.singleton x) yMap
-                 in V2 x y /= startPos && findLoop_ (stepPath' (V2 xMap' yMap') startPos)
+              axesMaps = collapseAxes boulders
+           in flip countTrue origPath \p ->
+                p /= startPos && findLoop_ (stepPath' (addAxesMap p axesMaps) startPos)
     }
