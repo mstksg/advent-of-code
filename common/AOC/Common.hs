@@ -39,6 +39,7 @@ module AOC.Common (
   firstRepeatedFinitary,
   firstRepeatedByFinitary,
   findLoopBy,
+  findLoop,
   skipConsecutive,
   skipConsecutiveBy,
   fixedPoint,
@@ -314,6 +315,10 @@ firstRepeatedByFinitary f xs = runST do
   pure case res of
     Left x -> Just x
     Right _ -> Nothing
+
+-- | Find a "loop", where applying a function repeatedly creates a closed loop
+findLoop :: Ord a => [a] -> Maybe (V2 (Int, a))
+findLoop = findLoopBy id
 
 -- | Find a "loop", where applying a function repeatedly creates a closed loop
 findLoopBy :: Ord a => (b -> a) -> [b] -> Maybe (V2 (Int, b))

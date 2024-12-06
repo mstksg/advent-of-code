@@ -49,45 +49,48 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
-day06a :: _ :~> _
+parseMap :: String -> Maybe (NESet Point, Point)
+parseMap str = (,) <$> NES.nonEmptySet (M.keysSet boulders) <*> S.lookupMin (M.keysSet startPos)
+  where
+    (boulders, startPos) = M.partition id . flip parseAsciiMap str $ \case
+      '#' -> Just True
+      '^' -> Just False
+      _ -> Nothing
+
+-- | Could be infinite
+stepPath :: V2 Point -> NESet Point -> Point -> [(Point, Dir)]
+stepPath bb boulders = iterateMaybe go . (,South)
+  where
+    go (x, d) =
+      guard (inBoundingBox bb x)
+        $> if x' `NES.member` boulders
+          then (x, d <> West)
+          else (x', d)
+      where
+        x' :: Point
+        x' = x + dirPoint d
+
+day06a :: (NESet Point, Point) :~> Int
 day06a =
   MkSol
-    { sParse =
-        noFail $
-          parseAsciiMap \case '#' -> Just True; '^' -> Just False; _ -> Nothing
+    { sParse = parseMap
     , sShow = show
     , sSolve =
-        noFail \mp ->
-          let boulds = M.keysSet $ M.filter id mp
-              startPos = S.findMin . M.keysSet $ M.filter not mp
-              Just bb = boundingBox' $ M.keysSet mp
-              path = flip iterateMaybe (startPos, South) \(x, d) ->
-                let newpos = x + dirPoint d
-                    good = inBoundingBox bb newpos
-                 in guard good
-                      $> if newpos `S.member` boulds
-                        then (x, d <> West)
-                        else (newpos, d)
-           in S.size . S.fromList $ fst <$> path
+        noFail \(boulders, startPos) ->
+          S.size . S.fromList $
+            fst <$> stepPath (boundingBox boulders) boulders startPos
     }
 
-day06b :: _ :~> _
+day06b :: (NESet Point, Point) :~> Int
 day06b =
   MkSol
     { sParse = sParse day06a
     , sShow = show
     , sSolve =
-        noFail \mp ->
-          let boulds = M.keysSet $ M.filter id mp
-              startPos = S.findMin . M.keysSet $ M.filter not mp
-              Just bb = boundingBox' $ M.keysSet mp
-              findLoop boulds' = findLoopBy id $ flip iterateMaybe (startPos, South) $ \(x, d) ->
-                let newpos = x + dirPoint d
-                    good = inBoundingBox bb newpos
-                 in guard good
-                      $> if newpos `S.member` boulds'
-                        then (x, d <> West)
-                        else (newpos, d)
-           in flip countTrue (fillBoundingBox bb) \p -> traceShow p $
-                not (p `M.member` mp) && isJust (findLoop (S.insert p boulds))
+        noFail \(boulders, startPos) ->
+          let bb = boundingBox boulders
+              origPath = S.fromList $ fst <$> stepPath bb boulders startPos
+           in flip countTrue origPath \p -> isJust do
+                guard $ p /= startPos
+                firstRepeated (stepPath bb (NES.insert p boulders) startPos)
     }
