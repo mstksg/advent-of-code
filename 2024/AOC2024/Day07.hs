@@ -14,20 +14,20 @@ where
 
 import AOC.Common.Parser (pDecimal, parseLines)
 import AOC.Solver (noFail, type (:~>) (..))
-import Control.Monad (guard, mfilter)
-import Data.Foldable1 (foldlM1)
-import Data.List.NonEmpty (NonEmpty)
+import Control.Monad (guard)
+import Data.Foldable (foldrM)
+import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (mapMaybe)
 
 -- | Operations must be monotonic
-search :: [Int -> Int -> Int] -> Int -> NonEmpty Int -> Bool
-search operations n = elem n . foldlM1 go
+search :: [Int -> Int -> Maybe Int] -> Int -> NonEmpty Int -> Bool
+search operations n (x :| xs) = x `elem` foldrM go n xs
   where
-    go a b = mfilter (<= n) $ map (\f -> f a b) operations
+    go a b = mapMaybe (\f -> f a b) operations
 
 -- | Operations must be monotonic
-day07 :: [Int -> Int -> Int] -> [(Int, NonEmpty Int)] :~> Int
+day07 :: [Int -> Int -> Maybe Int] -> [(Int, NonEmpty Int)] :~> Int
 day07 ops =
   MkSol
     { sParse = parseLines $ (,) <$> pDecimal <* ":" <*> NE.some1 pDecimal
@@ -35,13 +35,21 @@ day07 ops =
     , sSolve = noFail $ sum . mapMaybe (\(n, xs) -> n <$ guard (search ops n xs))
     }
 
+unAdd :: Int -> Int -> Maybe Int
+unAdd x y = [y - x | y >= x]
+
+unMul :: Int -> Int -> Maybe Int
+unMul x y = [y `div` x | y `mod` x == 0]
+
+unCat :: Int -> Int -> Maybe Int
+unCat x y = [y `div` fac | y `mod` fac == x]
+  where
+    pow :: Int
+    pow = ceiling @Double $ logBase 10 (fromIntegral (x + 1))
+    fac = 10 ^ pow
+
 day07a :: [(Int, NonEmpty Int)] :~> Int
-day07a = day07 [(+), (*)]
+day07a = day07 [unAdd, unMul]
 
 day07b :: [(Int, NonEmpty Int)] :~> Int
-day07b = day07 [(+), (*), cat]
-  where
-    cat x y = x * 10 ^ pow + y
-      where
-        pow :: Int
-        pow = ceiling @Double $ logBase 10 (fromIntegral (y + 1))
+day07b = day07 [unAdd, unMul, unCat]
