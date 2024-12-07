@@ -33,11 +33,12 @@ import Data.Containers.ListUtils as P
 import Data.Either as P
 import Data.Finite as P (Finite, finites, getFinite, modulo, packFinite)
 import Data.Foldable as P
+import Data.Foldable1 as P hiding (head, last, maximum, maximumBy, minimum, minimumBy, foldr1, foldl1)
 import Data.Function as P
 import Data.Functor as P hiding (unzip)
 import Data.Functor.Foldable as P (ana, cata, hylo)
 import Data.Functor.Foldable.TH as P (makeBaseFunctor)
-import Data.Functor.Rep as P (Representable(tabulate))
+import Data.Functor.Rep as P (Representable (tabulate))
 import Data.Generics.Labels ()
 import Data.IntMap as P (IntMap)
 import Data.IntMap.NonEmpty as P (NEIntMap)
