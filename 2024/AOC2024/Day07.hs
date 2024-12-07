@@ -20,13 +20,11 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (mapMaybe)
 
--- | Operations must be monotonic
 search :: [Int -> Int -> Maybe Int] -> Int -> NonEmpty Int -> Bool
 search operations n (x :| xs) = x `elem` foldrM go n xs
   where
     go a b = mapMaybe (\f -> f a b) operations
 
--- | Operations must be monotonic
 day07 :: [Int -> Int -> Maybe Int] -> [(Int, NonEmpty Int)] :~> Int
 day07 ops =
   MkSol
