@@ -42,11 +42,11 @@ unMul :: Int -> Int -> Maybe Int
 unMul x y = [y `div` x | y `mod` x == 0]
 
 unCat :: Int -> Int -> Maybe Int
-unCat x y = [y `div` fac | y `mod` fac == x]
+unCat x y = [d | m == x]
   where
     pow :: Int
     pow = ceiling @Double $ logBase 10 (fromIntegral (x + 1))
-    fac = 10 ^ pow
+    (d, m) = y `divMod` (10 ^ pow)
 
 day07a :: [(Int, NonEmpty Int)] :~> Int
 day07a = day07 [unAdd, unMul]
