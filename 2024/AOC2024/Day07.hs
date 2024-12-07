@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day07 (
--- day07a,
--- day07b
-
+day07a,
+day07b
 )
 where
 
@@ -53,14 +52,18 @@ import qualified Text.Megaparsec.Char.Lexer as PP
 day07a :: _ :~> _
 day07a =
   MkSol
-    { sParse =
-        noFail $
-          lines
+    { sParse = parseLines $ (,) <$> pDecimal <* ":" <*> many pDecimal
+        -- noFail $
+        --   lines
     , sShow = show
     , sSolve =
         noFail $
-          id
+          sum . mapMaybe (\(n, xs) -> n <$ guard (good n xs))
     }
+  where
+    good n (x:xs) = n `elem` foldlM go x xs
+      where
+        go acc x = [x + acc, x * acc]
 
 day07b :: _ :~> _
 day07b =
@@ -69,5 +72,9 @@ day07b =
     , sShow = show
     , sSolve =
         noFail $
-          id
+          sum . mapMaybe (\(n, xs) -> n <$ guard (good n xs))
     }
+  where
+    good n (x:xs) = n `elem` foldlM go x xs
+      where
+        go acc x = [x + acc, x * acc, read $ show acc ++ show x]
