@@ -50,7 +50,7 @@ unMul x y = [y `div` x | y `mod` x == 0]
 unCat :: Int -> Int -> Maybe Int
 unCat x y = [d | m == x]
   where
-    pow = ceiling $ logBase 10 (fromIntegral (x + 1))
+    pow = length . takeWhile (< x) $ iterate (* 10) 1
     (d, m) = y `divMod` (10 ^ pow)
 ```
 
