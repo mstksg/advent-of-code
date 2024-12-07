@@ -58,4 +58,4 @@ So part 1 is `checkBackEquation [unAdd, unMul]` and part 2 is
 `checkBackEquation [unAdd, unMul, unCat]`.
 
 Timing-wise, moving from forwards to backwards brought my times for part 2 from
-380ms to 1.5ms.
+380ms to 1.2ms.
