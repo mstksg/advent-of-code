@@ -1,18 +1,18 @@
 >> Day 08a
 benchmarking...
-time                 898.4 μs   (895.0 μs .. 903.8 μs)
+time                 590.0 μs   (587.8 μs .. 592.0 μs)
                      1.000 R²   (1.000 R² .. 1.000 R²)
-mean                 896.6 μs   (894.8 μs .. 900.8 μs)
-std dev              10.85 μs   (6.968 μs .. 17.95 μs)
+mean                 585.1 μs   (583.2 μs .. 586.6 μs)
+std dev              5.404 μs   (4.505 μs .. 6.494 μs)
 
 * parsing and formatting times excluded
 
 >> Day 08b
 benchmarking...
-time                 1.133 ms   (1.130 ms .. 1.138 ms)
+time                 990.5 μs   (987.5 μs .. 996.0 μs)
                      1.000 R²   (1.000 R² .. 1.000 R²)
-mean                 1.131 ms   (1.129 ms .. 1.133 ms)
-std dev              6.530 μs   (5.010 μs .. 8.133 μs)
+mean                 994.3 μs   (991.8 μs .. 997.7 μs)
+std dev              9.220 μs   (8.039 μs .. 11.41 μs)
 
 * parsing and formatting times excluded
 
