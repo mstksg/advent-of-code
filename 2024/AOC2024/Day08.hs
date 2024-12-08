@@ -15,7 +15,6 @@ where
 import AOC.Common.Point (Point, boundingBox, inBoundingBox, parseAsciiMap)
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Monad (guard, mfilter)
-import Data.List (tails)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Map.NonEmpty (NEMap)
@@ -25,10 +24,10 @@ import qualified Data.Set as S
 
 makeAntinodes :: Eq a => Map Point a -> (Point -> Point -> [Point]) -> Set Point
 makeAntinodes mp genPts = S.fromList do
-  (p1, c1) : rest <- tails $ M.toList mp
-  (p2, c2) <- rest
+  (p1, c1) <- M.toList mp
+  (p2, c2) <- M.toList mp
   guard $ p1 /= p2 && c1 == c2
-  genPts p1 p2 ++ genPts p2 p1
+  genPts p1 p2
 
 day08 :: (Point -> Point -> [Point]) -> NEMap Point (Maybe Char) :~> Int
 day08 stepper =

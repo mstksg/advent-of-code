@@ -167,11 +167,7 @@ shiftToZero' ps = case minCorner' ps of
   Nothing -> ps
   Just mn -> S.mapMonotonic (liftA2 subtract mn) ps
 
-inBoundingBox ::
-  (Applicative g, Foldable g, Ord a) =>
-  V2 (g a) ->
-  g a ->
-  Bool
+inBoundingBox :: (Applicative g, Foldable g, Ord a) => V2 (g a) -> g a -> Bool
 inBoundingBox (V2 mn mx) x = and $ go <$> x <*> mn <*> mx
   where
     go x' mn' mx' = x' >= mn' && x' <= mx'
