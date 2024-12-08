@@ -276,7 +276,7 @@ mannDist :: (Foldable f, Num a, Num (f a)) => f a -> f a -> a
 mannDist x y = sum . abs $ x - y
 
 mannNorm :: (Foldable f, Num a, Num (f a)) => f a -> a
-mannNorm x = mannDist x x
+mannNorm = mannDist 0
 
 -- | Treat as complex number multiplication. useful for rotations
 mulPoint :: Num a => V2 a -> V2 a -> V2 a

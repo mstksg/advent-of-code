@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day08 (
--- day08a,
--- day08b
-
+  day08a,
+  day08b,
 )
 where
 
@@ -50,16 +49,38 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
+-- sameLine p1@(V2 x1 y1) p2@(V2 x2 y2)
+--   | dx == 0 && dy /= 0 = y1 `mod` y2 == 0 || y2 `mod` y1 == 0
+--   | dy == 0 && dx /= 0 = x1 `mod` x2 == 0 || x2 `mod` x1 == 0
+--   | dx /= 0 && dy /= 0 && yb `mod` ys == 0 = xb
+--   where
+--     d@(V2 dx dy) = pBig - pSmall
+--     pBig@(V2 xb yb) = maximumBy (comparing mannNorm) [p1,p2]
+--     pSmall@(V2 xm ym) = maximumBy (comparing mannNorm) [p1,p2]
+
+isAntinode :: Map Point Char -> Point -> Bool
+isAntinode mp p = any (hasDouble . sortOn mannNorm . toList) lineDists
+  where
+    hasDouble [] = False
+    hasDouble (x : xs) = (x * 2) `elem` xs || hasDouble xs
+    lineDists =
+      M.fromListWith
+        (<>)
+        [ (c, S.singleton (p' - p))
+        | (p', c) <- M.toList mp
+        ]
+
 day08a :: _ :~> _
 day08a =
   MkSol
-    { sParse =
-        noFail $
-          lines
+    { sParse = Just . parseAsciiMap Just
     , sShow = show
-    , sSolve =
-        noFail $
-          id
+    -- , sShow = ('\n' :) . displayAsciiSet '.' '#'
+    , sSolve = \mp -> do
+        bb <- boundingBox' (M.keys mp)
+        let noDots = M.filter (/= '.') mp
+        -- pure $ S.filter (isAntinode noDots) (fillBoundingBox bb)
+        pure $ countTrue (isAntinode noDots) (fillBoundingBox bb)
     }
 
 day08b :: _ :~> _
@@ -67,7 +88,15 @@ day08b =
   MkSol
     { sParse = sParse day08a
     , sShow = show
-    , sSolve =
-        noFail $
-          id
+    , sSolve = \mp -> do
+        bb <- boundingBox' (M.keys mp)
+        let noDots = M.filter (/= '.') mp
+        -- pure $ S.filter (isAntinode noDots) (fillBoundingBox bb)
+        pure . S.size . S.fromList $ do
+          (p1, c1) <- M.toList noDots
+          (p2, c2) <- M.toList noDots
+          guard $ p1 /= p2
+          guard $ c1 == c2
+          let delta = p2 - p1
+          takeWhile (inBoundingBox bb) $ iterate (+ delta) p2
     }
