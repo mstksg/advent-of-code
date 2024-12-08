@@ -10,13 +10,13 @@ makeAntinodes mp genPts = S.fromList do
   guard $ p1 /= p2 && c1 == c2
   genPts p1 p2
 
-day08 :: (Point -> Point -> [Point]) -> Map Point (Maybe Char) :~> Int
+day08 :: (Point -> Point -> [Point]) -> Map Point Char -> Int
 day08 stepper mp = S.size $
     makeAntinodes ants \p1 p2 ->
       takeWhile (`S.member` allPoints) $ stepper p1 p2
   where
-    allPoints = boundingBox (M.keysSet mp)
-    ants = M.mapMaybe id mp
+    allPoints = M.keysSet mp
+    ants = M.filter (/= '.') mp
 
 day08a :: Map Point (Maybe Char) -> Int
 day08a = day08 \p1 p2 -> [p2 + p2 - p1]
