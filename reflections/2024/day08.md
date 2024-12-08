@@ -18,9 +18,9 @@ day08 stepper mp = S.size $
     allPoints = M.keysSet mp
     ants = M.filter (/= '.') mp
 
-day08a :: Map Point (Maybe Char) -> Int
+day08a :: Map Point Char -> Int
 day08a = day08 \p1 p2 -> [p2 + p2 - p1]
 
-day08b :: Map Point (Maybe Char) -> Int
+day08b :: Map Point Char -> Int
 day08b = day08 \p1 p2 -> iterate (+ (p2 - p1)) p2
 ```
