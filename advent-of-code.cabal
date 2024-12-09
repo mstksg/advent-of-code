@@ -142,6 +142,7 @@ library aoc-common
   import:          common-options
   import:          solver-extensions
   build-depends:
+    , adjunctions
     , advent-of-code-ocr
     , aoc-core
     , base                       >=4.7 && <5
@@ -165,7 +166,6 @@ library aoc-common
     , megaparsec
     , mtl
     , nonempty-containers
-    , adjunctions
     , parallel
     , parser-combinators
     , psqueues
@@ -180,6 +180,7 @@ library aoc-common
     , vector
     , vector-algorithms
     , vector-sized
+    , witherable
 
   exposed-modules:
     AOC.Common

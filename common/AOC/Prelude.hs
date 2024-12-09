@@ -28,6 +28,7 @@ import Control.Lens as P hiding (uncons)
 import Control.Monad as P
 import Control.Monad.Except as P
 import Control.Monad.State as P
+import Witherable as P (Witherable(..), forMaybe, FilterableWithIndex(..), WitherableWithIndex(..))
 import Data.Bifunctor as P
 import Data.Char as P
 import Data.Containers.ListUtils as P
