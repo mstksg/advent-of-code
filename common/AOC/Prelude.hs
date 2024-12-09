@@ -22,6 +22,7 @@ import AOC.Common.Search as P
 import AOC.Solver as P
 import AOC.Util as P
 import Control.Applicative as P
+import Control.Arrow as P (Kleisli (..))
 import Control.DeepSeq as P
 import Control.Lens as P hiding (uncons)
 import Control.Monad as P
@@ -33,7 +34,16 @@ import Data.Containers.ListUtils as P
 import Data.Either as P
 import Data.Finite as P (Finite, finites, getFinite, modulo, packFinite)
 import Data.Foldable as P
-import Data.Foldable1 as P hiding (head, last, maximum, maximumBy, minimum, minimumBy, foldr1, foldl1)
+import Data.Foldable1 as P hiding (
+  foldl1,
+  foldr1,
+  head,
+  last,
+  maximum,
+  maximumBy,
+  minimum,
+  minimumBy,
+ )
 import Data.Function as P
 import Data.Functor as P hiding (unzip)
 import Data.Functor.Foldable as P (ana, cata, hylo)
@@ -97,7 +107,7 @@ import Data.Traversable as P
 import Data.Tuple as P
 import Data.Void as P
 import Debug.Trace as P
-import GHC.Generics as P (Generic)
+import GHC.Generics as P (Generic, Generically (..))
 import Numeric.Natural as P
 import Safe as P (
   atMay,

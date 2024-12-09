@@ -29,7 +29,6 @@ where
 import AOC.Prelude
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as IM
 import qualified Data.IntSet as IS
 import qualified Data.IntSet.NonEmpty as NEIS
 import qualified Data.List.NonEmpty as NE
@@ -48,8 +47,31 @@ import qualified Linear as L
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
+import Witherable (wither)
 
-day09a :: _ :~> _
+data DiskState a = DS
+  { dsGaps :: !(IntMap Int)
+  , dsFiles :: !(IntMap (a, Int))
+  }
+  deriving stock (Generic, Show)
+  deriving anyclass (NFData)
+  deriving (Semigroup, Monoid) via (Generically (DiskState a))
+
+toDiskState :: [a] -> [Int] -> DiskState a
+toDiskState fids =
+  uncurry DS
+    . IM.mapEither splitter
+    . IM.fromList
+    . flip evalState 0
+    . traverse go
+    . zip (intersperse Nothing (Just <$> fids))
+  where
+    go (mfid, len) = state \i -> ((i, (mfid, len)), i + len)
+    splitter (mfid, len) = case mfid of
+      Nothing -> Left len
+      Just fid -> Right (fid, len)
+
+day09a :: [Int] :~> _
 day09a =
   MkSol
     { sParse =
@@ -58,47 +80,45 @@ day09a =
     , sShow = show
     , sSolve =
         noFail \ls ->
-          let board =
-                M.fromList . mapMaybe (\(i, x) -> (i :: Int,) <$> x) . zip [0 ..] . concat $
-                  zipWith replicate ls (intersperse Nothing $ Just <$> [0 ..])
-              maxIx = last $ M.keys board
-              allIx = [0 .. maxIx]
-              (finalBoard, _) = flip loopMaybe (board, 0) \(ps, n) -> traceShow n do
-                let (iLast, pLast) = M.findMax ps
-                firstGap <- find (`M.notMember` ps) allIx
-                guard $ firstGap /= (iLast + 1)
-                pure (M.insert firstGap pLast $ M.delete iLast ps, n + 1)
-           in sum . map (uncurry (*)) $ M.toList finalBoard
+          let DS{..} = toDiskState [0 ..] ls
+              endFiles :: [(Int, Int)]
+              endFiles =
+                [ (i, fid)
+                | (i0, (fid, len)) <- IM.toDescList dsFiles
+                , i <- take len $ iterate (subtract 1) (i0 + len - 1)
+                ]
+              (newGaps, newFiles) = flip runState endFiles . fmap concat . for (IM.toAscList dsGaps) $ \(i0, gapLen) -> state \ends ->
+                let (fillMe, rest) = splitAt gapLen ends
+                    (fillToTheMiddle, pastMiddle) = span (\((endI, _), gapI) -> endI > gapI) $ zip fillMe [i0 ..]
+                 in ((\((_, fid), i) -> (i, fid)) <$> fillToTheMiddle, (fst <$> pastMiddle) ++ rest)
+           in sum . map (uncurry (*)) $ newGaps ++ newFiles
     }
 
-day09b :: _ :~> _
+advanceBlock :: DiskState a -> (Int, (a, Int)) -> DiskState a
+advanceBlock ds (i, (fid, fileLen)) =
+  maybe ds update . find ((>= fileLen) . snd) . IM.toAscList . IM.takeWhileAntitone (< i) $ dsGaps ds
+  where
+    update (gapI, gapLen) =
+      DS
+        { dsGaps = IM.union reGap . IM.delete gapI $ dsGaps ds
+        , dsFiles = IM.insert gapI (fid, fileLen) . IM.delete i $ dsFiles ds
+        }
+      where
+        reGap = IM.filter (> 0) $ IM.singleton (gapI + fileLen) (gapLen - fileLen)
+
+checksum :: IM.IntMap (Int, Int) -> Int
+checksum = sum . map go . IM.toList
+  where
+    go (i, (v, len)) = sum . map (* v) . take len $ [i ..]
+
+day09b :: [Int] :~> Int
 day09b =
   MkSol
     { sParse = sParse day09a
     , sShow = show
     , sSolve =
         noFail \ls ->
-          let board = M.fromList $
-                flip evalState 0 $
-                  for (zip ls (intersperse Nothing $ Just <$> [0 ..])) \(len, fid) -> state \i ->
-                    ((i, (fid, len)), i + len)
-              emptyBoard :: M.Map Int Int
-              emptyBoard = M.mapMaybe (\(fid, i) -> case fid of Nothing -> Just i; Just _ -> Nothing) board
-              fullBoard :: M.Map Int (Int, Int)
-              fullBoard = M.mapMaybe (\(fid, i) -> (,i) <$> fid) board
-              (_, _, finalFull) = flip loopMaybe (S.empty, emptyBoard, fullBoard) \(moved, psEmpty, psFull) -> do
-                (gapI, gapLen, moveMeI, moveMe, moveMeLen) <- flip firstJust (M.toDescList psFull) \(i, (fid, len)) -> do
-                  guard $ fid `S.notMember` moved
-                  (gapI, gapLen) <- find ((len <=) . snd) (M.toAscList psEmpty)
-                  guard $ gapI < i
-                  pure (gapI, gapLen, i, fid, len)
-                let reAddEmpty
-                      | gapLen == moveMeLen = id
-                      | otherwise = M.insert (gapI + moveMeLen) (gapLen - moveMeLen)
-                    newEmpty = reAddEmpty $ M.delete gapI psEmpty
-                    newFull = M.insert gapI (moveMe, moveMeLen) . M.delete moveMeI $ psFull
-                    newMoved = S.insert moveMe moved
-                pure (newMoved, newEmpty, newFull)
-              checksum (i, (v, len)) = sum . map (* v) . take len $ [i ..]
-           in sum . map checksum $ M.toList finalFull
+          let ds0 :: DiskState Int
+              ds0 = toDiskState [0 ..] ls
+           in checksum . dsFiles . foldl' advanceBlock ds0 $ IM.toDescList (dsFiles ds0)
     }
