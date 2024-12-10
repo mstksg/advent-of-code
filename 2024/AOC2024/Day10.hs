@@ -49,38 +49,38 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
-day10a :: _ :~> _
+stepPoint :: (Enum a, Eq a) => Map Point a -> Point -> Set Point
+stepPoint mp p = M.keysSet . M.filter (== succ x) $ mp `M.restrictKeys` cardinalNeighbsSet p
+  where
+    x = mp M.! p
+
+distinctTrailsFrom :: (Eq a, Enum a, Bounded a) => Map Point a -> Point -> Int
+distinctTrailsFrom mp = go
+  where
+    go p
+      | x == maxBound = 1
+      | otherwise = sum $ go <$> nexts
+      where
+        x = mp M.! p
+        nexts = M.keys $ M.filter (== succ x) $ mp `M.restrictKeys` cardinalNeighbsSet p
+
+day10a :: Map Point Int :~> Int
 day10a =
   MkSol
-    { sParse =
-        noFail $ parseAsciiMap digitToIntSafe
+    { sParse = noFail $ parseAsciiMap digitToIntSafe
     , sShow = show
     , sSolve =
         noFail \mp ->
           sum
-            [ M.size . M.filter (== 9) $ mp `M.restrictKeys` allTrails
-            | startPos <- M.keys $ M.filter (== 0) mp
-            , let allTrails = flip floodFill (S.singleton startPos) \p ->
-                    let curr = mp M.! p
-                     in M.keysSet $ M.filter (== (curr + 1)) $ mp `M.restrictKeys` cardinalNeighbsSet p
-            ]
+            . map (\p -> M.size . M.filter (== 9) $ mp `M.restrictKeys` floodFill (stepPoint mp) (S.singleton p))
+            . M.keys
+            $ M.filter (== 0) mp
     }
 
 day10b :: _ :~> _
 day10b =
   MkSol
-    { sParse = sParse day10a
+    { sParse = noFail $ parseAsciiMap (preview decimalDigit)
     , sShow = show
-    , sSolve =
-        noFail \mp ->
-          sum
-            [ distinctTrailsFrom startPos
-            | startPos <- M.keys $ M.filter (== 0) mp
-            , let distinctTrailsFrom p
-                      | curr == 9 = 1
-                      | otherwise = sum $ distinctTrailsFrom <$> nexts
-                    where
-                      curr = mp M.! p
-                      nexts = M.keys $ M.filter (== (curr + 1)) $ mp `M.restrictKeys` cardinalNeighbsSet p
-            ]
+    , sSolve = noFail \mp -> sum . map (distinctTrailsFrom mp) . M.keys $ M.filter (== 0) mp
     }
