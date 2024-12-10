@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- |
 -- Module      : AOC2024.Day10
 -- License     : BSD3
@@ -9,78 +6,40 @@
 -- Portability : non-portable
 --
 -- Day 10.  See "AOC.Solver" for the types used in this module!
---
--- After completing the challenge, it is recommended to:
---
--- *   Replace "AOC.Prelude" imports to specific modules (with explicit
---     imports) for readability.
--- *   Remove the @-Wno-unused-imports@ and @-Wno-unused-top-binds@
---     pragmas.
--- *   Replace the partial type signatures underscores in the solution
---     types @_ :~> _@ with the actual types of inputs and outputs of the
---     solution.  You can delete the type signatures completely and GHC
---     will recommend what should go in place of the underscores.
 module AOC2024.Day10 (
   day10a,
   day10b,
 )
 where
 
-import AOC.Prelude
-import qualified Data.Graph.Inductive as G
-import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as NEIM
-import qualified Data.IntSet as IS
-import qualified Data.IntSet.NonEmpty as NEIS
-import qualified Data.List.NonEmpty as NE
-import qualified Data.List.PointedList as PL
-import qualified Data.List.PointedList.Circular as PLC
+import AOC.Common (decimalDigit)
+import AOC.Common.Point (Point, cardinalNeighbsSet, parseAsciiMap)
+import AOC.Solver (noFail, type (:~>) (..))
+import Control.Lens (preview)
+import Data.Finite (Finite)
+import Data.Map (Map)
 import qualified Data.Map as M
-import qualified Data.Map.NonEmpty as NEM
-import qualified Data.OrdPSQ as PSQ
-import qualified Data.Sequence as Seq
-import qualified Data.Sequence.NonEmpty as NESeq
+import Data.Semigroup (Sum (getSum))
 import qualified Data.Set as S
-import qualified Data.Set.NonEmpty as NES
-import qualified Data.Text as T
-import qualified Data.Vector as V
-import qualified Linear as L
-import qualified Text.Megaparsec as P
-import qualified Text.Megaparsec.Char as P
-import qualified Text.Megaparsec.Char.Lexer as PP
 
-stepPoint :: (Enum a, Eq a) => Map Point a -> Point -> Set Point
-stepPoint mp p = M.keysSet . M.filter (== succ x) $ mp `M.restrictKeys` cardinalNeighbsSet p
+gatherNines :: (Eq a, Enum a, Bounded a, Monoid m) => (Point -> m) -> Map Point a -> Point -> m
+gatherNines f mp = go minBound
   where
-    x = mp M.! p
+    go x p
+      | x == maxBound = f p
+      | otherwise =
+          foldMap (go (succ x)) . M.keys . M.filter (== succ x) $ mp `M.restrictKeys` cardinalNeighbsSet p
 
-distinctTrailsFrom :: (Eq a, Enum a, Bounded a) => Map Point a -> Point -> Int
-distinctTrailsFrom mp = go
-  where
-    go p
-      | x == maxBound = 1
-      | otherwise = sum $ go <$> nexts
-      where
-        x = mp M.! p
-        nexts = M.keys $ M.filter (== succ x) $ mp `M.restrictKeys` cardinalNeighbsSet p
-
-day10a :: Map Point Int :~> Int
-day10a =
-  MkSol
-    { sParse = noFail $ parseAsciiMap digitToIntSafe
-    , sShow = show
-    , sSolve =
-        noFail \mp ->
-          sum
-            . map (\p -> M.size . M.filter (== 9) $ mp `M.restrictKeys` floodFill (stepPoint mp) (S.singleton p))
-            . M.keys
-            $ M.filter (== 0) mp
-    }
-
-day10b :: _ :~> _
-day10b =
+day10 :: Monoid m => (Point -> m) -> (m -> Int) -> Map Point (Finite 10) :~> Int
+day10 gather observe =
   MkSol
     { sParse = noFail $ parseAsciiMap (preview decimalDigit)
     , sShow = show
-    , sSolve = noFail \mp -> sum . map (distinctTrailsFrom mp) . M.keys $ M.filter (== 0) mp
+    , sSolve = noFail \mp -> sum . map (observe . gatherNines gather mp) . M.keys $ M.filter (== 0) mp
     }
+
+day10a :: Map Point (Finite 10) :~> Int
+day10a = day10 S.singleton S.size
+
+day10b :: Map Point (Finite 10) :~> Int
+day10b = day10 (const 1) getSum
