@@ -76,7 +76,6 @@ moveBlock gaps (i, (fid, fileLen)) = (gaps', hereContrib)
               | gapLen > fileLen = IM.insert (gapI + fileLen) (gapLen - fileLen)
               | otherwise = id
          in addBack . IM.delete gapI $ gaps
-           in sum . snd . mapAccumL moveBlock dsGaps $ IM.toDescList dsFiles
 
 part2 :: IntMap Int -> IntMap (Int, Int) -> Int
 part2 gaps files = sum . snd . mapAccumL moveBlock gaps $ IM.toDescList files
