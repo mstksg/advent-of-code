@@ -21,16 +21,15 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day10 (
--- day10a,
--- day10b
-
+  day10a,
+  day10b,
 )
 where
 
 import AOC.Prelude
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as IM
+import qualified Data.IntMap.NonEmpty as NEIM
 import qualified Data.IntSet as IS
 import qualified Data.IntSet.NonEmpty as NEIS
 import qualified Data.List.NonEmpty as NE
@@ -54,12 +53,17 @@ day10a :: _ :~> _
 day10a =
   MkSol
     { sParse =
-        noFail $
-          lines
+        noFail $ parseAsciiMap digitToIntSafe
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \mp ->
+          sum
+            [ M.size . M.filter (== 9) $ mp `M.restrictKeys` allTrails
+            | startPos <- M.keys $ M.filter (== 0) mp
+            , let allTrails = flip floodFill (S.singleton startPos) \p ->
+                    let curr = mp M.! p
+                     in M.keysSet $ M.filter (== (curr + 1)) $ mp `M.restrictKeys` cardinalNeighbsSet p
+            ]
     }
 
 day10b :: _ :~> _
@@ -68,6 +72,15 @@ day10b =
     { sParse = sParse day10a
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \mp ->
+          sum
+            [ distinctTrailsFrom startPos
+            | startPos <- M.keys $ M.filter (== 0) mp
+            , let distinctTrailsFrom p
+                      | curr == 9 = 1
+                      | otherwise = sum $ distinctTrailsFrom <$> nexts
+                    where
+                      curr = mp M.! p
+                      nexts = M.keys $ M.filter (== (curr + 1)) $ mp `M.restrictKeys` cardinalNeighbsSet p
+            ]
     }
