@@ -14,12 +14,11 @@ where
 
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.DeepSeq (NFData)
-import Control.Monad.State (MonadState (state), evalState)
 import Data.Char (digitToInt)
 import Data.Foldable (find)
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
-import Data.List (intersperse)
+import Data.List (intersperse, mapAccumL)
 import GHC.Generics (Generic, Generically (..))
 
 data DiskState a = DS
@@ -35,11 +34,11 @@ toDiskState fids =
   uncurry DS
     . IM.mapEither splitter
     . IM.fromList
-    . flip evalState 0
-    . traverse go
+    . snd
+    . mapAccumL go 0
     . zip (intersperse Nothing (Just <$> fids))
   where
-    go (mfid, len) = state \i -> ((i, (mfid, len)), i + len)
+    go i (mfid, len) = (i + len, (i, (mfid, len)))
     splitter (mfid, len) = case mfid of
       Nothing -> Left len
       Just fid -> Right (fid, len)
@@ -67,27 +66,26 @@ day09a =
     , sSolve =
         noFail \ls ->
           let DS{..} = toDiskState [0 ..] ls
-              endFiles :: [(Int, Int)]
-              endFiles =
+           in fillGaps
+                (IM.toAscList dsGaps)
                 [ (i, fid)
                 | (i0, (fid, len)) <- IM.toDescList dsFiles
                 , i <- take len $ iterate (subtract 1) (i0 + len - 1)
                 ]
-           in fillGaps (IM.toAscList dsGaps) endFiles
     }
 
-moveBlocks :: IntMap Int -> [(Int, (Int, Int))] -> Int
-moveBlocks gaps = \case
-  [] -> 0
-  (i, (fid, fileLen)) : rest ->
-    let foundGap = find ((>= fileLen) . snd) . IM.toAscList $ IM.takeWhileAntitone (< i) gaps
-        hereContrib = sum . map (* fid) . take fileLen $ [maybe i fst foundGap ..]
-        gaps' = case foundGap of
-          Nothing -> gaps
-          Just (gapI, gapLen) ->
-            let reGap = IM.filter (> 0) $ IM.singleton (gapI + fileLen) (gapLen - fileLen)
-             in IM.union reGap . IM.delete gapI $ gaps
-     in hereContrib + moveBlocks gaps' rest
+moveBlock :: IntMap Int -> (Int, (Int, Int)) -> (IntMap Int, Int)
+moveBlock gaps (i, (fid, fileLen)) = (gaps', hereContrib)
+  where
+    foundGap = find ((>= fileLen) . snd) . IM.toAscList $ IM.takeWhileAntitone (< i) gaps
+    hereContrib = fid * ((fileLen * (fileLen + 1)) `div` 2 + fileLen * (maybe i fst foundGap - 1))
+    gaps' = case foundGap of
+      Nothing -> gaps
+      Just (gapI, gapLen) ->
+        let addBack
+              | gapLen > fileLen = IM.insert (gapI + fileLen) (gapLen - fileLen)
+              | otherwise = id
+         in addBack . IM.delete gapI $ gaps
 
 day09b :: [Int] :~> Int
 day09b =
@@ -97,5 +95,5 @@ day09b =
     , sSolve =
         noFail \ls ->
           let DS{..} = toDiskState [0 ..] ls
-           in moveBlocks dsGaps $ IM.toDescList dsFiles
+           in sum . snd . mapAccumL moveBlock dsGaps $ IM.toDescList dsFiles
     }
