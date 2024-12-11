@@ -19,7 +19,8 @@ growTo = Memo.memo2 Memo.integral Memo.integral go
 step :: Int -> [Int]
 step c
   | c == 0 = [1]
-  | even pow = review _ListTup $ c `divMod` (10 ^ (pow `div` 2))
+  | even pow = let (a, b) = c `divMod` (10 ^ (pow `div` 2))
+  |             in [a, b]
   | otherwise = [c * 2024]
   where
     pow = numDigits c
