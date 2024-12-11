@@ -21,16 +21,15 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day11 (
--- day11a,
--- day11b
-
+  day11a,
+  day11b,
 )
 where
 
 import AOC.Prelude
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as IM
+import qualified Data.IntMap.NonEmpty as NEIM
 import qualified Data.IntSet as IS
 import qualified Data.IntSet.NonEmpty as NEIS
 import qualified Data.List.NonEmpty as NE
@@ -49,18 +48,38 @@ import qualified Linear as L
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
+import qualified Data.MemoCombinators as MC
 
-day11a :: _ :~> _
+day11a :: [Int] :~> _
 day11a =
   MkSol
-    { sParse =
-        noFail $
-          lines
+    { sParse = parseMaybe' $ many pDecimal
+        -- noFail $
+        --   lines
     , sShow = show
     , sSolve =
         noFail $
-          id
+          sum . map (`growFrom` 25)
     }
+
+growFrom :: Int -> Int -> Int
+growFrom = MC.memo2 MC.integral MC.integral go
+  where
+    go n k
+      | k <= 0 = 1
+      | otherwise = sum . map (`growFrom` (k-1)) $ step n
+  -- where
+  --   go = concatMap growFrom . step
+
+step :: Int -> [Int]
+step !c
+  | c == 0 = [1]
+  | even (length shownc) = let (a,b) = splitAt (length shownc `div` 2)  shownc
+                           in read <$> [a,b]
+  | otherwise = [c*2024]
+  where
+    shownc = show c
+
 
 day11b :: _ :~> _
 day11b =
@@ -69,5 +88,5 @@ day11b =
     , sShow = show
     , sSolve =
         noFail $
-          id
+          sum . map (`growFrom` 75)
     }
