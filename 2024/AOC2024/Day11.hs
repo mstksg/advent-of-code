@@ -12,7 +12,7 @@ module AOC2024.Day11 (
 )
 where
 
-import AOC.Common
+import AOC.Common (bindIntFreq, intFreqs, numDigits, strictIterate, (!!!), _ListTup)
 import AOC.Common.Parser (pDecimal, parseMaybe')
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Applicative (Alternative (many))
