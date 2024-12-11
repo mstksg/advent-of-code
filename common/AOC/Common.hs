@@ -56,6 +56,7 @@ module AOC.Common (
   lookupFreq,
   freqList,
   revFreq,
+  bindFreq,
   perturbations,
   perturbationsBy,
   select,
@@ -415,6 +416,9 @@ revFreq =
     . map (swap . first NES.singleton)
     . M.toList
     . freqs
+
+bindFreq :: Ord b => Map a Int -> (a -> Map b Int) -> Map b Int
+bindFreq mp f = M.unionsWith (+) [ (* n) <$> f x | (x, n) <- M.toList mp ]
 
 -- | Build a list of /descending/ frequencies.  Ties are sorted.
 freqList :: (Foldable f, Ord a) => f a -> [(Int, a)]
