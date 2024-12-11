@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- |
 -- Module      : AOC2024.Day11
 -- License     : BSD3
@@ -9,84 +6,41 @@
 -- Portability : non-portable
 --
 -- Day 11.  See "AOC.Solver" for the types used in this module!
---
--- After completing the challenge, it is recommended to:
---
--- *   Replace "AOC.Prelude" imports to specific modules (with explicit
---     imports) for readability.
--- *   Remove the @-Wno-unused-imports@ and @-Wno-unused-top-binds@
---     pragmas.
--- *   Replace the partial type signatures underscores in the solution
---     types @_ :~> _@ with the actual types of inputs and outputs of the
---     solution.  You can delete the type signatures completely and GHC
---     will recommend what should go in place of the underscores.
 module AOC2024.Day11 (
   day11a,
   day11b,
 )
 where
 
-import AOC.Prelude
-import qualified Data.Graph.Inductive as G
-import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as NEIM
-import qualified Data.IntSet as IS
-import qualified Data.IntSet.NonEmpty as NEIS
-import qualified Data.List.NonEmpty as NE
-import qualified Data.List.PointedList as PL
-import qualified Data.List.PointedList.Circular as PLC
-import qualified Data.Map as M
-import qualified Data.Map.NonEmpty as NEM
-import qualified Data.OrdPSQ as PSQ
-import qualified Data.Sequence as Seq
-import qualified Data.Sequence.NonEmpty as NESeq
-import qualified Data.Set as S
-import qualified Data.Set.NonEmpty as NES
-import qualified Data.Text as T
-import qualified Data.Vector as V
-import qualified Linear as L
-import qualified Text.Megaparsec as P
-import qualified Text.Megaparsec.Char as P
-import qualified Text.Megaparsec.Char.Lexer as PP
-import qualified Data.MemoCombinators as MC
+import AOC.Common (numDigits, _ListTup)
+import AOC.Common.Parser (pDecimal, parseMaybe')
+import AOC.Solver (noFail, type (:~>) (..))
+import Control.Applicative (Alternative (many))
+import Control.Lens (review)
+import qualified Data.MemoCombinators as Memo
 
-day11a :: [Int] :~> _
-day11a =
+day11 :: Int -> [Int] :~> Int
+day11 n =
   MkSol
     { sParse = parseMaybe' $ many pDecimal
-        -- noFail $
-        --   lines
     , sShow = show
-    , sSolve =
-        noFail $
-          sum . map (`growFrom` 25)
+    , sSolve = noFail $ sum . map (`growFrom` n)
     }
+
+day11a :: [Int] :~> Int
+day11a = day11 25
+
+day11b :: [Int] :~> Int
+day11b = day11 75
 
 growFrom :: Int -> Int -> Int
-growFrom = MC.memo2 MC.integral MC.integral go
+growFrom = Memo.memo2 Memo.integral Memo.integral go
   where
-    go n k
-      | k <= 0 = 1
-      | otherwise = sum . map (`growFrom` (k-1)) $ step n
-  -- where
-  --   go = concatMap growFrom . step
-
-step :: Int -> [Int]
-step !c
-  | c == 0 = [1]
-  | even (length shownc) = let (a,b) = splitAt (length shownc `div` 2)  shownc
-                           in read <$> [a,b]
-  | otherwise = [c*2024]
-  where
-    shownc = show c
-
-
-day11b :: _ :~> _
-day11b =
-  MkSol
-    { sParse = sParse day11a
-    , sShow = show
-    , sSolve =
-        noFail $
-          sum . map (`growFrom` 75)
-    }
+    go _ 0 = 1
+    go n k = sum . map (`growFrom` (k - 1)) $ step n
+    step c
+      | c == 0 = [1]
+      | even pow = review _ListTup $ c `divMod` (10 ^ (pow `div` 2))
+      | otherwise = [c * 2024]
+      where
+        pow = numDigits c

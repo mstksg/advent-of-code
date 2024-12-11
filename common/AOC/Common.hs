@@ -125,6 +125,7 @@ module AOC.Common (
   memo4,
   LCM (..),
   asString,
+  numDigits,
 
   -- * Comonad stuff
   matchMap,
@@ -1011,6 +1012,9 @@ mapMaybeSet f = S.fromList . mapMaybe f . S.toList
 
 symDiff :: Ord a => Set a -> Set a -> Set a
 symDiff x y = (x `S.union` y) S.\\ (x `S.intersection` y)
+
+numDigits :: (Ord a, Num a) => a -> Int
+numDigits x = length . takeWhile (<= x) $ iterate (* 10) 1
 
 memo4 ::
   Memo.Memo a ->
