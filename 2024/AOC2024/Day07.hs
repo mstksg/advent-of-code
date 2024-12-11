@@ -12,8 +12,8 @@ module AOC2024.Day07 (
 )
 where
 
-import AOC.Common.Parser (pDecimal, parseLines)
 import AOC.Common (numDigits)
+import AOC.Common.Parser (pDecimal, parseLines)
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Monad (guard)
 import Data.Foldable (foldrM)

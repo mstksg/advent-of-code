@@ -12,19 +12,19 @@ module AOC2024.Day11 (
 )
 where
 
-import AOC.Common (numDigits, _ListTup)
+import AOC.Common
 import AOC.Common.Parser (pDecimal, parseMaybe')
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Applicative (Alternative (many))
 import Control.Lens (review)
-import qualified Data.MemoCombinators as Memo
+import Data.IntMap (IntMap)
 
 day11 :: Int -> [Int] :~> Int
 day11 n =
   MkSol
     { sParse = parseMaybe' $ many pDecimal
     , sShow = show
-    , sSolve = noFail $ sum . map (`growTo` n)
+    , sSolve = noFail $ sum . (!!! n) . strictIterate stepMap . intFreqs
     }
 
 day11a :: [Int] :~> Int
@@ -33,14 +33,13 @@ day11a = day11 25
 day11b :: [Int] :~> Int
 day11b = day11 75
 
-growTo :: Int -> Int -> Int
-growTo = Memo.memo2 Memo.integral Memo.integral go
+step :: Int -> [Int]
+step c
+  | c == 0 = [1]
+  | even pow = review _ListTup $ c `divMod` (10 ^ (pow `div` 2))
+  | otherwise = [c * 2024]
   where
-    go _ 0 = 1
-    go n k = sum . map (`growTo` (k - 1)) $ step n
-    step c
-      | c == 0 = [1]
-      | even pow = review _ListTup $ c `divMod` (10 ^ (pow `div` 2))
-      | otherwise = [c * 2024]
-      where
-        pow = numDigits c
+    pow = numDigits c
+
+stepMap :: IntMap Int -> IntMap Int
+stepMap = flip bindIntFreq (intFreqs . step)

@@ -53,10 +53,13 @@ module AOC.Common (
 
   -- * Lists
   freqs,
+  intFreqs,
   lookupFreq,
+  lookupIntFreq,
   freqList,
   revFreq,
   bindFreq,
+  bindIntFreq,
   perturbations,
   perturbationsBy,
   select,
@@ -397,6 +400,10 @@ pickUnique mp = flip evalStateT S.empty $ do
 freqs :: (Foldable f, Ord a) => f a -> Map a Int
 freqs = M.fromListWith (+) . map (,1) . toList
 
+-- | Build a frequency map
+intFreqs :: Foldable f => f Int -> IntMap Int
+intFreqs = IM.fromListWith (+) . map (,1) . toList
+
 -- | each item paired with the list not including that item
 select :: [a] -> [(a, [a])]
 select = go []
@@ -409,6 +416,11 @@ select = go []
 lookupFreq :: Ord a => a -> Map a Int -> Int
 lookupFreq = M.findWithDefault 0
 
+-- | Look up a count from a frequency map, defaulting to zero if item is
+-- not foudn
+lookupIntFreq :: Int -> IntMap Int -> Int
+lookupIntFreq = IM.findWithDefault 0
+
 -- | Build a reverse frequency map
 revFreq :: (Foldable f, Ord a) => f a -> IntMap (NESet a)
 revFreq =
@@ -418,7 +430,10 @@ revFreq =
     . freqs
 
 bindFreq :: Ord b => Map a Int -> (a -> Map b Int) -> Map b Int
-bindFreq mp f = M.unionsWith (+) [ (* n) <$> f x | (x, n) <- M.toList mp ]
+bindFreq mp f = M.unionsWith (+) [(* n) <$> f x | (x, n) <- M.toList mp]
+
+bindIntFreq :: IntMap Int -> (Int -> IntMap Int) -> IntMap Int
+bindIntFreq mp f = IM.unionsWith (+) [(* n) <$> f x | (x, n) <- IM.toList mp]
 
 -- | Build a list of /descending/ frequencies.  Ties are sorted.
 freqList :: (Foldable f, Ord a) => f a -> [(Int, a)]
@@ -1027,8 +1042,8 @@ numDigits x = length . takeWhile (<= x) $ iterate (* 10) 1
 
 listDigits :: (Integral a) => a -> [a]
 listDigits = L.unfoldr \x ->
-    let (a, b) = x `divMod` 10
-     in [(b, a) | b > 0]
+  let (a, b) = x `divMod` 10
+   in [(b, a) | b > 0]
 
 unListDigits :: Num a => [a] -> a
 unListDigits = foldr (\x acc -> x + acc * 10) 0
