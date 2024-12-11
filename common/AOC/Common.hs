@@ -128,6 +128,9 @@ module AOC.Common (
   LCM (..),
   asString,
   numDigits,
+  listDigits,
+  unListDigits,
+  _DigitList,
 
   -- * Comonad stuff
   matchMap,
@@ -1017,6 +1020,17 @@ symDiff x y = (x `S.union` y) S.\\ (x `S.intersection` y)
 
 numDigits :: (Ord a, Num a) => a -> Int
 numDigits x = length . takeWhile (<= x) $ iterate (* 10) 1
+
+listDigits :: (Integral a) => a -> [a]
+listDigits = L.unfoldr \x ->
+    let (a, b) = x `divMod` 10
+     in [(b, a) | b > 0]
+
+unListDigits :: Num a => [a] -> a
+unListDigits = foldr (\x acc -> x + acc * 10) 0
+
+_DigitList :: Integral a => Iso' a [a]
+_DigitList = iso listDigits unListDigits
 
 memo4 ::
   Memo.Memo a ->
