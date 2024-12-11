@@ -97,6 +97,8 @@ module AOC.Common (
   binaryFold,
   binaryFoldPar,
   rotSquare,
+  splitHalf,
+  splitHalfExact,
 
   -- * Simple type util
   deleteFinite,
@@ -1080,6 +1082,19 @@ instance TraversableWithIndex k (NEMap k) where
 -- | Generalize a 'Maybe' to any 'Alternative'
 maybeAlt :: Alternative m => Maybe a -> m a
 maybeAlt = maybe empty pure
+
+splitHalf :: [a] -> ([a], [a])
+splitHalf xs = go xs xs
+  where
+    go (y : ys) (_ : _ : zs) = (y :) `first` go ys zs
+    go ys _ = ([], ys)
+
+splitHalfExact :: [a] -> Maybe ([a], [a])
+splitHalfExact xs = go xs xs
+  where
+    go (y : ys) (_ : _ : zs) = first (y :) <$> go ys zs
+    go ys [] = Just ([], ys)
+    go _ (_ : _) = Nothing
 
 -- | Like 'traceShowId' but with an extra message
 traceShowIdMsg :: Show a => String -> a -> a
