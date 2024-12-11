@@ -24,7 +24,7 @@ day11 n =
   MkSol
     { sParse = parseMaybe' $ many pDecimal
     , sShow = show
-    , sSolve = noFail $ sum . map (`growFrom` n)
+    , sSolve = noFail $ sum . map (`growTo` n)
     }
 
 day11a :: [Int] :~> Int
@@ -33,11 +33,11 @@ day11a = day11 25
 day11b :: [Int] :~> Int
 day11b = day11 75
 
-growFrom :: Int -> Int -> Int
-growFrom = Memo.memo2 Memo.integral Memo.integral go
+growTo :: Int -> Int -> Int
+growTo = Memo.memo2 Memo.integral Memo.integral go
   where
     go _ 0 = 1
-    go n k = sum . map (`growFrom` (k - 1)) $ step n
+    go n k = sum . map (`growTo` (k - 1)) $ step n
     step c
       | c == 0 = [1]
       | even pow = review _ListTup $ c `divMod` (10 ^ (pow `div` 2))

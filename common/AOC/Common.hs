@@ -1030,7 +1030,7 @@ anaM ::
   (a -> m (R.Base t a)) ->
   a ->
   m t
-anaM f = R.hylo (fmap R.embed . join . fmap sequenceA . getCompose) (Compose . f)
+anaM f = R.hylo (fmap R.embed . sequenceA <=< getCompose) (Compose . f)
 
 newtype Iterate n a = Iterate {runIterate :: a}
 
