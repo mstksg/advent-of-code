@@ -17,11 +17,10 @@ stepMap mp = IM.unionsWith (+)
 step :: Int -> [Int]
 step c
   | c == 0 = [1]
-  | even pow = let (a, b) = c `divMod` (10 ^ (pow `div` 2))
-                in [a, b]
+  | even pow = let (a, b) = c `divMod` (10 ^ (pow `div` 2)) in [a, b]
   | otherwise = [c * 2024]
   where
-    pow = numDigits c
+    pow = length . takeWhile (<= x) $ iterate (* 10) 1
 
 part1 :: [Int] -> Int
 part1 = sum . (!! 25) . iterate stepMap . freqs
