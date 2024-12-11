@@ -10,7 +10,7 @@ freqs = IM.fromListWith (+) . map (,1)
 
 stepMap :: IntMap Int -> IntMap Int
 stepMap mp = IM.unionsWith (+)
-  [ freqs (map (* n) (step x))
+  [ (* n) <$> freqs (step x)
   | (x, n) <- IM.toList mp
   ]
 
