@@ -31,32 +31,23 @@ regions mp =
   contiguousRegions
     <$> M.fromListWith (<>) [(x, S.singleton p) | (p, x) <- M.toList mp]
 
-day12a :: Map Point Char :~> Int
-day12a =
+day12 :: (Set Point -> Int) -> Map Point Char :~> Int
+day12 countFences =
   MkSol
     { sParse = noFail $ parseAsciiMap Just
     , sShow = show
     , sSolve =
         noFail $ \mp ->
           sum
-            [ S.size region * S.size dirRegion
+            [ S.size region * countFences dirRegion
             | letterRegions <- toList $ regions mp
             , region <- NES.toSet <$> toList letterRegions
             , dirRegion <- toList $ neighborsByDir region
             ]
     }
 
+day12a :: Map Point Char :~> Int
+day12a = day12 S.size
+
 day12b :: Map Point Char :~> Int
-day12b =
-  MkSol
-    { sParse = sParse day12a
-    , sShow = show
-    , sSolve =
-        noFail \mp ->
-          sum
-            [ S.size region * S.size (contiguousRegions dirRegion)
-            | letterRegions <- toList $ regions mp
-            , region <- NES.toSet <$> toList letterRegions
-            , dirRegion <- toList $ neighborsByDir region
-            ]
-    }
+day12b = day12 (S.size . contiguousRegions)

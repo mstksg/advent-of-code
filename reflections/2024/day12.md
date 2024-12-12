@@ -30,23 +30,20 @@ neighborsByDir pts = neighborsAt <$> [V2 0 1, V2 1 0, V2 0 (-1), V2 (-1) 0]
 Now part 1 basically is the size of all of those points, and part 2 is the
 number of contiguous regions of those points:
 
-
 ```haskell
-part1 :: Ord a => Map Point a -> Int
-part1 = sum
-    [ S.size region * S.size dirRegion
+solve :: Ord a => (Set Point -> Int) -> Map Point a -> Int
+solve countFences mp = sum
+    [ S.size region * countFences dirRegion
     | letterRegions <- regions mp
     , region <- letterRegions
     , dirRegion <- neighborsByDir region
     ]
+
+part1 :: Ord a => Map Point a -> Int
+part1 = solve S.size
 
 part2 :: Ord a => Map Point a -> Int
-part2 = sum
-    [ S.size region * length (contiguousRegions dirRegion)
-    | letterRegions <- regions mp
-    , region <- letterRegions
-    , dirRegion <- neighborsByDir region
-    ]
+part2 = solve (length . contiguousRegions)
 ```
 
 Okay I'll admit that I had `contiguousRegions` saved from multiple years of
