@@ -21,8 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day12 (
--- day12a,
--- day12b
+day12a,
+day12b
 
 )
 where
@@ -30,7 +30,7 @@ where
 import AOC.Prelude
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as IM
+import qualified Data.IntMap.NonEmpty as NEIM
 import qualified Data.IntSet as IS
 import qualified Data.IntSet.NonEmpty as NEIS
 import qualified Data.List.NonEmpty as NE
@@ -50,17 +50,33 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
+perimeter :: Set Point -> Int
+perimeter pts = sum
+  [ S.size $ cardinalNeighbsSet p `S.difference` pts
+    | p <- toList pts
+  ]
+
 day12a :: _ :~> _
 day12a =
   MkSol
-    { sParse =
-        noFail $
-          lines
+    { sParse = noFail $ parseAsciiMap Just
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \mp ->
+          let regions = contiguousRegions <$> M.fromListWith (<>)
+                  [ (x, S.singleton p)
+                    | (p, x) <- M.toList mp
+                  ]
+          in sum [ perimeter reg * S.size reg | regs <- toList regions, reg <- NES.toSet <$> toList regs ]
     }
+
+sides :: Set Point -> Int
+sides pts = sum . map S.size . toList $ contiguousRegions <$> M.fromListWith (<>)
+  [ (d, S.singleton p)
+    | p <- toList pts
+    , d <- [ North .. ]
+  , (p + dirPoint d) `S.notMember` pts
+  ]
 
 day12b :: _ :~> _
 day12b =
@@ -68,6 +84,10 @@ day12b =
     { sParse = sParse day12a
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \mp ->
+          let regions = contiguousRegions <$> M.fromListWith (<>)
+                  [ (x, S.singleton p)
+                    | (p, x) <- M.toList mp
+                  ]
+          in sum [ sides reg * S.size reg | regs <- toList regions, reg <- NES.toSet <$> toList regs ]
     }
