@@ -22,25 +22,14 @@ import qualified Data.Set as S
 import Data.Set.NonEmpty (NESet)
 import qualified Data.Set.NonEmpty as NES
 
-regionNeighbors :: Set Point -> Map Dir (Set Point)
-regionNeighbors pts =
-  M.fromListWith
-    (<>)
-    [ (d, S.singleton p')
-    | p <- toList pts
-    , d <- [North ..]
-    , let p' = p + dirPoint d
-    , p' `S.notMember` pts
-    ]
+neighborsByDir :: Set Point -> Map Dir (Set Point)
+neighborsByDir pts = flip M.fromSet (S.fromList [North ..]) \d ->
+  S.map (+ dirPoint d) pts `S.difference` pts
 
 regions :: Ord a => Map Point a -> Map a (Set (NESet Point))
 regions mp =
   contiguousRegions
-    <$> M.fromListWith
-      (<>)
-      [ (x, S.singleton p)
-      | (p, x) <- M.toList mp
-      ]
+    <$> M.fromListWith (<>) [(x, S.singleton p) | (p, x) <- M.toList mp]
 
 day12a :: Map Point Char :~> Int
 day12a =
@@ -53,7 +42,7 @@ day12a =
             [ S.size region * S.size dirRegion
             | letterRegions <- toList $ regions mp
             , region <- NES.toSet <$> toList letterRegions
-            , dirRegion <- toList $ regionNeighbors region
+            , dirRegion <- toList $ neighborsByDir region
             ]
     }
 
@@ -68,6 +57,6 @@ day12b =
             [ S.size region * S.size (contiguousRegions dirRegion)
             | letterRegions <- toList $ regions mp
             , region <- NES.toSet <$> toList letterRegions
-            , dirRegion <- toList $ regionNeighbors region
+            , dirRegion <- toList $ neighborsByDir region
             ]
     }
