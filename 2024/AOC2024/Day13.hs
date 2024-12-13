@@ -29,6 +29,7 @@ module AOC2024.Day13 (
   restrictRange,
   runBezout,
   iterateRange,
+  applyRanges,
 )
 where
 
@@ -180,20 +181,20 @@ data BezoutSol = BS
 -- r' > (min - ky) / yFactor, yFactor > 0
 -- r' < (min - kx) / yFactor, yFactor < 0
 
--- | Range of R such that a/b are both in the given interval
-restrictRange :: IV.Interval Int -> IV.Interval Int -> BezoutSol -> IV.Interval Int
+-- | Range of R such that a/b are within the given interval
+restrictRange :: IV.Interval Double -> IV.Interval Double -> BezoutSol -> IV.Interval Double
 restrictRange ivA ivB BS{..} = IV.intersections [minA, maxA, minB, maxB]
   where
-    V2 ma ba = bsA
-    V2 mb bb = bsB
+    V2 ma ba = fromIntegral <$> bsA
+    V2 mb bb = fromIntegral <$> bsB
     (minBoA, minClA) = IV.lowerBound' ivA
     (maxBoA, maxClA) = IV.upperBound' ivA
     (minBoB, minClB) = IV.lowerBound' ivB
     (maxBoB, maxClB) = IV.upperBound' ivB
-    minALim = minBoA <&> \mbo -> (mbo - ba) `div` ma
-    maxALim = maxBoA <&> \mbo -> (mbo - ba) `div` ma
-    minBLim = minBoB <&> \mbo -> (mbo - bb) `div` mb
-    maxBLim = maxBoB <&> \mbo -> (mbo - bb) `div` mb
+    minALim = minBoA <&> \mbo -> (mbo - ba) / ma
+    maxALim = maxBoA <&> \mbo -> (mbo - ba) / ma
+    minBLim = minBoB <&> \mbo -> (mbo - bb) / mb
+    maxBLim = maxBoB <&> \mbo -> (mbo - bb) / mb
     minA = mkIval (ma > 0) (minALim, minClA)
     maxA = mkIval (ma < 0) (maxALim, maxClA)
     minB = mkIval (mb > 0) (minBLim, minClB)
@@ -208,11 +209,24 @@ restrictRange ivA ivB BS{..} = IV.intersections [minA, maxA, minB, maxB]
       IV.NegInf -> IV.PosInf
       c -> c
 
+-- | Given range of R, give ranges of a/b
+applyRanges :: IV.Interval Double -> BezoutSol -> V2 (IV.Interval Double)
+applyRanges ivR BS{..} = V2 (IV.mapMonotonic (+ ba) $ scaleInterval ma ivR) (IV.mapMonotonic (+ bb) $ scaleInterval mb ivR)
+  where
+    V2 ma ba = fromIntegral <$> bsA
+    V2 mb bb = fromIntegral <$> bsB
 
-      -- minBo <&> \mbo ->
-      --   if ma > 0
-      --      then I.Interval ((mbo - ba) `div` ma) IV.<=..<= IV.PosInf
-      --      else IV.Finite ((mbo - ba) `div` ma) IV.<=..<= IV.PosInf
+scaleInterval :: (Ord a, Num a) => a -> IV.Interval a -> IV.Interval a
+scaleInterval x iv
+    | x > 0 = IV.interval ((* x) <$> minBo, minCl) ((* x) <$> maxBo, maxCl)
+    | otherwise = IV.interval ((* x) <$> flipInf maxBo, maxCl) ((* x) <$> flipInf minBo, minCl)
+  where
+    (minBo, minCl) = IV.lowerBound' iv
+    (maxBo, maxCl) = IV.upperBound' iv
+    flipInf = \case
+      IV.NegInf -> IV.PosInf
+      IV.PosInf -> IV.PosInf
+      IV.Finite q -> IV.Finite q
 
 solveBezout :: V3 Int -> Maybe BezoutSol
 solveBezout (V3 x y z) = do
@@ -256,13 +270,13 @@ getPrize'' (V3 a b g) = do
     -- bsb <- solveBezout $ V3 (view _1 $ bsB bsx) (negate $ view _1 $ bsB bsy) (view _2 (bsB bsy) - view _2 (bsB bsx))
     rAs <- iterateRange $ restrictRange rXs rYs bsa
     -- rBs <- iterateRange $ restrictRange rXs rYs bsb
-    minimumMay [ xa * 3 + xb
+    listToMaybe [ xa * 3 + xb
          | V2 raA raB <- runBezout bsa <$> rAs
          -- , V2 rbA rbB <- runBezout bsb <$> rBs
          , let x = runBezout bsx raA
                y = runBezout bsy raB
                V2 xa xb = x
-         , x == y
+         -- , x == y
          ]
   where
     positive = 0 IV.<=..< IV.PosInf
@@ -276,6 +290,61 @@ testPrize'' (V3 a b g) = do
     -- bsx: rx -> valid ax/bx/gx solutions
     -- bsy: ry -> valid ay/by/gy solutions
     V2 bsx bsy <- traverse solveBezout . sequenceA $ V3 a b g
+    -- at this point we have ways to solve A ax + B bx = gx, A by + B by = gy
+    -- but we want to know there are any (A,B) pair that would work for both.
+    --
+    -- A,B are of the form (ma r + ba, mb r + bb) for both. so if we want them
+    -- to be equal, we need r where:
+    --
+    -- max rA + bax == may rA' + bay
+    -- => max rA - may rA' == bay - bax
+    -- mbx rB + bbx == mby rB' + bby
+    -- => mbx rB - mbx rB' == bby - bbx
+    --
+    -- that gives us valid rA/rB's, but that space is still too huge. How do
+    -- we link it back to the original xyz...
+    --
+    -- Ah okay yeah we must remember that each A and B are themselves related.
+    -- how do we pick (A,B) now considering they work for both?
+    --
+    -- what can rA be? well:
+    --
+    -- (max rAx + bax) ax + (mbx rBx + bbx) bx = gx
+    -- (may rAy + bay) ay + (mby rBy + bby) by = gy
+    --
+    -- every choice of rAx and rBx within rXs produces a valid 1st eq
+    -- every choice of rAy and rBy within rXy produces a valid 2st eq
+    --
+    -- but rAx rAy cannot vary independently. we can parameterize possible
+    -- (rAx, rAy) pairs by a variable qA. And same for (rBx rBy) by a variable
+    -- qB. and then we want to know what ranges qA and qB can take.
+    --
+    -- But, even those ranges are way too big, we need some way to intercept
+    -- them again. I guess if we plub them back in, we can get q to emerge
+    -- from the big equation.
+    --
+    -- Actually wait that's wrong, they have to have the same R across (A,B),
+    -- so that means our equations are actually:
+    --
+    -- (max rX + bax) ax + (mbx rX + bbx) bx = gx
+    -- (may rY + bay) ay + (mby rY + bby) by = gy
+    --
+    -- and of course our A's have to be the same, which means we have:
+    --
+    -- max rX + bax == may rY + bay
+    -- => max rX - may rY = bay - bax
+    -- mbx rX + bbx == may rY + bby
+    -- => mab rX - mab rY = bby - bbx
+    --
+    -- yeah this is starting to get more constrained. Okay now let's break
+    -- this down into qA and qB... and see if that helps at all
+    --
+    -- max (max' qA + bax') - may (may' qA + bay') = bay - bax
+    -- mbx (mbx' qB + bbx') - mby (mby' qB + bby') = bby - bbx
+    --
+    -- hey it looks like every time we go deeper, the range of values gets
+    -- smaller. maybe there's something going on here.
+    --
     -- rXs: rx giving valid solutions
     -- rYs: ry giving valid solutions
     let rXs = restrictRange positive positive bsx
@@ -286,9 +355,16 @@ testPrize'' (V3 a b g) = do
     bsa <- solveBezout $ V3 (view _1 $ bsA bsx) (negate $ view _1 $ bsA bsy) (view _2 (bsA bsy) - view _2 (bsA bsx))
     -- how to generate r's that match for both rx and ry for B
     bsb <- solveBezout $ V3 (view _1 $ bsB bsx) (negate $ view _1 $ bsB bsy) (view _2 (bsB bsy) - view _2 (bsB bsx))
-    rAs <- Just $ restrictRange rXs rYs bsa
-    rBs <- Just $ restrictRange rXs rYs bsb
-    pure (rAs, rBs)
+    let qAs = restrictRange rXs rYs bsa
+        qBs = restrictRange rXs rYs bsb
+    bsa' <- solveBezout $ V3 (view _1 $ bsA bsa) (negate $ view _1 $ bsA bsb) (view _2 (bsA bsb) - view _2 (bsA bsa))
+    bsb' <- solveBezout $ V3 (view _1 $ bsB bsa) (negate $ view _1 $ bsB bsb) (view _2 (bsB bsb) - view _2 (bsB bsa))
+    let qAs' = restrictRange qAs qBs bsa'
+        qBs' = restrictRange qAs qBs bsb'
+    -- pure $ [ applyRanges rXs bsx, applyRanges rYs bsy ]
+    -- pure $ [rXs, rYs, rAs, rBs]
+    -- pure $ IV.mapMonotonic (round @Double @Int) <$> [rXs, rYs, rAs, rBs]
+    pure $ IV.width <$> [rXs, rYs, qAs, qBs, qAs', qBs']
     -- minimumMay [ xa * 3 + xb
     --      | V2 raA raB <- runBezout bsa <$> rAs
     --      -- , V2 rbA rbB <- runBezout bsb <$> rBs
@@ -297,14 +373,22 @@ testPrize'' (V3 a b g) = do
     --            V2 xa xb = x
     --      , x == y
     --      ]
+    -- listToMaybe [ V2 xa xb
+    --      | V2 raA raB <- map (runBezout bsa) $ fold $ iterateRange rAs
+    --      -- , V2 rbA rbB <- runBezout bsb <$> rBs
+    --      , let x = runBezout bsx raA
+    --            y = runBezout bsy raB
+    --            V2 xa xb = x
+    --      -- , x == y
+    --      ]
   where
     positive = 0 IV.<=..< IV.PosInf
 
 
 -- | Nothing if range is infinite
-iterateRange :: IV.Interval Int -> Maybe [Int]
+iterateRange :: IV.Interval Double -> Maybe [Int]
 iterateRange iv = case (IV.lowerBound' iv, IV.upperBound' iv) of
-  ((IV.Finite mn, _), (IV.Finite mx, _)) -> Just [mn .. mx]
+  ((IV.Finite mn, _), (IV.Finite mx, _)) -> Just [ceiling mn .. floor mx]
   _ -> Nothing
 
 
