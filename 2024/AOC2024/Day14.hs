@@ -19,16 +19,18 @@ import AOC.Solver (noFail, type (:~>) (..))
 import Data.Foldable (find)
 import Data.Maybe (mapMaybe)
 import qualified Data.Set as S
+import Data.Traversable (for)
 import qualified Data.Vector.Storable as VS
+
+step :: Point -> Point -> Point
+step v x = mod <$> (x + v) <*> V2 101 103
 
 day14a :: [V2 Point] :~> Int
 day14a =
   MkSol
     { sParse =
-        parseMaybe' $ sepByLines $ do
-          p <- "p=" *> sequenceSepBy (V2 pDecimal pDecimal) ","
-          v <- "v=" *> sequenceSepBy (V2 pDecimal pDecimal) ","
-          pure $ V2 p v
+        parseMaybe' . sepByLines . for (V2 "p=" "v=") $ \q ->
+          q *> sequenceSepBy (V2 pDecimal pDecimal) ","
     , sShow = show
     , sSolve =
         noFail \pvs ->
@@ -46,9 +48,6 @@ day14a =
           LT -> Just False
           EQ -> Nothing
           GT -> Just True
-
-step :: Point -> Point -> Point
-step v x = mod <$> (x + v) <*> V2 101 103
 
 day14b :: [V2 Point] :~> Int
 day14b =
