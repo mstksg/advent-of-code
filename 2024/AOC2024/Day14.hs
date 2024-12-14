@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- |
 -- Module      : AOC2024.Day14
 -- License     : BSD3
@@ -9,87 +6,59 @@
 -- Portability : non-portable
 --
 -- Day 14.  See "AOC.Solver" for the types used in this module!
---
--- After completing the challenge, it is recommended to:
---
--- *   Replace "AOC.Prelude" imports to specific modules (with explicit
---     imports) for readability.
--- *   Remove the @-Wno-unused-imports@ and @-Wno-unused-top-binds@
---     pragmas.
--- *   Replace the partial type signatures underscores in the solution
---     types @_ :~> _@ with the actual types of inputs and outputs of the
---     solution.  You can delete the type signatures completely and GHC
---     will recommend what should go in place of the underscores.
 module AOC2024.Day14 (
-day14a,
-day14b
-
+  day14a,
+  day14b,
 )
 where
 
-import AOC.Prelude
-import qualified Data.Graph.Inductive as G
-import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as IM
-import qualified Data.IntSet as IS
-import qualified Data.IntSet.NonEmpty as NEIS
-import qualified Data.List.NonEmpty as NE
-import qualified Data.List.PointedList as PL
-import qualified Data.List.PointedList.Circular as PLC
-import qualified Data.Map as M
-import qualified Data.Map.NonEmpty as NEM
-import qualified Data.OrdPSQ as PSQ
-import qualified Data.Sequence as Seq
-import qualified Data.Sequence.NonEmpty as NESeq
+import AOC.Common (freqs, strictIterate, (!!!))
+import AOC.Common.Parser (pDecimal, parseMaybe', sepByLines, sequenceSepBy)
+import AOC.Common.Point (Point, V2 (..), fullNeighbsSet)
+import AOC.Solver (noFail, type (:~>) (..))
+import Data.Foldable (find)
+import Data.Maybe (mapMaybe)
 import qualified Data.Set as S
-import qualified Data.Set.NonEmpty as NES
-import qualified Data.Text as T
-import qualified Data.Vector as V
-import qualified Linear as L
-import qualified Text.Megaparsec as P
-import qualified Text.Megaparsec.Char as P
-import qualified Text.Megaparsec.Char.Lexer as PP
+import qualified Data.Vector.Storable as VS
 
-day14a :: _ :~> _
+day14a :: [V2 Point] :~> Int
 day14a =
   MkSol
     { sParse =
-        parseMaybe' $ flip sepBy' P.newline $ do
+        parseMaybe' $ sepByLines $ do
           p <- "p=" *> sequenceSepBy (V2 pDecimal pDecimal) ","
           v <- "v=" *> sequenceSepBy (V2 pDecimal pDecimal) ","
           pure $ V2 p v
     , sShow = show
     , sSolve =
         noFail \pvs ->
-          let V2 ps vs = sequenceA pvs
-           in score $ strictIterate (zipWith step vs) ps !!! 100
+          let V2 ps vs = VS.fromList <$> sequenceA pvs
+           in score $ strictIterate (VS.zipWith step vs) ps !!! 100
     }
+  where
+    score = product . freqs . mapMaybe quadrant . VS.toList
+      where
+        quadrant (V2 x y) = do
+          qx <- classify $ compare x 50
+          qy <- classify $ compare y 51
+          pure (qx, qy)
+        classify = \case
+          LT -> Just False
+          EQ -> Nothing
+          GT -> Just True
 
 step :: Point -> Point -> Point
 step v x = mod <$> (x + v) <*> V2 101 103
 
-score :: [Point] -> Int
-score = product . freqs . mapMaybe quadrant
-  where
-    quadrant (V2 x y) = do
-      qx <- case compare x 50 of
-        LT -> Just False
-        EQ -> Nothing
-        GT -> Just True
-      qy <- case compare y 51 of
-        LT -> Just False
-        EQ -> Nothing
-        GT -> Just True
-      pure (qx, qy)
-
-
-day14b :: _ :~> _
+day14b :: [V2 Point] :~> Int
 day14b =
   MkSol
     { sParse = sParse day14a
-    , sShow = \(n, ps) -> show n ++ "\n" ++ displayAsciiSet ' ' '#' (S.fromList ps)
+    , sShow = show
     , sSolve =
         \pvs ->
           let V2 ps vs = sequenceA pvs
-           in find ((< 300) . traceShowId . S.size . contiguousRegions . S.fromList . snd) . zip [0..] $ strictIterate (zipWith step vs) ps
+           in fmap fst . find (good . S.fromList . snd) . zip [0 ..] $ iterate (zipWith step vs) ps
     }
+  where
+    good ps = any ((`S.isSubsetOf` ps) . fullNeighbsSet) ps
