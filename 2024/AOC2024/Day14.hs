@@ -21,8 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day14 (
--- day14a,
--- day14b
+day14a,
+day14b
 
 )
 where
@@ -54,20 +54,42 @@ day14a :: _ :~> _
 day14a =
   MkSol
     { sParse =
-        noFail $
-          lines
+        parseMaybe' $ flip sepBy' P.newline $ do
+          p <- "p=" *> sequenceSepBy (V2 pDecimal pDecimal) ","
+          v <- "v=" *> sequenceSepBy (V2 pDecimal pDecimal) ","
+          pure $ V2 p v
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \pvs ->
+          let V2 ps vs = sequenceA pvs
+           in score $ strictIterate (zipWith step vs) ps !!! 100
     }
+
+step :: Point -> Point -> Point
+step v x = mod <$> (x + v) <*> V2 101 103
+
+score :: [Point] -> Int
+score = product . freqs . mapMaybe quadrant
+  where
+    quadrant (V2 x y) = do
+      qx <- case compare x 50 of
+        LT -> Just False
+        EQ -> Nothing
+        GT -> Just True
+      qy <- case compare y 51 of
+        LT -> Just False
+        EQ -> Nothing
+        GT -> Just True
+      pure (qx, qy)
+
 
 day14b :: _ :~> _
 day14b =
   MkSol
     { sParse = sParse day14a
-    , sShow = show
+    , sShow = \(n, ps) -> show n ++ "\n" ++ displayAsciiSet ' ' '#' (S.fromList ps)
     , sSolve =
-        noFail $
-          id
+        \pvs ->
+          let V2 ps vs = sequenceA pvs
+           in find ((< 300) . traceShowId . S.size . contiguousRegions . S.fromList . snd) . zip [0..] $ strictIterate (zipWith step vs) ps
     }
