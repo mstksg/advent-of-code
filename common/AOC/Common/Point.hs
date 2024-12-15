@@ -337,6 +337,10 @@ parseDir = flip M.lookup dirMap . toUpper
         , ('R', East)
         , ('D', South)
         , ('L', West)
+        , ('V', North)
+        , ('>', East)
+        , ('^', South)
+        , ('<', West)
         ]
 
 parseDir' :: Char -> Dir
