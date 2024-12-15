@@ -198,6 +198,7 @@ common solver-deps
     , aoc-common
     , aoc-core
     , arithmoi
+    , semirings
     , barbies
     , base                       >=4.7   && <5
     , bitvec

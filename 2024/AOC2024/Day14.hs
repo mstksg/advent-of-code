@@ -14,13 +14,18 @@ where
 
 import AOC.Common (freqs, strictIterate, (!!!))
 import AOC.Common.Parser (pDecimal, parseMaybe', sepByLines, sequenceSepBy)
-import AOC.Common.Point (Point, V2 (..), fullNeighbsSet)
+import AOC.Common.Point (Point)
 import AOC.Solver (noFail, type (:~>) (..))
-import Data.Foldable (find)
+import Control.Lens (view)
+import Control.Monad (join)
+import Data.Bifunctor (Bifunctor (second))
+import Data.Foldable1 (foldMap1)
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe (mapMaybe)
-import qualified Data.Set as S
+import Data.Semigroup (Arg (Arg), Max (Max))
 import Data.Traversable (for)
 import qualified Data.Vector.Storable as VS
+import Linear.V2 (R1 (_x), R2 (_y), V2 (..))
 
 step :: Point -> Point -> Point
 step v x = mod <$> (x + v) <*> V2 101 103
@@ -55,9 +60,18 @@ day14b =
     { sParse = sParse day14a
     , sShow = show
     , sSolve =
-        \pvs ->
-          let V2 ps vs = sequenceA pvs
-           in fmap fst . find (good . S.fromList . snd) . zip [0 ..] $ iterate (zipWith step vs) ps
+        \pvs -> do
+          let V2 ps vs = VS.fromList <$> sequenceA pvs
+              firstSteps = zip [0 ..] . strictIterate (VS.zipWith step vs) $ ps
+          xi <- maxMargin $ second (map (view _x) . VS.toList) <$> take 101 firstSteps
+          yi <- maxMargin $ second (map (view _y) . VS.toList) <$> take 103 firstSteps
+          pure $ (xi + ((yi - xi) * 5151)) `mod` 10403
     }
   where
-    good ps = any ((`S.isSubsetOf` ps) . fullNeighbsSet) ps
+    maxMargin :: [(Int, [Int])] -> Maybe Int
+    maxMargin = fmap (unMax . foldMap1 go) . NE.nonEmpty
+      where
+        unMax (Max (Arg _ i)) = i
+        go (i, xs) = Max (Arg sos i)
+          where
+            sos = sum . fmap (join (*)) . freqs $ xs
