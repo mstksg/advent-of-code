@@ -232,7 +232,7 @@ binaryFindMin p x0 y0 = binaryFindMin_ p (p y0) x0 y0
 
 binaryFindMin_ ::
   (Int -> Maybe a) ->
-  Maybe a -> -- p y0
+  Maybe a ->
   Int ->
   Int ->
   Maybe a
