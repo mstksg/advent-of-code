@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day18 (
--- day18a,
--- day18b
-
+day18a,
+day18b
 )
 where
 
@@ -53,21 +52,64 @@ import qualified Text.Megaparsec.Char.Lexer as PP
 day18a :: _ :~> _
 day18a =
   MkSol
-    { sParse =
-        noFail $
-          lines
+    { sParse = parseMaybe' $ sepByLines $ sequenceSepBy  (V2 pDecimal pDecimal) ","
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        \pts ->
+          let walls = S.fromList $ take 1024 pts
+              step p = S.filter (all (inRange (0, 70))) $ cardinalNeighbsSet p `S.difference` walls
+           in length <$> bfs step 0 (== 70)
+          
     }
 
 day18b :: _ :~> _
 day18b =
   MkSol
     { sParse = sParse day18a
-    , sShow = show
-    , sSolve =
-        noFail $
-          id
+    -- , sShow = ('\n':) . displayAsciiMap ' '
+    -- , sShow = show
+    , sShow = intercalate "," . map show . toList
+    , sSolve = \pts -> do
+      let step walls p = S.filter (all (inRange (0, 70))) $ cardinalNeighbsSet p `S.difference` walls
+          testI i = do
+            let walls = S.fromList $ take i pts
+            bfs (step walls) 0 (== 70)
+            -- aStar (const 0) (M.fromSet (const 1) . step walls) 0 (== 70)
+      j <- binaryMinSearch (isNothing . testI) 0 (length pts)
+      pure $ pts !! (j - 1)
+      -- pure $ testI (j + 2)
+      -- pure $ M.singleton (pts !! (j + 2)) '2'
+      --     <> M.singleton (pts !! (j + 0)) '0'
+      --     <> M.singleton (pts !! (j  -1)) '&'
+      --     <> M.singleton (pts !! (j + 1)) '1'
+      --     <> M.singleton (pts !! (j + 2)) '2'
+      --     <> M.singleton (pts !! (j + 3)) '3'
+      --     <> M.singleton (pts !! (j + 4)) '4'
+      --     <> M.fromSet (const '#') (S.fromList $ take j pts)
+      --     <> M.fromSet (const 'o') (foldMap S.fromList $ testI (j - 1))
+      -- pure $ testI j
+
+-- binaryMinSearch ::
+--   (Int -> Bool) ->
+--   Int ->
+--   Int ->
+--   Maybe Int
+
+           -- in length <$> bfs step 0 (== 70)
+-- binarySearch ::
+--   (Int -> Ordering) -> -- LT: Too small, GT: Too big
+--   Int ->
+--   Int ->
+--   Maybe Int
+-- binarySearch p = go
+--   where
+--     go !x !y
+--       | x == y = if p x == EQ then Just x else Nothing
+--       | otherwise = case p mid of
+--           LT -> go mid y
+--           EQ -> Just mid
+--           GT -> go x mid
+--       where
+--         mid = ((y - x) `div` 2) + x
+
     }
