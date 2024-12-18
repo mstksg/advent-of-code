@@ -21,12 +21,13 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day17 (
-day17a,
-day17b
+  day17a,
+  day17b,
 )
 where
 
 import AOC.Prelude
+import Data.Bits
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
 import qualified Data.IntMap.NonEmpty as IM
@@ -34,7 +35,6 @@ import qualified Data.IntSet as IS
 import qualified Data.IntSet.NonEmpty as NEIS
 import qualified Data.List.NonEmpty as NE
 import qualified Data.List.PointedList as PL
-import Data.Bits
 import qualified Data.List.PointedList.Circular as PLC
 import qualified Data.Map as M
 import qualified Data.Map.NonEmpty as NEM
@@ -46,6 +46,7 @@ import qualified Data.Set.NonEmpty as NES
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Linear as L
+import qualified Numeric.Lens as L
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
@@ -62,36 +63,38 @@ day17a =
         P.newline
         P.newline
         d <- "Program: " *> (pDecimal `sepBy'` ",")
-        pure (a,b,c,d)
+        pure (a, b, c, d)
     , sShow = intercalate "," . map show
     , sSolve =
-        noFail $ \(a,b,c,p :: [Int]) ->
-              go 0 (V3 a b c) (Seq.fromList p)
+        noFail $ \(a, b, c, p :: [Int]) ->
+          go 0 (V3 a b c) (Seq.fromList p)
     }
 
 go :: Int -> V3 Int -> Seq Int -> [Int]
-go i (V3 a b c) tp = traceShow (i, V3 a b c) $ case (,) <$> Seq.lookup i tp <*> Seq.lookup (i + 1) tp of
+-- go i (V3 a b c) tp = case (,) <$> Seq.lookup i tp <*> Seq.lookup (i + 1) tp of
+go i (V3 a b c) tp = case (,) <$> Seq.lookup i tp <*> Seq.lookup (i + 1) tp of
   Nothing -> []
-  Just (q,o) ->
+  Just (q, o) ->
     let x = case o of
-              0 -> 0
-              1 -> 1
-              2 -> 2
-              3 -> 3
-              4 -> a
-              5 -> b
-              6 -> c
-    in case q of
-         0 -> go (i + 2) (V3 (a `div` (2^x)) b c) tp
-         1 -> go (i + 2) (V3 a (b `xor` o) c) tp
-         2 -> go (i + 2) (V3 a (x `mod` 8) c) tp
-         3 | a == 0 -> go (i + 2) (V3 a b c) tp
-           | otherwise -> go o (V3 a b c) tp
-         4 -> go (i + 2) (V3 a (b `xor` c) c) tp
-         5 -> trace (show (x `mod` 8, o, x)) (x `mod` 8) : go (i + 2) (V3 a b c) tp
-         6 -> go (i + 2) (V3 a (a `div` (2^x)) c) tp
-         7 -> go (i + 2) (V3 a b (a `div` (2^x))) tp
-
+          0 -> 0
+          1 -> 1
+          2 -> 2
+          3 -> 3
+          4 -> a
+          5 -> b
+          6 -> c
+     in case q of
+          0 -> go (i + 2) (V3 (a `div` (2 ^ x)) b c) tp
+          1 -> go (i + 2) (V3 a (b `xor` o) c) tp
+          2 -> go (i + 2) (V3 a (x `mod` 8) c) tp
+          3
+            | a == 0 -> go (i + 2) (V3 a b c) tp
+            | otherwise -> go o (V3 a b c) tp
+          4 -> go (i + 2) (V3 a (b `xor` c) c) tp
+          5 -> (x `mod` 8) : go (i + 2) (V3 a b c) tp
+          -- 5 -> trace (show (x `mod` 8, o, x)) (x `mod` 8) : go (i + 2) (V3 a b c) tp
+          6 -> go (i + 2) (V3 a (a `div` (2 ^ x)) c) tp
+          7 -> go (i + 2) (V3 a b (a `div` (2 ^ x))) tp
 
 -- 2,4, 1,6, 7,5, 4,6, 1,4, 5,5, 0,3, 3,0
 --
@@ -109,7 +112,8 @@ go i (V3 a b c) tp = traceShow (i, V3 a b c) $ case (,) <$> Seq.lookup i tp <*> 
 -- raising 2 to the power of the instruction's *combo* operand. (So, an
 -- operand of `2` would divide `A` by `4` (`2^2`); an operand of `5` would
 -- divide `A` by `2^B`.) The result of the division operation is
--- *truncated* to an integer and then written to the `A` register.
+
+-- * truncated* to an integer and then written to the `A` register.
 
 -- The *`bxl`* instruction (opcode *`1`*) calculates the [bitwise
 -- XOR](https://en.wikipedia.org/wiki/Bitwise_operation#XOR){target="_blank"}
@@ -117,7 +121,9 @@ go i (V3 a b c) tp = traceShow (i, V3 a b c) $ case (,) <$> Seq.lookup i tp <*> 
 -- result in register `B`.
 
 -- The *`bst`* instruction (opcode *`2`*) calculates the value of its
--- *combo* operand
+
+-- * combo* operand
+
 -- [modulo](https://en.wikipedia.org/wiki/Modulo){target="_blank"} 8
 -- (thereby keeping only its lowest 3 bits), then writes that value to the
 -- `B` register.
@@ -135,7 +141,9 @@ go i (V3 a b c) tp = traceShow (i, V3 a b c) $ case (,) <$> Seq.lookup i tp <*> 
 -- it.)
 
 -- The *`out`* instruction (opcode *`5`*) calculates the value of its
--- *combo* operand modulo 8, then *outputs* that value. (If a program
+
+-- * combo* operand modulo 8, then *outputs* that value. (If a program
+
 -- outputs multiple values, they are separated by commas.)
 
 -- The *`bdv`* instruction (opcode *`6`*) works exactly like the `adv`
@@ -152,29 +160,32 @@ day17b =
   MkSol
     { sParse = sParse day17a
     , sShow = show
-    -- , sShow = intercalate "\n" . map show
     , sSolve =
-        noFail $ \(_,_,_,p :: [Int]) ->
-          execState (stepBackwards (reverse p)) (V3 0 0 0)
-          -- [ (go 0 (V3 i b c) (Seq.fromList p))
-          -- -- | i <- [45184372088832]
-          -- | i <- [1999]
-          -- ]
+        \(_, _, _, p :: [Int]) -> listToMaybe do
+          option <- stepBackwards (reverse p)
+          guard $ go 0 (V3 option 0 0) (Seq.fromList p) == p
+          pure option
     }
 
-stepBackwards :: [Int] -> State (V3 Int) ()
-stepBackwards = \case
-  [] -> pure ()   -- still need to progress back up to the first
-  o:os -> do
-    -- oh no, this is wrong because we only get o mod 8
-    -- _y .= (o `xor` 6)
-    let lsbA = [ a
-                | a <- [0..1000]
-               , let b0 = (a .&. 7) `xor` 6
-               , (b0 `xor` (a `shift` (-b0))) .&. 7 == o
-              ]
-    traceM $ show (o, lsbA)
-    pure ()
+-- [ (go 0 (V3 i b c) (Seq.fromList p))
+-- -- | i <- [45184372088832]
+-- \| i <- [1999]
+-- ]
+
+stepBackwards :: [Int] -> [Int]
+stepBackwards = search 0
+  where
+    search a = \case
+      [] -> pure a
+      o : os -> do
+        a' <- ((a `shift` 3) +) <$> [0 .. 7]
+        let b0 = (a' .&. 7) `xor` 6
+        let c = a' `shift` (-b0)
+        guard $ ((b0 `xor` c) `xor` 4) .&. 7 == o
+        search a' os
+
+-- traceM $ show $ V3 last10A last3B last7C
+-- pure ()
 
 -- CDV B    --- c = a / (2^b)
 -- BXC      --- b ^= c
@@ -187,7 +198,7 @@ stepBackwards = \case
 -- b = (b0 ^ 110) ^ (a >> (b0 ^ 110))
 --
 -- b = ((a `mod` 8) ^ 110) ^ (a >> ((a `mod` 8) ^ 110))
--- 
+--
 -- mod 8 is & 111
 --
 -- b & 111 = ((a & 111) ^ 110) ^ (a >> ((a & 111) ^ 110))
@@ -207,7 +218,7 @@ stepBackwards = \case
 
 -- BST A    --- b = (a `mod` 8)
 -- BXL 6    --- b ^= 110    (6)
--- CDV B    --- c = a / (2^b)
+-- CDV B    --- c = a >> b
 -- BXC      --- b ^= c
 -- BXL 4    --- b ^= 100    (4)
 -- OUT B    --- print (b `mod` 8)
