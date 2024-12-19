@@ -13,52 +13,54 @@ module AOC2024.Day19 (
 where
 
 import AOC.Common.Parser (pAlphaNumWord, parseMaybe')
-import AOC.Solver (noFail, type (:~>) (..))
+import AOC.Solver (type (:~>) (..))
 import Control.DeepSeq (NFData)
+import Control.Monad (guard)
+import Data.Finite (Finite)
 import Data.Foldable (fold)
 import Data.Functor.Foldable (Corecursive (ana), Recursive (cata))
 import Data.Functor.Foldable.TH (MakeBaseFunctor (makeBaseFunctor))
-import Data.Map (Map)
-import qualified Data.Map as M
 import Data.Maybe (mapMaybe)
 import Data.Semigroup (Sum (getSum))
+import qualified Data.Vector.Sized as SV
 import GHC.Generics (Generic)
+import GHC.TypeNats (KnownNat)
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 
-data CharTrie a = CT {ctHere :: Maybe a, ctThere :: Map Char (CharTrie a)}
+data NTrie n a = CT {ctHere :: Maybe a, ctThere :: SV.Vector n (Maybe (NTrie n a))}
   deriving stock (Show, Functor, Traversable, Foldable, Generic)
 
-deriving anyclass instance NFData a => NFData (CharTrie a)
+deriving anyclass instance NFData a => NFData (NTrie n a)
 
-makeBaseFunctor ''CharTrie
+makeBaseFunctor ''NTrie
 
-instance Semigroup a => Semigroup (CharTrie a) where
-  CT h1 t1 <> CT h2 t2 = CT (h1 <> h2) (M.unionWith (<>) t1 t2)
+instance Semigroup a => Semigroup (NTrie n a) where
+  CT h1 t1 <> CT h2 t2 = CT (h1 <> h2) (SV.zipWith (<>) t1 t2)
 
-instance Semigroup a => Monoid (CharTrie a) where
-  mempty = CT Nothing M.empty
+instance (KnownNat n, Semigroup a) => Monoid (NTrie n a) where
+  mempty = CT Nothing (SV.replicate Nothing)
 
-bindTrie :: Semigroup b => CharTrie a -> (a -> CharTrie b) -> CharTrie b
+bindTrie :: Semigroup b => NTrie n a -> (a -> NTrie n b) -> NTrie n b
 bindTrie t f = flip cata t \case
   CTF{..} -> case ctHereF of
     Nothing -> CT Nothing ctThereF
     Just x -> case f x of
-      CT here' there' -> CT here' (M.unionWith (<>) ctThereF there')
+      CT here' there' -> CT here' (SV.zipWith (<>) ctThereF there')
 
-singletonTrie :: String -> a -> CharTrie a
+singletonTrie :: KnownNat n => [Finite n] -> a -> NTrie n a
 singletonTrie str x = flip ana str \case
-  [] -> CTF (Just x) M.empty
-  c : cs -> CTF Nothing (M.singleton c cs)
+  [] -> CTF (Just x) (SV.replicate Nothing)
+  c : cs -> CTF Nothing (SV.generate \i -> cs <$ guard (i == c))
 
-lookupTrie :: String -> CharTrie a -> Maybe a
+lookupTrie :: [Finite n] -> NTrie n a -> Maybe a
 lookupTrie str t = cata go t str
   where
     go CTF{..} = \case
       [] -> ctHereF
-      c : cs -> ($ cs) =<< M.lookup c ctThereF
+      c : cs -> ($ cs) =<< ctThereF `SV.index` c
 
-foreverTrie :: Semigroup w => [String] -> w -> CharTrie w
+foreverTrie :: (KnownNat n, Semigroup w) => [[Finite n]] -> w -> NTrie n w
 foreverTrie strs x = infiniTrie
   where
     tr = foldMap (`singletonTrie` x) strs
@@ -75,9 +77,13 @@ day19 x agg =
           ls <- pAlphaNumWord `P.sepBy` P.newline
           pure (ws, ls)
     , sShow = show
-    , sSolve =
-        noFail \(ws, ls) -> agg $ mapMaybe (`lookupTrie` foreverTrie ws x) ls
+    , sSolve = \(ws, ls) -> do
+        ws' <- traverse toFinites ws
+        ls' <- traverse toFinites ls
+        pure $ agg $ mapMaybe (`lookupTrie` foreverTrie ws' x) ls'
     }
+  where
+    toFinites = traverse (`SV.elemIndex` SV.fromTuple ('w', 'u', 'b', 'r', 'g'))
 
 day19a :: ([String], [String]) :~> Int
 day19a = day19 () length
