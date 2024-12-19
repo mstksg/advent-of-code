@@ -12,7 +12,6 @@ module AOC2024.Day19 (
 )
 where
 
-import AOC.Common (countTrue)
 import AOC.Common.Parser (pAlphaNumWord, parseMaybe')
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.DeepSeq (NFData)
@@ -21,7 +20,7 @@ import Data.Functor.Foldable (Corecursive (ana), Recursive (cata))
 import Data.Functor.Foldable.TH (MakeBaseFunctor (makeBaseFunctor))
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe (isJust)
+import Data.Maybe (mapMaybe)
 import Data.Semigroup (Sum (getSum))
 import GHC.Generics (Generic)
 import qualified Text.Megaparsec as P
@@ -65,8 +64,8 @@ foreverTrie strs x = infiniTrie
     tr = foldMap (`singletonTrie` x) strs
     infiniTrie = tr `bindTrie` \_ -> singletonTrie [] x <> infiniTrie
 
-day19a :: ([String], [String]) :~> _
-day19a =
+day19 :: Semigroup w => w -> ([w] -> Int) -> ([String], [String]) :~> Int
+day19 x agg =
   MkSol
     { sParse =
         parseMaybe' do
@@ -77,14 +76,11 @@ day19a =
           pure (ws, ls)
     , sShow = show
     , sSolve =
-        noFail \(ws, ls) -> countTrue (isJust . flip lookupTrie (foreverTrie ws ())) ls
+        noFail \(ws, ls) -> agg $ mapMaybe (`lookupTrie` foreverTrie ws x) ls
     }
 
+day19a :: ([String], [String]) :~> Int
+day19a = day19 () length
+
 day19b :: ([String], [String]) :~> Int
-day19b =
-  MkSol
-    { sParse = sParse day19a
-    , sShow = show
-    , sSolve =
-        noFail \(ws, ls) -> getSum . foldMap (fold . flip lookupTrie (foreverTrie ws 1)) $ ls
-    }
+day19b = day19 1 (getSum . fold)
