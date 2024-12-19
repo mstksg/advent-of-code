@@ -16,11 +16,12 @@ import AOC.Common (countTrue)
 import AOC.Common.Parser (pAlphaNumWord, parseMaybe')
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.DeepSeq (NFData)
+import Data.Foldable (fold)
 import Data.Functor.Foldable (Corecursive (ana), Recursive (cata))
 import Data.Functor.Foldable.TH (MakeBaseFunctor (makeBaseFunctor))
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe (isJust, mapMaybe)
+import Data.Maybe (isJust)
 import Data.Semigroup (Sum (getSum))
 import GHC.Generics (Generic)
 import qualified Text.Megaparsec as P
@@ -85,5 +86,5 @@ day19b =
     { sParse = sParse day19a
     , sShow = show
     , sSolve =
-        noFail \(ws, ls) -> sum . mapMaybe (fmap getSum . flip lookupTrie (foreverTrie ws 1)) $ ls
+        noFail \(ws, ls) -> getSum . foldMap (fold . flip lookupTrie (foreverTrie ws 1)) $ ls
     }
