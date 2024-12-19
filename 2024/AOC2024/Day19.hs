@@ -62,7 +62,7 @@ foreverTrie :: Semigroup w => [String] -> w -> CharTrie w
 foreverTrie strs x = infiniTrie
   where
     tr = foldMap (`singletonTrie` x) strs
-    infiniTrie = tr `bindTrie` \_ -> singletonTrie [] x <> infiniTrie
+    infiniTrie = singletonTrie [] x <> (tr `bindTrie` const infiniTrie)
 
 day19 :: Semigroup w => w -> ([w] -> Int) -> ([String], [String]) :~> Int
 day19 x agg =
