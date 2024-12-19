@@ -20,6 +20,7 @@ import Data.Finite (Finite)
 import Data.Foldable (fold)
 import Data.Functor.Foldable (Corecursive (ana), Recursive (cata))
 import Data.Functor.Foldable.TH (MakeBaseFunctor (makeBaseFunctor))
+import qualified Data.Map as M
 import Data.Maybe (mapMaybe)
 import Data.Semigroup (Sum (getSum))
 import qualified Data.Vector.Sized as SV
@@ -80,10 +81,10 @@ day19 x agg =
     , sSolve = \(ws, ls) -> do
         ws' <- traverse toFinites ws
         ls' <- traverse toFinites ls
-        pure $ agg $ mapMaybe (`lookupTrie` foreverTrie ws' x) ls'
+        pure $ agg $ mapMaybe (`lookupTrie` (foreverTrie @5) ws' x) ls'
     }
   where
-    toFinites = traverse (`SV.elemIndex` SV.fromTuple ('w', 'u', 'b', 'r', 'g'))
+    toFinites = traverse $ flip M.lookup (M.fromList $ zip "wubrg" [0 ..])
 
 day19a :: ([String], [String]) :~> Int
 day19a = day19 () length
