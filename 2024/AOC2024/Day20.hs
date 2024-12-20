@@ -64,6 +64,11 @@ day20a =
         end : _ <- pure . M.keys $ M.filter (== Just True) mp
         bb <- boundingBox' $ M.keysSet mp
         let walls = M.keysSet $ M.filter isNothing mp
+        goodPath <-
+          let go p = cardinalNeighbsSet p `S.difference` walls
+           in length <$> bfs go start (== end)
+        traceM $ show goodPath
+        let reachable = floodFill (\p -> cardinalNeighbsSet p `S.difference` walls) (S.singleton start)
             cheats =
               S.fromList
                 [ (w, d)
@@ -72,23 +77,25 @@ day20a =
                 , let d = w + dirPoint dir
                       d' = w - dirPoint dir
                 , d `S.notMember` walls
-                , d' `S.notMember` walls
+                , d' `S.member` reachable
                 -- toList $ cardinalNeighbsSet w `S.difference` walls
                 , inBoundingBox bb d
                 , inBoundingBox bb d'
                 ]
             cheatPaths = do
               (w, d) <- toList cheats
+              let go p = cardinalNeighbsSet p `S.difference` S.delete w walls
+                  go' p = cardinalNeighbsSet p `S.difference` walls
               traceM $ show (w, d)
-              let go p = cardinalNeighbsSet p `S.difference` S.delete d walls
-              getToCheat <- maybeToList $ fst <$> aStar (mannDist w) (M.fromSet (const 1) . go) start (== w)
-              getToEnd <- maybeToList $ fst <$> aStar (mannDist end) (M.fromSet (const 1) . go) w (== end)
-              pure $ getToCheat + getToEnd
-        goodPath <-
-          let go p = cardinalNeighbsSet p `S.difference` walls
-           in length <$> bfs go start (== end)
-        traceM $ show goodPath
-        pure $ countTrue (\t -> traceShow t $ goodPath - t >= 100) cheatPaths
+              getToCheat <- maybeToList $ length <$> bfs go start (== w)
+              -- getToCheat <- maybeToList $ fst <$> aStar (mannDist w) (M.fromSet (const 1) . go) start (== w)
+              -- guard $ getToCheat + mannDist d end < goodPath - 100
+              -- traceM $ show getToCheat
+              getToEnd <- maybeToList $ (+ 1) . length <$> bfs go' d (== end)
+              -- getToEnd <- maybeToList $ (+1) . fst <$> aStar (mannDist end) (M.fromSet (const 1) . go') d (== end)
+              -- traceM $ show (getToEnd, getToCheat + getToEnd)
+              pure $! getToCheat + getToEnd
+        pure $ countTrue (\t -> traceShowId (goodPath - t) >= 100) cheatPaths
     }
 
 -- aStar ::
@@ -105,12 +112,139 @@ day20a =
 --   -- | the shortest path, if it exists, and its cost
 --   Maybe (p, [n])
 
+data CheatState = PreCheat
+                | InCheat Int
+                | PostCheat
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass NFData
+
+-- okay new plan:
+-- * use spTree from end and spTree from beginning (fgl)
+-- * pair up each item in each, that is within range of a "teleport" and would
+-- give a good enough time
 day20b :: _ :~> _
 day20b =
   MkSol
     { sParse = sParse day20a
-    , sShow = show
-    , sSolve =
-        noFail $
-          id
+    -- , sShow = unlines . map show
+    , sShow = show . length
+    , sSolve = \mp -> do
+        start : _ <- pure . M.keys $ M.filter (== Just False) mp
+        end : _ <- pure . M.keys $ M.filter (== Just True) mp
+        bb <- boundingBox' $ M.keysSet mp
+        let walls = M.keysSet $ M.filter isNothing mp
+        goodPath <-
+          let go p = cardinalNeighbsSet p `S.difference` walls
+           in length <$> bfs go start (== end)
+        let goCheat (p, st) = S.filter (inBoundingBox bb . fst) $ case st of
+              PreCheat -> S.map (, PreCheat) (cardinalNeighbsSet p `S.difference` walls)
+                       <> S.map (, InCheat 20) (cardinalNeighbsSet p `S.intersection` walls)
+              InCheat i
+                | i > 2 -> S.map (, InCheat (i - 1)) (cardinalNeighbsSet p)
+                | otherwise -> S.map (, PostCheat) (cardinalNeighbsSet p `S.difference` walls)
+              PostCheat -> S.map (,PostCheat) (cardinalNeighbsSet p `S.difference` walls)
+            cheatIx ps = do
+              here <- listToMaybe
+                [p
+                  | (p, InCheat _) <- ps ]
+              there <- listToMaybe
+                [p
+                  | (p, PostCheat) <- ps ]
+              pure (V2 here there, length ps)
+              -- (length xs, length zs)
+              --   (xs, ys) = span ((== PreCheat) . snd) ps
+              --   zs = dropWhile ((/= PostCheat) . snd) ys
+            allPaths = mapMaybe (traceShowId . cheatIx) $ go 0 S.empty (start, PreCheat)
+              where
+                go n seen s = do
+                  guard $ n < goodPath - 50
+                  s'@(p, _) <- toList $ goCheat s
+                  guard $ p `S.notMember` seen
+                  (s':) <$> if s' == (end, PostCheat)
+                     then pure []
+                     else go (n + 1) (S.insert p seen) s'
+        -- pure $
+        --   let go p = cardinalNeighbsSet p `S.difference` walls
+        --    in bfsAll go start (== end)
+        pure . M.toList . M.filter (>= 50) . fmap (goodPath -) $ M.fromListWith min allPaths
+          -- let go (p, st) = S.filter (inBoundingBox bb . fst) $ case st of
+          --       PreCheat -> S.map (, PreCheat) (cardinalNeighbsSet p `S.difference` walls)
+          --                <> S.map (, InCheat 2) (cardinalNeighbsSet p `S.intersection` walls)
+          --       InCheat i
+          --         | i > 2 -> S.map (, InCheat (i - 1)) (cardinalNeighbsSet p)
+          --         | otherwise -> S.map (, PostCheat) (cardinalNeighbsSet p `S.difference` walls)
+          --       PostCheat -> S.map (,PostCheat) (cardinalNeighbsSet p `S.difference` walls)
+          --  in bfsAll go (start, PreCheat) ((== end) . fst)
+        -- traceM $ show goodPath
+        -- let reachable = floodFill (\p -> cardinalNeighbsSet p `S.difference` walls) (S.singleton start)
+        --     cheats =
+        --       S.fromList
+        --         [ (w, d)
+        --         | w <- toList walls
+        --         , dir <- [ North ..]
+        --         , let d = w + dirPoint dir
+        --               d' = w - dirPoint dir
+        --         , d `S.notMember` walls
+        --         , d' `S.member` reachable
+        --         -- toList $ cardinalNeighbsSet w `S.difference` walls
+        --         , inBoundingBox bb d
+        --         , inBoundingBox bb d'
+        --         ]
+        --     cheatPaths = do
+        --       (w, d) <- toList cheats
+        --       let go p = cardinalNeighbsSet p `S.difference` S.delete w walls
+        --           go' p = cardinalNeighbsSet p `S.difference` walls
+        --       traceM $ show (w, d)
+        --       getToCheat <- maybeToList $ length <$> bfs go start (== w)
+        --       -- getToCheat <- maybeToList $ fst <$> aStar (mannDist w) (M.fromSet (const 1) . go) start (== w)
+        --       -- guard $ getToCheat + mannDist d end < goodPath - 100
+        --       -- traceM $ show getToCheat
+        --       getToEnd <- maybeToList $ (+ 1) . length <$> bfs go' d (== end)
+        --       -- getToEnd <- maybeToList $ (+1) . fst <$> aStar (mannDist end) (M.fromSet (const 1) . go') d (== end)
+        --       -- traceM $ show (getToEnd, getToCheat + getToEnd)
+        --       pure $! getToCheat + getToEnd
+        -- pure $ countTrue (\t -> traceShowId (goodPath - t) >= 100) cheatPaths
     }
+
+-- data BFSState n = BS
+--   { _bsClosed :: !(Map n (Maybe n))
+--   -- ^ map of item to "parent"
+--   , _bsOpen :: !(Seq n)
+--   -- ^ queue
+--   }
+
+-- -- | Breadth-first search, with loop detection
+-- bfsAll ::
+--   forall n.
+--   Ord n =>
+--   -- | neighborhood
+--   (n -> Set n) ->
+--   -- | start
+--   n ->
+--   -- | target
+--   (n -> Bool) ->
+--   -- | the shortest path, if it exists
+--   [[n]]
+-- bfsAll ex x0 dest = reconstruct <$> go (addBack x0 Nothing (BS M.empty Seq.empty))
+--   where
+--     reconstruct :: (n, Map n (Maybe n)) -> [n]
+--     reconstruct (goal, mp) = drop 1 . reverse $ goreco goal
+--       where
+--         goreco n = n : maybe [] goreco (mp M.! n)
+--     go :: BFSState n -> [(n, Map n (Maybe n))]
+--     go BS{..} = case _bsOpen of
+--       Empty -> []
+--       n :<| ns
+--         | dest n -> (n, _bsClosed) : go (BS _bsClosed ns)
+--         | otherwise -> go . S.foldl' (processNeighbor n) (BS _bsClosed ns) $ ex n
+--     addBack :: n -> Maybe n -> BFSState n -> BFSState n
+--     addBack x up BS{..} =
+--       BS
+--         { _bsClosed = M.insert x up _bsClosed
+--         , _bsOpen = _bsOpen :|> x
+--         }
+--     processNeighbor :: n -> BFSState n -> n -> BFSState n
+--     processNeighbor curr bs0@BS{..} neighb
+--       | neighb `M.member` _bsClosed = bs0
+--       | otherwise = addBack neighb (Just curr) bs0
+
