@@ -42,11 +42,13 @@ module AOC.Common (
   findLoop,
   findLoopBy_,
   findLoop_,
+  findKeyFor,
   skipConsecutive,
   skipConsecutiveBy,
   fixedPoint,
   floodFill,
   floodFillCount,
+  floodFillSteps,
   countTrue,
   pickUnique,
   maybeAlt,
@@ -302,6 +304,9 @@ scanrT f z = snd . mapAccumR (\x -> dup . flip f x) z
 -- | Lazily find the first repeated item.
 firstRepeated :: Ord a => [a] -> Maybe a
 firstRepeated = firstRepeatedBy id
+
+findKeyFor :: Eq a => a -> Map k a -> Maybe k
+findKeyFor x = listToMaybe . M.keys . M.filter (== x)
 
 -- | Lazily find the first repeated projection.
 firstRepeatedBy :: Ord a => (b -> a) -> [b] -> Maybe b
@@ -840,6 +845,24 @@ floodFillCount f = go 0 S.empty
       where
         innr' = S.union innr outr
         outr' = foldMap f outr `S.difference` innr'
+
+-- | Flood fill from a starting set, with the shortest distance
+floodFillSteps ::
+  Ord a =>
+  -- | Expansion (be sure to limit allowed points)
+  (a -> Set a) ->
+  -- | Start points
+  Set a ->
+  -- | Flood filled, with count of number of steps
+  Map a Int
+floodFillSteps f = go 0 M.empty
+  where
+    go !n !innr !outr
+      | S.null outr' = innr'
+      | otherwise = go (n + 1) innr' outr'
+      where
+        innr' = innr <> M.fromSet (const n) outr
+        outr' = foldMap f outr `S.difference` M.keysSet innr'
 
 type Graph v e = Map v (Map v e)
 
