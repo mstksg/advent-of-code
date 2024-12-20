@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2024.Day20 (
--- day20a,
--- day20b
-
+  day20a,
+  day20b,
 )
 where
 
@@ -54,13 +53,48 @@ day20a :: _ :~> _
 day20a =
   MkSol
     { sParse =
-        noFail $
-          lines
+      noFail $ parseAsciiMap \case 'S' -> Just $ Just False
+                                   'E' -> Just $ Just True
+                                   '#' -> Just Nothing
+                                   _ -> Nothing
     , sShow = show
-    , sSolve =
-        noFail $
-          id
+    , sSolve = \mp -> do
+          start :_ <- pure . M.keys $ M.filter (== Just False) mp
+          end :_ <- pure . M.keys $ M.filter (== Just True) mp
+          bb <- boundingBox' $ M.keysSet mp
+          let walls = M.keysSet $ M.filter isNothing mp
+              cheats = S.fromList
+                [ (w, d)
+                  | w <- toList walls
+                , d <- toList $ cardinalNeighbsSet w `S.difference` walls
+                , inBoundingBox bb d
+                ]
+              cheatPaths = do
+                (w, d) <- toList cheats
+                traceM $ show (w, d)
+                let go p | p == w = S.singleton d
+                         | otherwise = cardinalNeighbsSet p `S.difference` S.delete d walls
+                maybeToList $ fst <$> aStar (mannDist end) (M.fromSet (const 1) . go) start (== end)
+          goodPath <- 
+            let go p = cardinalNeighbsSet p `S.difference` walls
+             in length <$> bfs go start (== end)
+          traceM $ show goodPath
+          pure $ countTrue (\t -> t - goodPath >= 100) cheatPaths
     }
+
+-- aStar ::
+--   forall n p.
+--   (Ord n, Ord p, Num p) =>
+--   -- | heuristic
+--   (n -> p) ->
+--   -- | neighborhood
+--   (n -> Map n p) ->
+--   -- | start
+--   n ->
+--   -- | target
+--   (n -> Bool) ->
+--   -- | the shortest path, if it exists, and its cost
+--   Maybe (p, [n])
 
 day20b :: _ :~> _
 day20b =

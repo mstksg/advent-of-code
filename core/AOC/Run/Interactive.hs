@@ -139,7 +139,7 @@ testSolution ri@RI{..} =
 testSolutionOnly :: RunInteractive -> IO (Maybe Bool)
 testSolutionOnly ri@RI{..} =
   eitherIO $
-    fst <$> runInteractive (defaultMRO (TSPart _riSpec)){_mroTest = True, _mroActual = False} ri
+    fst <$> runInteractive ((defaultMRO (TSPart _riSpec)){_mroTest = True, _mroActual = False}) ri
 
 -- | View the prompt for a given challenge spec.
 viewPrompt :: RunInteractive -> IO Text
@@ -190,7 +190,7 @@ testSolution_ = void . testSolution
 
 -- | Result-suppressing version of 'testSolutionOnly'.
 testSolutionOnly_ :: RunInteractive -> IO ()
-testSolutionOnly_ = void . testSolution
+testSolutionOnly_ = void . testSolutionOnly
 
 -- | Result-suppressing version of 'viewPrompt'.
 viewPrompt_ :: RunInteractive -> IO ()
