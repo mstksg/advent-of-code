@@ -80,15 +80,15 @@ day20a =
             cheatPaths = do
               (w, d) <- toList cheats
               traceM $ show (w, d)
-              let go p
-                    | p == w = S.singleton d
-                    | otherwise = cardinalNeighbsSet p `S.difference` S.delete d walls
-              maybeToList $ fst <$> aStar (mannDist end) (M.fromSet (const 1) . go) start (== end)
+              let go p = cardinalNeighbsSet p `S.difference` S.delete d walls
+              getToCheat <- maybeToList $ fst <$> aStar (mannDist w) (M.fromSet (const 1) . go) start (== w)
+              getToEnd <- maybeToList $ fst <$> aStar (mannDist end) (M.fromSet (const 1) . go) w (== end)
+              pure $ getToCheat + getToEnd
         goodPath <-
           let go p = cardinalNeighbsSet p `S.difference` walls
            in length <$> bfs go start (== end)
         traceM $ show goodPath
-        pure $ countTrue (\t -> t - goodPath >= 100) cheatPaths
+        pure $ countTrue (\t -> traceShow t $ goodPath - t >= 100) cheatPaths
     }
 
 -- aStar ::
