@@ -12,7 +12,7 @@ module AOC2024.Day20 (
 )
 where
 
-import AOC.Common (findKeyFor, floodFill, floodFillSteps)
+import AOC.Common (findKeyFor, floodFill, floodFillSteps, countTrue)
 import AOC.Common.Point (Point, cardinalNeighbsSet, mannDist, parseAsciiMap)
 import AOC.Solver (noFail, type (:~>) (..))
 import Data.Functor ((<&>))
@@ -38,13 +38,12 @@ findCheats walls start end len thresh =
   M.lookup end distFromStart <&> \noCheatDist ->
     sum $
       M.toList distFromStart <&> \(p, n) ->
-        M.size $
-          M.filterWithKey (\q m -> n + m + mannDist p q <= noCheatDist - thresh) $
-            M.restrictKeys distFromEnd (S.mapMonotonic (+ p) diamond)
+        countTrue (\(q, m) -> n + m + mannDist p q <= noCheatDist - thresh) $
+            M.toList $ M.restrictKeys distFromEnd (S.mapMonotonic (+ p) diamond)
   where
     distFromStart = floodFillSteps ((`S.difference` walls) . cardinalNeighbsSet) (S.singleton start)
     distFromEnd = floodFillSteps ((`S.difference` walls) . cardinalNeighbsSet) (S.singleton end)
-    diamond = floodFill (S.filter ((<= len) . mannDist 0) . cardinalNeighbsSet) (S.singleton 0)
+    diamond = floodFill (S.filter ((<= len) . mannDist 0) . cardinalNeighbsSet) (cardinalNeighbsSet 0)
 
 day20 :: Int -> Map Point (Maybe Bool) :~> Int
 day20 len =
