@@ -127,46 +127,60 @@ day20b =
   MkSol
     { sParse = sParse day20a
     -- , sShow = unlines . map show
-    , sShow = show . length
+    , sShow = show
+    -- , sShow = show . length
     , sSolve = \mp -> do
         start : _ <- pure . M.keys $ M.filter (== Just False) mp
         end : _ <- pure . M.keys $ M.filter (== Just True) mp
         bb <- boundingBox' $ M.keysSet mp
         let walls = M.keysSet $ M.filter isNothing mp
+            nonWalls = fillBoundingBox bb `S.difference` walls
+            mazeGraph :: G.UGr
+            mazeGraph = G.mkUGraph (zipWith const [0..] $ toList nonWalls)
+              [ (i,j)
+                | (i, p) <- zip [0..] (toList nonWalls)
+              , Just j <- map (`S.lookupIndex` nonWalls) . toList $ cardinalNeighbsSet p `S.difference` walls
+              ]
+            fromStart = M.fromList $ first (`S.elemAt` nonWalls)  <$> G.level (start `S.findIndex` nonWalls) mazeGraph
+            fromEnd = M.fromList $ first (`S.elemAt` nonWalls)  <$> G.level (end `S.findIndex` nonWalls) mazeGraph
+            diamond = floodFill (S.filter ((<= 20) . mannDist 0) . cardinalNeighbsSet) (S.singleton 0)
         goodPath <-
           let go p = cardinalNeighbsSet p `S.difference` walls
            in length <$> bfs go start (== end)
-        let goCheat (p, st) = S.filter (inBoundingBox bb . fst) $ case st of
-              PreCheat -> S.map (, PreCheat) (cardinalNeighbsSet p `S.difference` walls)
-                       <> S.map (, InCheat 20) (cardinalNeighbsSet p `S.intersection` walls)
-              InCheat i
-                | i > 2 -> S.map (, InCheat (i - 1)) (cardinalNeighbsSet p)
-                | otherwise -> S.map (, PostCheat) (cardinalNeighbsSet p `S.difference` walls)
-              PostCheat -> S.map (,PostCheat) (cardinalNeighbsSet p `S.difference` walls)
-            cheatIx ps = do
-              here <- listToMaybe
-                [p
-                  | (p, InCheat _) <- ps ]
-              there <- listToMaybe
-                [p
-                  | (p, PostCheat) <- ps ]
-              pure (V2 here there, length ps)
-              -- (length xs, length zs)
-              --   (xs, ys) = span ((== PreCheat) . snd) ps
-              --   zs = dropWhile ((/= PostCheat) . snd) ys
-            allPaths = mapMaybe (traceShowId . cheatIx) $ go 0 S.empty (start, PreCheat)
-              where
-                go n seen s = do
-                  guard $ n < goodPath - 50
-                  s'@(p, _) <- toList $ goCheat s
-                  guard $ p `S.notMember` seen
-                  (s':) <$> if s' == (end, PostCheat)
-                     then pure []
-                     else go (n + 1) (S.insert p seen) s'
-        -- pure $
-        --   let go p = cardinalNeighbsSet p `S.difference` walls
-        --    in bfsAll go start (== end)
-        pure . M.toList . M.filter (>= 50) . fmap (goodPath -) $ M.fromListWith min allPaths
+        pure . sum $ M.toList fromStart <&> \(p, n) ->
+          M.size $ M.filterWithKey (\q m -> n + m + mannDist p q <= goodPath - 100) $ M.restrictKeys fromEnd (S.map (+ p) diamond)
+
+        -- let goCheat (p, st) = S.filter (inBoundingBox bb . fst) $ case st of
+        --       PreCheat -> S.map (, PreCheat) (cardinalNeighbsSet p `S.difference` walls)
+        --                <> S.map (, InCheat 20) (cardinalNeighbsSet p `S.intersection` walls)
+        --       InCheat i
+        --         | i > 2 -> S.map (, InCheat (i - 1)) (cardinalNeighbsSet p)
+        --         | otherwise -> S.map (, PostCheat) (cardinalNeighbsSet p `S.difference` walls)
+        --       PostCheat -> S.map (,PostCheat) (cardinalNeighbsSet p `S.difference` walls)
+        --     cheatIx ps = do
+        --       here <- listToMaybe
+        --         [p
+        --           | (p, InCheat _) <- ps ]
+        --       there <- listToMaybe
+        --         [p
+        --           | (p, PostCheat) <- ps ]
+        --       pure (V2 here there, length ps)
+        --       -- (length xs, length zs)
+        --       --   (xs, ys) = span ((== PreCheat) . snd) ps
+        --       --   zs = dropWhile ((/= PostCheat) . snd) ys
+        --     allPaths = mapMaybe (traceShowId . cheatIx) $ go 0 S.empty (start, PreCheat)
+        --       where
+        --         go n seen s = do
+        --           guard $ n < goodPath - 50
+        --           s'@(p, _) <- toList $ goCheat s
+        --           guard $ p `S.notMember` seen
+        --           (s':) <$> if s' == (end, PostCheat)
+        --              then pure []
+        --              else go (n + 1) (S.insert p seen) s'
+        -- -- pure $
+        -- --   let go p = cardinalNeighbsSet p `S.difference` walls
+        -- --    in bfsAll go start (== end)
+        -- pure . M.toList . M.filter (>= 50) . fmap (goodPath -) $ M.fromListWith min allPaths
           -- let go (p, st) = S.filter (inBoundingBox bb . fst) $ case st of
           --       PreCheat -> S.map (, PreCheat) (cardinalNeighbsSet p `S.difference` walls)
           --                <> S.map (, InCheat 2) (cardinalNeighbsSet p `S.intersection` walls)
