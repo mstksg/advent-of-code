@@ -42,7 +42,6 @@ module AOC.Common (
   findLoop,
   findLoopBy_,
   findLoop_,
-  findKeyFor,
   skipConsecutive,
   skipConsecutiveBy,
   fixedPoint,
@@ -128,6 +127,8 @@ module AOC.Common (
   triangles,
   triangleNumber,
   mapMaybeSet,
+  findKeyFor,
+  flipMap,
   symDiff,
   unfoldedIterate,
   memo4,
@@ -433,6 +434,9 @@ revFreq =
     . map (swap . first NES.singleton)
     . M.toList
     . freqs
+
+flipMap :: (Ord k, Ord a) => Map k a -> Map a (Set k)
+flipMap = M.fromListWith (<>) . map (\(k, v) -> (v, S.singleton k)) . M.toList
 
 bindFreq :: Ord b => Map a Int -> (a -> Map b Int) -> Map b Int
 bindFreq mp f = M.unionsWith (+) [(* n) <$> f x | (x, n) <- M.toList mp]

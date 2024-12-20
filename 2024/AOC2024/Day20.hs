@@ -40,7 +40,7 @@ findCheats walls start end len thresh =
       M.toList distFromStart <&> \(p, n) ->
         M.size $
           M.filterWithKey (\q m -> n + m + mannDist p q <= noCheatDist - thresh) $
-            M.restrictKeys distFromEnd (S.map (+ p) diamond)
+            M.restrictKeys distFromEnd (S.mapMonotonic (+ p) diamond)
   where
     distFromStart = floodFillSteps ((`S.difference` walls) . cardinalNeighbsSet) (S.singleton start)
     distFromEnd = floodFillSteps ((`S.difference` walls) . cardinalNeighbsSet) (S.singleton end)
