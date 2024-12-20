@@ -53,33 +53,42 @@ day20a :: _ :~> _
 day20a =
   MkSol
     { sParse =
-      noFail $ parseAsciiMap \case 'S' -> Just $ Just False
-                                   'E' -> Just $ Just True
-                                   '#' -> Just Nothing
-                                   _ -> Nothing
+        noFail $ parseAsciiMap \case
+          'S' -> Just $ Just False
+          'E' -> Just $ Just True
+          '#' -> Just Nothing
+          _ -> Nothing
     , sShow = show
     , sSolve = \mp -> do
-          start :_ <- pure . M.keys $ M.filter (== Just False) mp
-          end :_ <- pure . M.keys $ M.filter (== Just True) mp
-          bb <- boundingBox' $ M.keysSet mp
-          let walls = M.keysSet $ M.filter isNothing mp
-              cheats = S.fromList
+        start : _ <- pure . M.keys $ M.filter (== Just False) mp
+        end : _ <- pure . M.keys $ M.filter (== Just True) mp
+        bb <- boundingBox' $ M.keysSet mp
+        let walls = M.keysSet $ M.filter isNothing mp
+            cheats =
+              S.fromList
                 [ (w, d)
-                  | w <- toList walls
-                , d <- toList $ cardinalNeighbsSet w `S.difference` walls
+                | w <- toList walls
+                , dir <- [ North ..]
+                , let d = w + dirPoint dir
+                      d' = w - dirPoint dir
+                , d `S.notMember` walls
+                , d' `S.notMember` walls
+                -- toList $ cardinalNeighbsSet w `S.difference` walls
                 , inBoundingBox bb d
+                , inBoundingBox bb d'
                 ]
-              cheatPaths = do
-                (w, d) <- toList cheats
-                traceM $ show (w, d)
-                let go p | p == w = S.singleton d
-                         | otherwise = cardinalNeighbsSet p `S.difference` S.delete d walls
-                maybeToList $ fst <$> aStar (mannDist end) (M.fromSet (const 1) . go) start (== end)
-          goodPath <- 
-            let go p = cardinalNeighbsSet p `S.difference` walls
-             in length <$> bfs go start (== end)
-          traceM $ show goodPath
-          pure $ countTrue (\t -> t - goodPath >= 100) cheatPaths
+            cheatPaths = do
+              (w, d) <- toList cheats
+              traceM $ show (w, d)
+              let go p
+                    | p == w = S.singleton d
+                    | otherwise = cardinalNeighbsSet p `S.difference` S.delete d walls
+              maybeToList $ fst <$> aStar (mannDist end) (M.fromSet (const 1) . go) start (== end)
+        goodPath <-
+          let go p = cardinalNeighbsSet p `S.difference` walls
+           in length <$> bfs go start (== end)
+        traceM $ show goodPath
+        pure $ countTrue (\t -> t - goodPath >= 100) cheatPaths
     }
 
 -- aStar ::
