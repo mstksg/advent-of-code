@@ -12,10 +12,12 @@ module AOC2024.Day20 (
 )
 where
 
-import AOC.Common (findKeyFor, floodFill, floodFillSteps, countTrue)
+import AOC.Common (countTrue, findKeyFor)
 import AOC.Common.Point (Point, cardinalNeighbsSet, mannDist, parseAsciiMap)
+import AOC.Common.Search
 import AOC.Solver (noFail, type (:~>) (..))
 import Data.Functor ((<&>))
+import Data.List (tails)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (isNothing)
@@ -34,16 +36,16 @@ findCheats ::
   -- | threshold
   Int ->
   Maybe Int
-findCheats walls start end len thresh =
-  M.lookup end distFromStart <&> \noCheatDist ->
+findCheats walls start end len thresh = do
+  path <- (start :) <$> bfs ((`S.difference` walls) . cardinalNeighbsSet) start (== end)
+  pure $
     sum $
-      M.toList distFromStart <&> \(p, n) ->
-        countTrue (\(q, m) -> n + m + mannDist p q <= noCheatDist - thresh) $
-            M.toList $ M.restrictKeys distFromEnd (S.mapMonotonic (+ p) diamond)
-  where
-    distFromStart = floodFillSteps ((`S.difference` walls) . cardinalNeighbsSet) (S.singleton start)
-    distFromEnd = floodFillSteps ((`S.difference` walls) . cardinalNeighbsSet) (S.singleton end)
-    diamond = floodFill (S.filter ((<= len) . mannDist 0) . cardinalNeighbsSet) (cardinalNeighbsSet 0)
+      tails path <&> \case
+        [] -> 0
+        p : ps ->
+          countTrue
+            (\(i, q) -> mannDist p q <= len && i - mannDist p q >= thresh)
+            (drop (thresh + 1) $ zip [1 ..] ps)
 
 day20 :: Int -> Map Point (Maybe Bool) :~> Int
 day20 len =
