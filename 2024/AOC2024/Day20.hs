@@ -22,6 +22,7 @@ import Data.Maybe (isNothing)
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Traversable (mapAccumR)
+import Data.Tuple.Strict (T2 (..))
 
 findCheats ::
   -- | walls
@@ -37,11 +38,11 @@ findCheats ::
   Maybe Int
 findCheats walls start end len thresh = do
   path <- (start :) <$> bfs ((`S.difference` walls) . cardinalNeighbsSet) start (== end)
-  pure . sum . snd $ mapAccumR go (0, M.empty) path
+  pure . sum . snd $ mapAccumR go (T2 0 M.empty) path
   where
-    go :: (Int, Map Point Int) -> Point -> ((Int, Map Point Int), Int)
-    go (i, xs) x =
-      ( (i + 1, M.insert x i xs)
+    go :: T2 Int (Map Point Int) -> Point -> (T2 Int (Map Point Int), Int)
+    go (T2 i xs) x =
+      ( T2 (i + 1) (M.insert x i xs)
       , M.size $
           M.filterWithKey (\y j -> i - j - mannDist x y >= thresh) $
             xs `M.restrictKeys` S.mapMonotonic (+ x) diamond
