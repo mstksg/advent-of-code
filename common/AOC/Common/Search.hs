@@ -1,6 +1,7 @@
 module AOC.Common.Search (
   aStar,
   bfs,
+  bfsActions,
   binarySearch,
   exponentialSearch,
   binaryMinSearch,
@@ -115,56 +116,50 @@ bfs ex x0 dest = reconstruct <$> go (addBack x0 Nothing (BS M.empty Seq.empty))
       | neighb `M.member` _bsClosed = bs0
       | otherwise = addBack neighb (Just curr) bs0
 
--- -- | Breadth-first search, with loop detection, stopping at first result
--- bfs :: forall n. Ord n
---     => (n -> Set n)   -- ^ neighborhood
---     -> n              -- ^ start
---     -> (n -> Bool)    -- ^ target
---     -> Maybe [n]      -- ^ the shortest path, if it exists
--- bfs ex x0 dest = fmap snd . M.lookupMin $ bfsAll ex x0 (mfilter dest . Just) ((> 0) . S.size)
+data BFSActionState a n = BAS
+  { _basClosed :: !(Map n (Maybe (a, n)))
+  -- ^ map of item to "parent"
+  , _basOpen :: !(Seq n)
+  -- ^ queue
+  }
 
--- data BFSState n a = BS { _bsClosed  :: !(Map n (Maybe n))  -- ^ map of item to "parent"
---                        , _bsOpen    :: !(Seq n          )  -- ^ queue
---                        , _bsFound   :: !(Map a n        )  -- ^ found items
---                        }
 
--- -- | Breadth-first search, with loop detection, to find all matches.
--- bfsAll :: forall n a. (Ord n, Ord a)
---     => (n -> Set n)             -- ^ neighborhood
---     -> n                        -- ^ start
---     -> (n -> Maybe a)              -- ^ keep me when True
---     -> (Set a -> Bool)          -- ^ stop when True
---     -> Map a [n]
--- bfsAll ex x0 isGood stopper = reconstruct <$> founds
--- -- M.fromSet reconstruct founds
---   where
---     (founds, parentMap) = go . addBack x0 Nothing $ BS M.empty Seq.empty M.empty
---     reconstruct :: n -> [n]
---     reconstruct goal = drop 1 . reverse $ goreco goal
---       where
---         goreco n = n : maybe [] goreco (parentMap M.! n)
---     go :: BFSState n a -> (Map a n, Map n (Maybe n))
---     go BS{..} = case _bsOpen of
---       Empty    -> (_bsFound, _bsClosed)
---       (!n) :<| ns ->
---         let (found', updated) = case isGood n of
---               Just x
---                 | x `M.notMember` _bsFound -> (M.insert x n _bsFound, True)
---               _   -> (_bsFound, False)
---             stopHere = updated && stopper (M.keysSet found')
---         in  if stopHere
---               then (found', _bsClosed)
---               else go . S.foldl' (processNeighbor n) (BS _bsClosed ns found') $ ex n
---     addBack :: n -> Maybe n -> BFSState n a -> BFSState n a
---     addBack !x !up BS{..} = BS
---       { _bsClosed = M.insert x up _bsClosed
---       , _bsOpen   = _bsOpen :|> x
---       , _bsFound  = _bsFound
---       }
---     processNeighbor :: n -> BFSState n a -> n -> BFSState n a
---     processNeighbor !curr bs0@BS{..} neighb
---       | neighb `M.member` _bsClosed = bs0
---       | otherwise                   = addBack neighb (Just curr) bs0
+-- | Breadth-first search, with loop detection, that outputs actions
+bfsActions ::
+  forall a n.
+  Ord n =>
+  -- | neighborhood
+  (n -> Map a n) ->
+  -- | start
+  n ->
+  -- | target
+  (n -> Bool) ->
+  -- | the shortest path, if it exists
+  Maybe [a]
+bfsActions ex x0 dest = reconstruct <$> go (addBack x0 Nothing (BAS M.empty Seq.empty))
+  where
+    reconstruct :: (n, Map n (Maybe (a, n))) -> [a]
+    reconstruct (goal, mp) = reverse $ goreco goal
+      where
+        goreco n = case mp M.! n of
+          Nothing -> []
+          Just (act, n') -> act : goreco n'
+    go :: BFSActionState a n -> Maybe (n, Map n (Maybe (a, n)))
+    go BAS{..} = case _basOpen of
+      Empty -> Nothing
+      n :<| ns
+        | dest n -> Just (n, _basClosed)
+        | otherwise -> go . M.foldlWithKey' (processNeighbor n) (BAS _basClosed ns) $ ex n
+    addBack :: n -> Maybe (a, n) -> BFSActionState a n -> BFSActionState a n
+    addBack x up BAS{..} =
+      BAS
+        { _basClosed = M.insert x up _basClosed
+        , _basOpen = _basOpen :|> x
+        }
+    processNeighbor :: n -> BFSActionState a n -> a -> n -> BFSActionState a n
+    processNeighbor curr bs0@BAS{..} act neighb
+      | neighb `M.member` _basClosed = bs0
+      | otherwise = addBack neighb (Just (act, curr)) bs0
 
 binarySearch ::
   (Int -> Ordering) -> -- LT: Too small, GT: Too big

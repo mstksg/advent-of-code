@@ -23,6 +23,7 @@
 module AOC2024.Day21 (
   day21a,
   day21b,
+  dirPath,
 )
 where
 
@@ -197,22 +198,24 @@ findSolN goal = score . fst <$> aStar heur step s0 ((== goalseq) . ssnOutput)
         , ssnDirBots = SV.replicate Nothing
         , ssnOutput = mempty
         }
-    step ssn@SSN{..} = M.fromSet (const 1) . S.fromList $
-        [ SSN{ssnNumBot = numBot', ssnDirBots = dirBots', ssnOutput = output'}
-        | push <- Nothing : (Just <$> [North ..])
-        , (dirBots', dbo) <- maybeToList $ flip runStateT (Just push) $ traverse pushDir1 ssnDirBots
-        , -- scanlM pushDir1 _ ssnDirBots
-        -- applyPushDirs push ssnDirBots
-        (numBot', nbo) <- case dbo of
-          Nothing -> pure (ssnNumBot, Nothing)
-          Just push' -> maybeToList $ applyPushNum push' ssnNumBot
-        , output' <- case nbo of
-            Nothing -> pure ssnOutput
-            Just o -> do
-              guard $ o == (goalseq `Seq.index` Seq.length ssnOutput)
-              traceM $ show (ssnOutput Seq.:|> o)
-              pure (ssnOutput Seq.:|> o)
-        ]
+    step ssn@SSN{..} =
+      traceShow ssn $
+        M.fromSet (const 1) . S.fromList $
+          [ SSN{ssnNumBot = numBot', ssnDirBots = dirBots', ssnOutput = output'}
+          | push <- Nothing : (Just <$> [North ..])
+          , (dirBots', dbo) <- maybeToList $ flip runStateT (Just push) $ traverse pushDir1 ssnDirBots
+          , -- scanlM pushDir1 _ ssnDirBots
+          -- applyPushDirs push ssnDirBots
+          (numBot', nbo) <- case dbo of
+            Nothing -> pure (ssnNumBot, Nothing)
+            Just push' -> maybeToList $ applyPushNum push' ssnNumBot
+          , output' <- case nbo of
+              Nothing -> pure ssnOutput
+              Just o -> do
+                guard $ o == (goalseq `Seq.index` Seq.length ssnOutput)
+                traceM $ show (ssnOutput Seq.:|> o)
+                pure (ssnOutput Seq.:|> o)
+          ]
 
 pushDir1 :: DirPad -> StateT (Maybe (Maybe Dir)) Maybe DirPad
 pushDir1 bot = do
@@ -223,6 +226,77 @@ pushDir1 bot = do
       (bot', out) <- lift $ applyPushDir push bot
       put out
       pure bot'
+
+allDirPad :: Set DirPad
+allDirPad = S.fromList $ Nothing : (Just <$> [North ..])
+
+class Ord a => Pushable a where
+  allPushable :: Set a
+  applyPush :: DirPad -> Maybe a -> Maybe (Maybe a, Maybe (Maybe a))
+
+allPushable' :: Pushable a => Set (Maybe a)
+allPushable' = S.insert Nothing (S.mapMonotonic Just allPushable)
+
+instance Pushable Dir where
+  allPushable = S.fromList [North ..]
+  applyPush = applyPushDir
+
+instance Pushable (Finite 10) where
+  allPushable = S.fromList finites
+  applyPush = applyPushNum
+
+-- | Best way to get from button to button
+dirPath :: forall a. Pushable a => Map (Maybe a) (Map (Maybe a) [DirPad])
+dirPath = M.fromSet ((`M.fromSet` allPushable') . go) allPushable'
+  where
+    go :: Maybe a -> Maybe a -> [DirPad]
+    go x y = fromJust $ bfsActions step (Left x) (== Right y)
+      where
+        step (Left d) =
+          M.fromList
+            [ case dout of
+                Nothing -> (push, Left d')
+                Just o -> (push, Right o)
+            | push <- toList allDirPad
+            , (d', dout) <- maybeToList $ applyPush push d
+            ]
+        step (Right _) = M.empty
+
+---- | Best way to get from button to button
+----
+---- Assume that same-to-same means same-to-A
+-- dirPath :: forall a. Pushable a => Map (Maybe a) (Map (Maybe a) [_])
+-- dirPath = M.fromSet ((`M.fromSet` allPushable') . go) allPushable'
+--  where
+--    go :: Maybe a -> Maybe a -> [DirPad]
+--    go x y = mapMaybe (preview (_Left . _1)) . fromJust $ bfs step (Left (Nothing, x)) (== Right y)
+--      where
+--        step (Left (d, b)) = S.fromList
+--          [ case bout of
+--              Nothing -> Left (d', b')
+--              Just o -> Right o
+--            | push <- toList allDirPad
+--          , (d', dout) <- maybeToList $ applyPushDir push d
+--          , (b', bout) <- case dout of
+--                          Nothing -> pure (b, Nothing)
+--                          Just push' -> maybeToList $ applyPush push' b
+--          ]
+--        step (Right _) = S.empty
+
+-- applyPushNum :: DirPad -> NumPad -> Maybe (NumPad, Maybe NumPad)
+-- applyPushDir :: Maybe Dir -> DirPad -> Maybe (DirPad, Maybe DirPad)
+-- step (Left (d, b)) = S.fromList
+--   [ case bout of
+--       Nothing -> Left (d', b')
+--       Just o -> Right o
+--     | push <- toList allDirPad
+--   , (d', dout) <- maybeToList $ applyPushDir push d
+--   , (b', bout) <- case dout of
+--                   Nothing -> pure (b, Nothing)
+--                   Just push' -> maybeToList $ applyPushDir push' b
+
+--   ]
+-- step (Right _) = S.empty
 
 day21b :: _ :~> _
 day21b =
