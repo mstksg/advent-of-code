@@ -24,6 +24,8 @@ module AOC2024.Day21 (
   day21a,
   day21b,
   dirPath,
+  composeDirPath,
+  runPath,
 )
 where
 
@@ -261,6 +263,46 @@ dirPath = M.fromSet ((`M.fromSet` allPushable') . go) allPushable'
             , (d', dout) <- maybeToList $ applyPush push d
             ]
         step (Right _) = M.empty
+
+-- | missing the first element
+spellDirPath ::
+  Ord a =>
+  Map (Maybe a) (Map (Maybe a) [Maybe b]) ->
+  [Maybe a] ->
+  [Maybe b]
+spellDirPath mp xs = concat $ zipWith (\x y -> (mp M.! x) M.! y) xs (drop 1 xs)
+
+-- composeDirPath ::
+--   (Ord a, Pushable b) =>
+--   Map (Maybe b) (Map (Maybe b) [Maybe c]) ->
+--   Map (Maybe a) (Map (Maybe a) [Maybe b]) ->
+--   Map (Maybe a, Maybe b) (Map (Maybe a) [Maybe c])
+-- composeDirPath mpBC mpAB = M.fromListWith M.union
+--   [ ((a0, b0), M.singleton a1 $ (spellDirPath mpBC $ b0 : pathA))
+--     | (a0, as) <- M.toList mpAB
+--     , (a1, pathA) <- M.toList as
+--     ,  b0 <- toList allPushable'
+--     -- , (b0, bs) <- M.toList mpBC
+--     -- , (b1, pathB) <- M.toList bs
+--   ]
+--   -- (fmap . fmap) (spellDirPath mp undefined)
+
+composeDirPath ::
+  Ord b =>
+  Map (Maybe b) (Map (Maybe b) [Maybe c]) ->
+  Map (Maybe a) (Map (Maybe a) [Maybe b]) ->
+  Map (Maybe a) (Map (Maybe a) [Maybe c])
+composeDirPath mp = (fmap . fmap) (spellDirPath mp . (Nothing:))
+
+
+runPath :: Pushable a => Maybe a -> [DirPad] -> [Maybe a]
+runPath x = \case
+  [] -> []
+  d:ds -> case applyPush d x of
+    Nothing -> error $ "hm..." ++ show d
+    Just (y, out) -> maybe id (:) out $ runPath y ds
+
+  -- applyPush :: DirPad -> Maybe a -> Maybe (Maybe a, Maybe (Maybe a))
 
 ---- | Best way to get from button to button
 ----
