@@ -29,7 +29,7 @@ where
 import AOC.Prelude
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as IM
+import qualified Data.IntMap.NonEmpty as NEIM
 import qualified Data.IntSet as IS
 import qualified Data.IntSet.NonEmpty as NEIS
 import qualified Data.List.NonEmpty as NE
@@ -107,13 +107,14 @@ day22b =
           let serieses = xs <&> \x ->
                 let ps = take 2000 $ map (`mod` 10) $ iterate step x 
                     dPs = zipWith (\p0 p1 -> (p1, p1 - p0)) ps (drop 1 ps)
-                    windows = slidingWindows 4 dPs <&> \w -> (snd <$> w, fst $ last (toList w))
-                    seqMap = M.fromListWith (flip const) windows
+                    windows = slidingWindows 4 dPs <&> \w -> (encodeSeq $ snd <$> w, fst $ last (toList w))
+                    seqMap = IM.fromListWith (const id) windows
                 in seqMap
-              bests = M.unionsWith (+) serieses
-           in snd $ maximumBy (comparing snd) (M.toList bests)
+              bests = toList $ IM.unionsWith (+) serieses
+           in maximum bests
               -- bests = M.unionsWith (<>) $ map (fmap (:[])) serieses
            -- in maximumBy (comparing (sum . snd)) (M.toList bests)
     }
   where
     diffs xs = zipWith subtract xs (drop 1 xs)
+    encodeSeq = sum . zipWith (*) [1,20,400,8000] . map (+9) . toList
