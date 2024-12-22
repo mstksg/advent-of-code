@@ -92,4 +92,4 @@ day22b =
           -- in maximumBy (comparing (sum . snd)) (M.toList bests)
     }
   where
-    encodeSeq = sum . zipWith (*) [1, 20, 400, 8000] . map (+ 9) . toList
+    encodeSeq = sum . zipWith (\i x -> x * 19^(i :: Int)) [0..] . map (+ 9) . toList
