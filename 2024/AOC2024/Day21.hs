@@ -287,6 +287,8 @@ spellDirPath mp xs = concat $ zipWith (\x y -> (mp M.! x) M.! y) xs (drop 1 xs)
 --   ]
 --   -- (fmap . fmap) (spellDirPath mp undefined)
 
+-- | this seems to work but at n=18 we get to 200,000,000 ... this grows too
+-- big to keep them all in memory i think. maybe just keep the lengths?
 composeDirPath ::
   Ord b =>
   Map (Maybe b) (Map (Maybe b) [Maybe c]) ->
