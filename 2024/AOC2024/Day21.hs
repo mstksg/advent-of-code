@@ -25,7 +25,10 @@ module AOC2024.Day21 (
   day21b,
   dirPath,
   composeDirPath,
+  composeDirPathLengths,
+  dirPathCosts,
   runPath,
+  altP1,
 )
 where
 
@@ -172,7 +175,11 @@ day21a =
       --   lines
       -- , sShow = ('\n':) . unlines . map show . head
       sShow = show
-    , sSolve = fmap sum . traverse findSol
+    -- , sSolve = fmap sum . traverse findSol
+    , sSolve = noFail $ sum . map (\p -> 
+                  let num :: Int
+                      num = read (map intToDigit (mapMaybe (fmap fromIntegral) p :: [Int]))
+                   in num * altP1 2 p)
     -- , sSolve = fmap (fmap length) . traverse findSolBasic
     -- noFail $
     --   id
@@ -201,7 +208,6 @@ findSolN goal = score . fst <$> aStar heur step s0 ((== goalseq) . ssnOutput)
         , ssnOutput = mempty
         }
     step ssn@SSN{..} =
-      traceShow ssn $
         M.fromSet (const 1) . S.fromList $
           [ SSN{ssnNumBot = numBot', ssnDirBots = dirBots', ssnOutput = output'}
           | push <- Nothing : (Just <$> [North ..])
@@ -215,7 +221,6 @@ findSolN goal = score . fst <$> aStar heur step s0 ((== goalseq) . ssnOutput)
               Nothing -> pure ssnOutput
               Just o -> do
                 guard $ o == (goalseq `Seq.index` Seq.length ssnOutput)
-                traceM $ show (ssnOutput Seq.:|> o)
                 pure (ssnOutput Seq.:|> o)
           ]
 
@@ -247,22 +252,47 @@ instance Pushable (Finite 10) where
   allPushable = S.fromList finites
   applyPush = applyPushNum
 
--- | Best way to get from button to button
+-- | Best way to get from button to button. penalize motion
 dirPath :: forall a. Pushable a => Map (Maybe a) (Map (Maybe a) [DirPad])
 dirPath = M.fromSet ((`M.fromSet` allPushable') . go) allPushable'
   where
     go :: Maybe a -> Maybe a -> [DirPad]
-    go x y = fromJust $ bfsActions step (Left x) (== Right y)
+    go x y = runPath Nothing . fromJust $ bfsActions step (Left (x, Nothing)) (== Right y)
       where
-        step (Left d) =
+        step (Left (b, d)) =
           M.fromList
-            [ case dout of
-                Nothing -> (push, Left d')
-                Just o -> (push, Right o)
+            [  (push, case bout of
+                  Nothing -> Left (b', d')
+                  Just o -> Right o)
             | push <- toList allDirPad
             , (d', dout) <- maybeToList $ applyPush push d
+            , (b', bout) <- case dout of
+                Nothing -> pure (b, Nothing)
+                Just push' -> maybeToList $ applyPush push' b
             ]
         step (Right _) = M.empty
+
+-- -- | Best way to get from button to button
+-- dirPath :: forall a. Pushable a => Map (Maybe a) (Map (Maybe a) [DirPad])
+-- dirPath = M.fromSet ((`M.fromSet` allPushable') . go) allPushable'
+--   where
+--     go :: Maybe a -> Maybe a -> [DirPad]
+--     go x y = fromJust $ bfsActions step (Left x) (== Right y)
+--       where
+--         step (Left d) =
+--           M.fromList
+--             [ case dout of
+--                 Nothing -> (push, Left d')
+--                 Just o -> (push, Right o)
+--             | push <- toList allDirPad
+--             , (d', dout) <- maybeToList $ applyPush push d
+--             ]
+--         step (Right _) = M.empty
+
+
+-- yeah I guess at each up/down step is independent of each other
+dirPathCosts :: Pushable a => Map (Maybe a) (Map (Maybe a) Int)
+dirPathCosts = (fmap . fmap) length dirPath
 
 -- | missing the first element
 spellDirPath ::
@@ -296,6 +326,37 @@ composeDirPath ::
   Map (Maybe a) (Map (Maybe a) [Maybe c])
 composeDirPath mp = (fmap . fmap) (spellDirPath mp . (Nothing:))
 
+-- | missing the first element
+spellDirPathLengths ::
+  Ord a =>
+  Map (Maybe a) (Map (Maybe a) Int) ->
+  [Maybe a] ->
+  Int
+spellDirPathLengths mp xs = sum $ zipWith (\x y -> (mp M.! x) M.! y) xs (drop 1 xs)
+
+-- | this seems to work but at n=18 we get to 200,000,000 ... this grows too
+-- big to keep them all in memory i think. maybe just keep the lengths?
+composeDirPathLengths ::
+  Ord b =>
+  Map (Maybe b) (Map (Maybe b) Int) ->
+  Map (Maybe a) (Map (Maybe a) [Maybe b]) ->
+  Map (Maybe a) (Map (Maybe a) Int)
+composeDirPathLengths mp = (fmap . fmap) (spellDirPathLengths mp . (Nothing:))
+
+-- [Just South,Just West,Nothing,Just West,Nothing,Nothing,Just East,Just
+-- North,Just East,Nothing,Just South,Nothing,Just North,Just
+-- West,Nothing,Just East,Just South,Nothing,Just North,Nothing]
+-- v<A<AA>^>AvA^<A>vA^A
+-- [Just South,Just West,Just West,Nothing,Just East,Just North,Just East,Nothing]
+-- v<<A>^>A
+-- ah hah, that's the key! >^> is more costly than >>^
+-- we must penalize changes
+
+
+-- <vA<AA>>^AvAA<^A>A
+--   v <<   A >>  ^ A
+--    <   A
+-- 029A
 
 runPath :: Pushable a => Maybe a -> [DirPad] -> [Maybe a]
 runPath x = \case
@@ -303,6 +364,19 @@ runPath x = \case
   d:ds -> case applyPush d x of
     Nothing -> error $ "hm..." ++ show d
     Just (y, out) -> maybe id (:) out $ runPath y ds
+
+-- altP1 :: [NumPad] -> Int
+-- altP1 = length . spellDirPath mp
+--   where
+--     mp = dirPath @Dir `composeDirPath` dirPath @Dir `composeDirPath` dirPath @(Finite 10)
+
+altP1 :: Int -> [NumPad] -> _
+altP1 n = spellDirPathLengths mp . (Nothing:)
+  where
+    mpChain :: [Map DirPad (Map DirPad Int)]
+    mpChain = iterate (`composeDirPathLengths` dirPath @Dir) (dirPathCosts @Dir)
+    mp = (mpChain !! (n - 1)) `composeDirPathLengths` dirPath @(Finite 10)
+
 
   -- applyPush :: DirPad -> Maybe a -> Maybe (Maybe a, Maybe (Maybe a))
 
@@ -347,5 +421,9 @@ day21b =
   MkSol
     { sParse = sParse day21a
     , sShow = show
-    , sSolve = fmap sum . traverse findSolN
+    , sSolve = noFail $ sum . map (\p -> 
+                  let num :: Int
+                      num = read (map intToDigit (mapMaybe (fmap fromIntegral) p :: [Int]))
+                   in num * altP1 25 p)
     }
+    -- score p = p * read @Int (map intToDigit (mapMaybe (fmap fromIntegral) goal :: [Int]))

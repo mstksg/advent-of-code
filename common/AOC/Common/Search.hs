@@ -65,8 +65,6 @@ aStar h ex x0 dest = second reconstruct <$> go (addBack x0 0 Nothing (AS M.empty
       | neighb `M.member` _asClosed = as0
       | otherwise = addBack neighb (currCost + moveCost) (Just curr) as0
 
--- addBack neighb (currCost + moveCost) (Just curr) as0
-
 insertIfBetter :: (Ord k, Ord p) => k -> p -> v -> OrdPSQ k p v -> OrdPSQ k p v
 insertIfBetter k p x q = case Q.lookup k q of
   Nothing -> Q.insert k p x q
