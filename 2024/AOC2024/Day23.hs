@@ -17,14 +17,14 @@ import AOC.Common.Parser (pAlphaNumWord, parseMaybe', sepByLines, sequenceSepBy)
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Monad (guard)
 import Data.Foldable (Foldable (toList))
+import Data.Functor.Foldable (hylo)
 import Data.List (intercalate, isPrefixOf, sort)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Ord (comparing)
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Tree (Forest, Tree (..))
-import qualified Data.Tree as Tree
+import GHC.Generics ((:.:) (..))
 import Linear (V2 (..), V3 (..))
 import Safe.Foldable (maximumByMay)
 
@@ -59,21 +59,16 @@ day23b =
     , sShow = intercalate ","
     , sSolve = \xs -> do
         let conns = connMap xs
-            clubsTree :: Forest String
-            clubsTree = flip Tree.unfoldForest (M.toList conns) \(a, cands) ->
-              ( a
-              , [ (b, cands `S.intersection` (conns M.! b))
-                | b <- toList cands
-                ]
-              )
             clubs :: [[String]]
-            clubs = go clubsTree
-              where
-                go :: [Tree String] -> [[String]]
-                go ts
-                  | null ts = pure []
-                  | otherwise = do
-                      Node here there <- ts
-                      (here :) <$> go there
+            clubs =
+              hylo @([] :.: (,) String)
+                (foldMap (\(here, there) -> (here :) <$> if null there then pure [] else there) . unComp1)
+                ( fmap \cands ->
+                    Comp1
+                      [ (b, cands `S.intersection` (conns M.! b))
+                      | b <- toList cands
+                      ]
+                )
+                (Comp1 $ M.toList conns)
         maximumByMay (comparing length) clubs
     }

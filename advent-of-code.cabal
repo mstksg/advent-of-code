@@ -220,6 +220,7 @@ common solver-deps
     , fin
     , finitary
     , finite-typelits
+    , free
     , foldl
     , free-algebras
     , generic-lens
