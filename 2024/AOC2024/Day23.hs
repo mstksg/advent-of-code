@@ -59,16 +59,14 @@ day23b =
     , sShow = intercalate ","
     , sSolve = \xs -> do
         let conns = connMap xs
-            clubs :: [[String]]
-            clubs =
-              hylo @([] :.: (,) String)
-                (foldMap (\(here, there) -> (here :) <$> if null there then pure [] else there) . unComp1)
-                ( fmap \cands ->
-                    Comp1
-                      [ (b, cands `S.intersection` (conns M.! b))
-                      | b <- toList cands
-                      ]
-                )
-                (Comp1 $ M.toList conns)
-        maximumByMay (comparing length) clubs
+        maximumByMay @[] (comparing length) $
+          hylo @([] :.: (,) String)
+            (foldMap (\(here, there) -> (here :) <$> if null there then pure [] else there) . unComp1)
+            ( fmap \cands ->
+                Comp1
+                  [ (b, cands `S.intersection` (conns M.! b))
+                  | b <- toList cands
+                  ]
+            )
+            (Comp1 $ M.toList conns)
     }
