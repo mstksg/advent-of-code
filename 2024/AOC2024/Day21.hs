@@ -56,6 +56,16 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
+
+-- okay i guess if we have a long series of bots, every time the top level
+-- pushes A, an unbroken chain from the top also pushes A
+--
+-- Therefore any A cannot be pushed without the cascade of all the others
+-- above it being pushed
+--
+-- 363987226123908 is too high
+--
+
 type NumPad = Maybe (Finite 10)
 type DirPad = Maybe Dir
 
@@ -415,6 +425,8 @@ altP1 n = spellDirPathLengths mp . (Nothing:)
 
 --   ]
 -- step (Right _) = S.empty
+--
+-- new realization, only the "top"
 
 day21b :: _ :~> _
 day21b =
@@ -427,3 +439,8 @@ day21b =
                    in num * altP1 25 p)
     }
     -- score p = p * read @Int (map intToDigit (mapMaybe (fmap fromIntegral) goal :: [Int]))
+
+-- data BotChain = BCNil NumPad
+
+requestMotion :: NumPad -> State (NumPad, [DirPad]) Int
+requestMotion = undefined
