@@ -15,7 +15,6 @@ where
 import AOC.Common (countTrue)
 import AOC.Common.Parser (pAlphaNumWord, parseMaybe', sepByLines, sequenceSepBy)
 import AOC.Solver (noFail, type (:~>) (..))
-import Control.Monad (guard)
 import Data.Foldable (Foldable (toList))
 import Data.Functor.Foldable (hylo)
 import Data.List (intercalate, isPrefixOf, sort)
@@ -45,10 +44,9 @@ day23a =
         noFail \xs ->
           let conns = connMap xs
            in countTrue (any ("t" `isPrefixOf`)) do
-                (a, bs) <- M.toList conns
-                b <- toList bs
-                c <- toList $ conns M.! b
-                guard $ c `S.member` bs
+                (a, adjA) <- M.toList conns
+                b <- toList adjA
+                c <- toList $ (conns M.! b) `S.intersection` adjA
                 pure (V3 a b c)
     }
 
