@@ -38,7 +38,7 @@ day25a =
     countCombos locks keys = length do
       lock <- colCounts <$> locks
       key <- colCounts <$> keys
-      guard . all (< 6) $ IM.unionWith (+) lock key
+      guard . all (< 8) $ IM.unionWith (+) lock key
 
 colCounts :: Set Point -> IntMap Int
-colCounts = fmap (subtract 1) . intFreqs . map (view _x) . toList
+colCounts = intFreqs . map (view _x) . toList
