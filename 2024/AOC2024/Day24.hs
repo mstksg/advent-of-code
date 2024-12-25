@@ -217,10 +217,10 @@ nameGate avail ng Gate{..} = case (gX, gY) of
     let gate = Gate gOp nX nY
     case applySwaps nsRenames <$> M.lookup gate avail of
       Nothing -> do
-        traceM $ "backtrack on " <> show ng <> ": " <> show gate
+        traceM $ "backtrack on " <> show ng <> ": " <> show gate <> " " <> show (M.keys nsRenames)
         empty -- reject this branch, needs a rename
       Just here ->
-        (do traceM $ "try on " <> show ng <> ": " <> show gate <> " -> " <> here
+        (do traceM $ "try on " <> show ng <> ": " <> show gate <> " -> " <> here <> " " <> show (M.keys nsRenames)
             here <$ (#nsNames %= IM.insert ng here)
         )
           `interleave` foldr
@@ -229,10 +229,12 @@ nameGate avail ng Gate{..} = case (gX, gY) of
             [ there <$ put (NS renames (IM.insert ng there nsNames))
             -- there <$ (#nsNames %= IM.insert ng there)
             | here `M.notMember` nsRenames
+            , here `notElem` nsNames
             , M.size nsRenames < 8
             , there <- toList avail
             , here /= there
             , there `M.notMember` nsRenames
+            , there `notElem` nsNames
             , let renames = M.fromList [(here, there), (there, here)] <> nsRenames
             ]
   (Right x, Right y) -> do
@@ -241,7 +243,7 @@ nameGate avail ng Gate{..} = case (gX, gY) of
     case applySwaps nsRenames <$> M.lookup gate avail of
       Nothing -> error $ show gate
       Just here ->
-        (do traceM $ "try on " <> show ng <> ": " <> show gate <> " -> " <> here
+        (do traceM $ "try on " <> show ng <> ": " <> show gate <> " -> " <> here <> " " <> show (M.keys nsRenames)
             here <$ (#nsNames %= IM.insert ng here)
         )
         -- (here <$ (#nsNames %= IM.insert ng here))
@@ -251,10 +253,12 @@ nameGate avail ng Gate{..} = case (gX, gY) of
             [ there <$ put (NS renames (IM.insert ng there nsNames))
             -- there <$ (#nsNames %= IM.insert ng there)
             | here `M.notMember` nsRenames
+            , here `notElem` nsNames
             , M.size nsRenames < 8
             , there <- toList avail
             , here /= there
             , there `M.notMember` nsRenames
+            , there `notElem` nsNames
             , let renames = M.fromList [(here, there), (there, here)] <> nsRenames
             ]
   _ -> error "huh"
@@ -265,7 +269,12 @@ nameGate avail ng Gate{..} = case (gX, gY) of
 nameTree :: Map (Gate String) String -> IntMap (Gate (Either Int VarBit)) -> Maybe (IntMap String, Map String String)
 nameTree avail = fmap (second nsRenames) . flip runStateT s0 . observeT . IM.traverseWithKey (nameGate avail)
   where
-    s0 = NS M.empty IM.empty
+    s0 = NS
+      -- (M.fromList [("bjm","z07"),("hsw","z13"),("z07","bjm"),("z13","hsw")])
+      -- (M.fromList [("bjm","z07"),("hsw","z13"),("skf","z18"),("z07","bjm"),("z13","hsw"),("z18","skf")])
+      (M.fromList [("bjm","z07"),("hsw","z13"),("nvr","wkr"),("skf","z18"),("wkr","nvr"),("z07","bjm"),("z13","hsw"),("z18","skf")])
+      -- M.empty
+      IM.empty
 
 -- j <- case gX of
 --   Left x -> do
@@ -394,9 +403,9 @@ day24b =
   MkSol
     { sParse = fmap snd . sParse day24a
     , -- , sShow = ('\n' :)
-      sShow = show
+      sShow = intercalate ","
     , -- , sShow = show
-      sSolve = noFail \xs ->
+      sSolve = \xs ->
         let rules = M.fromList (first normalizeGate <$> xs)
             -- swaps :: [V2 String]
             -- swaps = [V2 "z07" "bjm", V2 "z13" "hsw"]
@@ -405,8 +414,13 @@ day24b =
             --     Just kx = findKeyFor x mp
             --     Just ky = findKeyFor y mp
             -- rules' = foldl' (flip applySwap) rules swaps
-            (ual, uat) = unrollAdderTree 17
-         in nameTree rules uat
+            (ual, uat) = unrollAdderTree 44
+        in M.keys . snd <$> nameTree rules uat
+         -- in unlines
+         --      [ show ual
+         --      , show $ nameTree rules uat
+         --      , show uat
+         --      ]
         -- in (ual, uat, nameTree rules uat)
 
         -- swaps :: [V2 String]
