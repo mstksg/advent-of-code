@@ -23,7 +23,6 @@ import Control.Monad.Logic (LogicT, MonadLogic (interleave), observeT)
 import Control.Monad.State (MonadState (get, put), State, StateT, execState, execStateT)
 import Data.Bifunctor (Bifunctor (second))
 import Data.Foldable (Foldable (toList))
-import Data.Functor ((<&>))
 import Data.Generics.Labels ()
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
@@ -169,10 +168,7 @@ nameGate ::
   LogicT (StateT NameState Maybe) String
 nameGate avail renameLimit ng g0 = do
   NS{..} <- get
-  let gate =
-        g0 <&> \case
-          Left i -> nsNames IM.! i
-          Right x -> showVarBit x
+  let gate = either (nsNames IM.!) showVarBit <$> g0
   Just here <- pure $ applySwaps nsRenames <$> M.lookup gate avail
   (here <$ (#nsNames %= IM.insert ng here))
     `interleave` foldr
