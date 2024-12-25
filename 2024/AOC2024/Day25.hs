@@ -11,11 +11,10 @@ module AOC2024.Day25 (
 )
 where
 
-import AOC.Common (intFreqs, lookupIntFreq)
+import AOC.Common (countTrue, intFreqs, lookupIntFreq)
 import AOC.Common.Point (Point, parseAsciiSet)
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Lens (view)
-import Control.Monad (guard)
 import Data.Foldable (Foldable (toList))
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
@@ -35,10 +34,10 @@ day25a =
     }
   where
     isLock = (== 5) . lookupIntFreq 0 . intFreqs . map (view _y) . toList
-    countCombos locks keys = length do
+    countCombos locks keys = countTrue (all (< 8)) do
       lock <- colCounts <$> locks
       key <- colCounts <$> keys
-      guard . all (< 8) $ IM.unionWith (+) lock key
+      pure $ IM.unionWith (+) lock key
 
 colCounts :: Set Point -> IntMap Int
 colCounts = intFreqs . map (view _x) . toList
