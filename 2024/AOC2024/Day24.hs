@@ -23,6 +23,7 @@ import Control.Monad.Logic (LogicT, MonadLogic (interleave), observeT)
 import Control.Monad.State (MonadState (get, put), State, StateT, execState, execStateT)
 import Data.Bifunctor (Bifunctor (second))
 import Data.Foldable (Foldable (toList))
+import Data.Functor ((<&>))
 import Data.Generics.Labels ()
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
@@ -166,46 +167,27 @@ nameGate ::
   Int ->
   Gate (Either Int VarBit) ->
   LogicT (StateT NameState Maybe) String
-nameGate avail renameLimit ng Gate{..} = case (gX, gY) of
-  (Left i, Left j) -> do
-    NS{..} <- get
-    let nX = nsNames IM.! i
-        nY = nsNames IM.! j
-        gate = Gate gOp nX nY
-    Just here <- pure $ applySwaps nsRenames <$> M.lookup gate avail
-    (here <$ (#nsNames %= IM.insert ng here))
-      `interleave` foldr
-        interleave
-        empty
-        [ there <$ put (NS renames (IM.insert ng there nsNames))
-        | here `M.notMember` nsRenames
-        , here `notElem` nsNames
-        , M.size nsRenames < renameLimit
-        , there <- toList avail
-        , here /= there
-        , there `M.notMember` nsRenames
-        , there `notElem` nsNames
-        , let renames = M.fromList [(here, there), (there, here)] <> nsRenames
-        ]
-  (Right x, Right y) -> do
-    NS{..} <- get
-    let gate = showVarBit <$> Gate gOp x y
-    Just here <- pure $ applySwaps nsRenames <$> M.lookup gate avail
-    (here <$ (#nsNames %= IM.insert ng here))
-      `interleave` foldr
-        interleave
-        empty
-        [ there <$ put (NS renames (IM.insert ng there nsNames))
-        | here `M.notMember` nsRenames
-        , here `notElem` nsNames
-        , M.size nsRenames < renameLimit
-        , there <- toList avail
-        , here /= there
-        , there `M.notMember` nsRenames
-        , there `notElem` nsNames
-        , let renames = M.fromList [(here, there), (there, here)] <> nsRenames
-        ]
-  _ -> empty
+nameGate avail renameLimit ng g0 = do
+  NS{..} <- get
+  let gate =
+        g0 <&> \case
+          Left i -> nsNames IM.! i
+          Right x -> showVarBit x
+  Just here <- pure $ applySwaps nsRenames <$> M.lookup gate avail
+  (here <$ (#nsNames %= IM.insert ng here))
+    `interleave` foldr
+      interleave
+      empty
+      [ there <$ put (NS renames (IM.insert ng there nsNames))
+      | here `M.notMember` nsRenames
+      , here `notElem` nsNames
+      , M.size nsRenames < renameLimit
+      , there <- toList avail
+      , here /= there
+      , there `M.notMember` nsRenames
+      , there `notElem` nsNames
+      , let renames = M.fromList [(here, there), (there, here)] <> nsRenames
+      ]
   where
     applySwaps :: Map String String -> String -> String
     applySwaps mp x = M.findWithDefault x x mp
