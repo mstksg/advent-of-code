@@ -20,6 +20,7 @@ import Data.Sequence (Seq (..))
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as S
+import Data.List (foldl')
 
 data AStarState n p = AS
   { _asClosed :: !(Map n (Maybe n))
@@ -127,7 +128,7 @@ bfsActions ::
   forall a n.
   Ord n =>
   -- | neighborhood
-  (n -> Map a n) ->
+  (n -> [(a, n)]) ->
   -- | start
   n ->
   -- | target
@@ -147,15 +148,15 @@ bfsActions ex x0 dest = reconstruct <$> go (addBack x0 Nothing (BAS M.empty Seq.
       Empty -> Nothing
       n :<| ns
         | dest n -> Just (n, _basClosed)
-        | otherwise -> go . M.foldlWithKey' (processNeighbor n) (BAS _basClosed ns) $ ex n
+        | otherwise -> go . foldl' (processNeighbor n) (BAS _basClosed ns) $ ex n
     addBack :: n -> Maybe (a, n) -> BFSActionState a n -> BFSActionState a n
     addBack x up BAS{..} =
       BAS
         { _basClosed = M.insert x up _basClosed
         , _basOpen = _basOpen :|> x
         }
-    processNeighbor :: n -> BFSActionState a n -> a -> n -> BFSActionState a n
-    processNeighbor curr bs0@BAS{..} act neighb
+    processNeighbor :: n -> BFSActionState a n -> (a, n) -> BFSActionState a n
+    processNeighbor curr bs0@BAS{..} (act,neighb)
       | neighb `M.member` _basClosed = bs0
       | otherwise = addBack neighb (Just (act, curr)) bs0
 
