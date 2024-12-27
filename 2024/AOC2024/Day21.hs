@@ -75,14 +75,14 @@ applyPush = \case
         ]
 
 instance Pushable Dir where
-  allPushable = [East, South, North, West]
+  allPushable = [North ..]
   pushLayout = dirPad
 
 instance Pushable (Finite 10) where
   allPushable = finites
   pushLayout = numPad
 
--- | Best way to get from button to button. penalize motion
+-- | Best way to get from button to button. penalize motion two bots down
 dirPath :: forall a. Pushable a => Map (Maybe a) (Map (Maybe a) [DirPad])
 dirPath = M.fromSet ((`M.fromSet` S.fromList allPushable') . go) (S.fromList allPushable')
   where
