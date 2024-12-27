@@ -16,17 +16,13 @@ import AOC.Common (digitToIntSafe)
 import AOC.Common.Point (Dir (..), Point, V2 (V2), dirPoint)
 import AOC.Common.Search (bfsActions)
 import AOC.Solver (noFail, type (:~>) (..))
-import Control.Applicative (Alternative (empty))
-import Control.Monad (guard, mfilter, zipWithM, (<=<))
+import Control.Monad (mfilter, (<=<))
 import Data.Char (intToDigit, isDigit)
 import Data.Finite (Finite, finites)
-import Data.Foldable (Foldable (toList))
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe (fromJust, fromMaybe, mapMaybe, maybeToList)
-import Data.Set (Set)
+import Data.Maybe (fromJust, mapMaybe, maybeToList)
 import qualified Data.Set as S
-import Safe.Foldable (minimumMay)
 
 type NumPad = Maybe (Finite 10)
 type DirPad = Maybe Dir
@@ -91,17 +87,22 @@ dirPath :: forall a. Pushable a => Map (Maybe a) (Map (Maybe a) [DirPad])
 dirPath = M.fromSet ((`M.fromSet` S.fromList allPushable') . go) (S.fromList allPushable')
   where
     go :: Maybe a -> Maybe a -> [DirPad]
-    go x y = runPath Nothing . fromJust $ bfsActions step (Left (x, Nothing)) (== Right y)
+    go x y =
+      runPath Nothing . runPath Nothing . fromJust $
+        bfsActions step (Left (x, Nothing, Nothing)) (== Right y)
       where
-        step (Left (b, d)) =
+        step (Left (b, d, e)) =
           reverse
             [ ( push
               , case bout of
-                  Nothing -> Left (b', d')
+                  Nothing -> Left (b', d', e')
                   Just o -> Right o
               )
             | push <- allPushable'
-            , (d', dout) <- maybeToList $ applyPush push d
+            , (e', eout) <- maybeToList $ applyPush push e
+            , (d', dout) <- case eout of
+                Nothing -> pure (d, Nothing)
+                Just push' -> maybeToList $ applyPush push' d
             , (b', bout) <- case dout of
                 Nothing -> pure (b, Nothing)
                 Just push' -> maybeToList $ applyPush push' b
@@ -132,40 +133,12 @@ runPath x = \case
     Nothing -> error $ "hm..." ++ show d
     Just (y, out) -> maybe id (:) out $ runPath y ds
 
--- | this seems to work for the answers but not for the sample data
-_solveCodeNoSearch :: Int -> [NumPad] -> Int
-_solveCodeNoSearch n = spellDirPathLengths mp . (Nothing :)
+solveCodeNoSearch :: Int -> [NumPad] -> Int
+solveCodeNoSearch n = spellDirPathLengths mp . (Nothing :)
   where
     mpChain :: [Map DirPad (Map DirPad Int)]
     mpChain = iterate (`composeDirPathLengths` dirPath @Dir) (dirPathCosts @Dir)
     mp = (mpChain !! (n - 1)) `composeDirPathLengths` dirPath @(Finite 10)
-
-solveCodeWithSearch :: Int -> [NumPad] -> Int
-solveCodeWithSearch n ps = minimum do
-  npp <- toList $ fullPadPaths (Nothing : ps)
-  pure $ spellDirPathLengths mp (Nothing : npp)
-  where
-    mpChain :: [Map DirPad (Map DirPad Int)]
-    mpChain = iterate (`composeDirPathLengths` dirPath @Dir) (dirPathCosts @Dir)
-    mp = mpChain !! (n - 1)
-
--- | a lot of these can be pruned waay by getting rid of NEN/ENE etc.
-padPaths :: Pushable a => Maybe a -> Maybe a -> Set [DirPad]
-padPaths start goal = fromMaybe S.empty do
-  minLen <- minimumMay $ length <$> options
-  pure $ S.fromList $ filter ((== minLen) . length) options
-  where
-    options = go S.empty start
-    go seen p = do
-      guard $ p `S.notMember` seen
-      d <- allPushable'
-      (p', o) <- maybeToList $ applyPush d p
-      (d :) <$> case o of
-        Nothing -> go (S.insert p seen) p'
-        Just o' -> if o' == goal then pure [] else empty
-
-fullPadPaths :: Pushable a => [Maybe a] -> Set [DirPad]
-fullPadPaths xs = S.fromList $ concat <$> zipWithM (\a b -> toList $ padPaths a b) xs (drop 1 xs)
 
 pc :: Char -> Maybe (Finite 10)
 pc = fmap fromIntegral . digitToIntSafe <=< mfilter isDigit . Just
@@ -180,7 +153,7 @@ day21 n =
           sum . map solve
     }
   where
-    solve p = num * solveCodeWithSearch n p
+    solve p = num * solveCodeNoSearch n p
       where
         num = read (map intToDigit (mapMaybe (fmap fromIntegral) p :: [Int]))
 
