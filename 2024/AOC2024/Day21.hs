@@ -291,7 +291,7 @@ pushDir1 bot = do
       pure bot'
 
 allDirPad :: [DirPad]
-allDirPad = [Nothing, Just East, Just North, Just South, Just West] 
+allDirPad = [Nothing, Just East, Just North, Just South, Just West]
 
 class Ord a => Pushable a where
   allPushable :: [a]
@@ -315,7 +315,7 @@ dirPath = M.fromSet ((`M.fromSet` S.fromList allPushable') . go) (S.fromList all
     -- go :: Maybe a -> Maybe a -> [DirPad]
     -- go x y = (++ [Nothing]) . fromJust $ bfsActions step x (== y)
     --   where
-    --     step p = 
+    --     step p =
     --       [ (d, p')
     --       | d <- [Just West, Just North, Just South, Just East]
     --       , (p', Nothing) <- maybeToList $ applyPush d p
@@ -323,7 +323,8 @@ dirPath = M.fromSet ((`M.fromSet` S.fromList allPushable') . go) (S.fromList all
     go :: Maybe a -> Maybe a -> [DirPad]
     go x y = runPath Nothing . fromJust $ bfsActions step (Left (x, Nothing)) (== Right y)
       where
-        step (Left (b, d)) = reverse
+        step (Left (b, d)) =
+          reverse
             [ ( push
               , case bout of
                   Nothing -> Left (b', d')
@@ -443,13 +444,13 @@ altP1 n = spellDirPathLengths mp . (Nothing :)
 altP1' :: Int -> [NumPad] -> Int
 altP1' n ps = minimum do
   npp <- toList $ fullPadPaths (Nothing : ps)
-  dpp <- toList $ fullPadPaths (Nothing : npp)
+  -- dpp <- toList $ fullPadPaths (Nothing : npp)
   -- dpp' <- toList $ fullPadPaths (Nothing : dpp)
-  pure $ spellDirPathLengths mp (Nothing : dpp)
+  pure $ spellDirPathLengths mp (Nothing : npp)
   where
     mpChain :: [Map DirPad (Map DirPad Int)]
     mpChain = iterate (`composeDirPathLengths` dirPath @Dir) (dirPathCosts @Dir)
-    mp = mpChain !! (n - 2)
+    mp = mpChain !! (n - 1)
 
 altP1'' :: Int -> [NumPad] -> Int
 altP1'' n ps = minimum do
@@ -471,16 +472,16 @@ findFixed a b = fst $ minimumBy (comparing length) do
   dpp'' <- toList $ fullPadPaths (Nothing : dpp')
   -- dpp''' <- toList $ fullPadPaths (Nothing : dpp'')
   pure (npp, length dpp'')
-  -- npp <- traceLength . toList $ fullPadPaths (Nothing : ps)
-  -- traceM $ "npp " <> show npp
-  -- dpp <- traceLength . toList $ fullPadPaths (Nothing : npp)
-  -- traceM $ "dpp " <> show dpp
-  -- dpp' <- traceLength . toList $ fullPadPaths (Nothing : dpp)
-  -- traceM $ "dpp' " <> show dpp'
-  -- pure $ length dpp'
   where
-    traceLength xs = traceShow (length xs) xs
+    -- npp <- traceLength . toList $ fullPadPaths (Nothing : ps)
+    -- traceM $ "npp " <> show npp
+    -- dpp <- traceLength . toList $ fullPadPaths (Nothing : npp)
+    -- traceM $ "dpp " <> show dpp
+    -- dpp' <- traceLength . toList $ fullPadPaths (Nothing : dpp)
+    -- traceM $ "dpp' " <> show dpp'
+    -- pure $ length dpp'
 
+    traceLength xs = traceShow (length xs) xs
 
 -- pure $ spellDirPathLengths mp (Nothing:npp)
 -- where
@@ -540,7 +541,7 @@ day21b =
               ( \p ->
                   let num :: Int
                       num = read (map intToDigit (mapMaybe (fmap fromIntegral) p :: [Int]))
-                   in num * altP1' 25 p
+                   in num * altP1 25 p
               )
     }
 
@@ -553,7 +554,7 @@ numPadPaths start goal = fromMaybe S.empty do
     go seen p = do
       guard $ p `S.notMember` seen
       d <- allDirPad
-        -- Nothing : (Just <$> [North ..])
+      -- Nothing : (Just <$> [North ..])
       (p', o) <- maybeToList $ applyPushNum d p
       (d :) <$> case o of
         Nothing -> go (S.insert p seen) p'
@@ -572,7 +573,7 @@ padPaths start goal = fromMaybe S.empty do
     go seen p = do
       guard $ p `S.notMember` seen
       d <- allDirPad
-      -- Nothing : 
+      -- Nothing :
       -- (Just <$> [North ..])
       (p', o) <- maybeToList $ applyPush d p
       (d :) <$> case o of
@@ -588,7 +589,6 @@ fullPadPaths xs = S.fromList $ concat <$> zipWithM (\a b -> toList $ padPaths a 
 -- propagate
 --
 -- We probably have to generate this as we go
---
 dirPathTriples :: forall a. Pushable a => Map (Maybe a) (Map (Maybe a) (Map (Maybe a) [DirPad]))
 dirPathTriples = fmap (\xs -> M.fromSet (const xs) $ S.fromList allPushable') <$> dirPath @a
 
