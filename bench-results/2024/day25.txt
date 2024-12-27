@@ -1,0 +1,10 @@
+>> Day 25a
+benchmarking...
+time                 6.789 ms   (6.668 ms .. 6.890 ms)
+                     0.990 R²   (0.973 R² .. 1.000 R²)
+mean                 6.953 ms   (6.849 ms .. 7.262 ms)
+std dev              552.1 μs   (61.43 μs .. 1.049 ms)
+variance introduced by outliers: 46% (moderately inflated)
+
+* parsing and formatting times excluded
+

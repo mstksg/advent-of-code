@@ -25,6 +25,9 @@ let
                     ${lib.removeSuffix "\n\n" (builtins.readFile daymap.benchmark)}
                     ```
                   '';
+                standaloneLink = lib.optionalString
+                  (builtins.hasAttr "reflection" daymap)
+                  " / *[Standalone][d${daylong}s]*";
                 body =
                   ''
                     Day ${dayshort}
@@ -35,7 +38,7 @@ let
                     `./reflections/${year}/day${daylong}.md`.  If you want to edit this, edit that file instead!
                     -->
 
-                    *[Top](#)* / *[Prompt][d${daylong}p]* / *[Code][d${daylong}g]* / *[Standalone][d${daylong}s]*
+                    *[Top](#)* / *[Prompt][d${daylong}p]* / *[Code][d${daylong}g]*${standaloneLink}
 
                     [d${daylong}p]: https://adventofcode.com/${year}/day/${dayshort}
                     [d${daylong}g]: https://github.com/${github}/advent-of-code/blob/master/${year}/AOC${year}/Day${daylong}.hs
@@ -58,10 +61,12 @@ let
             let y2 = lib.removePrefix "aoc" n2;
             in "[${y2}](https://github.com/${github}/advent-of-code/wiki/Reflections-${y2})";
             tocLink = d: dm:
-              let dshort = lib.removePrefix "0" (lib.removePrefix "day" d);
-                  caveat = if builtins.hasAttr "reflection" dm
-                    then ""
-                    else " (benchmark only)";
+              let
+                dshort = lib.removePrefix "0" (lib.removePrefix "day" d);
+                caveat =
+                  if builtins.hasAttr "reflection" dm
+                  then ""
+                  else " (benchmark only)";
               in
               ''
                 * [Day ${dshort}](https://github.com/${github}/advent-of-code/wiki/Reflections-${year}#day-${dshort})${caveat}
@@ -97,7 +102,7 @@ let
     writeTextDir "Home.md"
       ''
         Check out the reflections page for each year!
-      
+
         ${lib.concatStrings (lib.mapAttrsToList mkLink renderedMap)}
       ''
 
