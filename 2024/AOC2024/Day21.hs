@@ -12,9 +12,21 @@ module AOC2024.Day21 (
 )
 where
 
-import AOC.Prelude
+import AOC.Common (digitToIntSafe)
+import AOC.Common.Point (Dir (..), Point, V2 (V2), dirPoint)
+import AOC.Common.Search (bfsActions)
+import AOC.Solver (noFail, type (:~>) (..))
+import Control.Applicative (Alternative (empty))
+import Control.Monad (guard, mfilter, zipWithM, (<=<))
+import Data.Char (intToDigit, isDigit)
+import Data.Finite (Finite, finites)
+import Data.Foldable (Foldable (toList))
+import Data.Map (Map)
 import qualified Data.Map as M
+import Data.Maybe (fromJust, fromMaybe, mapMaybe, maybeToList)
+import Data.Set (Set)
 import qualified Data.Set as S
+import Safe.Foldable (minimumMay)
 
 type NumPad = Maybe (Finite 10)
 type DirPad = Maybe Dir
@@ -120,15 +132,16 @@ runPath x = \case
     Nothing -> error $ "hm..." ++ show d
     Just (y, out) -> maybe id (:) out $ runPath y ds
 
-altP1 :: Int -> [NumPad] -> Int
-altP1 n = spellDirPathLengths mp . (Nothing :)
+-- | this seems to work for the answers but not for the sample data
+_solveCodeNoSearch :: Int -> [NumPad] -> Int
+_solveCodeNoSearch n = spellDirPathLengths mp . (Nothing :)
   where
     mpChain :: [Map DirPad (Map DirPad Int)]
     mpChain = iterate (`composeDirPathLengths` dirPath @Dir) (dirPathCosts @Dir)
     mp = (mpChain !! (n - 1)) `composeDirPathLengths` dirPath @(Finite 10)
 
-altP1' :: Int -> [NumPad] -> Int
-altP1' n ps = minimum do
+solveCodeWithSearch :: Int -> [NumPad] -> Int
+solveCodeWithSearch n ps = minimum do
   npp <- toList $ fullPadPaths (Nothing : ps)
   pure $ spellDirPathLengths mp (Nothing : npp)
   where
@@ -167,7 +180,7 @@ day21 n =
           sum . map solve
     }
   where
-    solve p = num * altP1' n p
+    solve p = num * solveCodeWithSearch n p
       where
         num = read (map intToDigit (mapMaybe (fmap fromIntegral) p :: [Int]))
 
