@@ -12,7 +12,7 @@ module AOC2024.Day21 (
 )
 where
 
-import AOC.Common (digitToIntSafe)
+import AOC.Common (digitToIntSafe, (!!!))
 import AOC.Common.Point (Dir (..), Point, V2 (V2), dirPoint)
 import AOC.Common.Search (bfsActions)
 import AOC.Solver (noFail, type (:~>) (..))
@@ -133,12 +133,13 @@ runPath x = \case
     Nothing -> error $ "hm..." ++ show d
     Just (y, out) -> maybe id (:) out $ runPath y ds
 
+dirPathChain :: Int -> Map DirPad (Map DirPad Int)
+dirPathChain n = iterate (`composeDirPathLengths` dirPath @Dir) (dirPathCosts @Dir) !!! n
+
 solveCodeNoSearch :: Int -> [NumPad] -> Int
 solveCodeNoSearch n = spellDirPathLengths mp . (Nothing :)
   where
-    mpChain :: [Map DirPad (Map DirPad Int)]
-    mpChain = iterate (`composeDirPathLengths` dirPath @Dir) (dirPathCosts @Dir)
-    mp = (mpChain !! (n - 1)) `composeDirPathLengths` dirPath @(Finite 10)
+    mp = dirPathChain (n - 1) `composeDirPathLengths` dirPath @(Finite 10)
 
 pc :: Char -> Maybe (Finite 10)
 pc = fmap fromIntegral . digitToIntSafe <=< mfilter isDigit . Just
