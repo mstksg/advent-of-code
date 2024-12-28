@@ -5,10 +5,10 @@ can marginalize to get the x-wise histograms and y-wise histograms:
 
 ```haskell
 marginX :: Set (Int, Int) -> Map Int Int
-marginX = M.fromListWith (+) . toList
+marginX = M.fromListWith (+) . map (\(x, y) -> (x, 1)) . toList
 
 marginY :: Set (Int, Int) -> Map Int Int
-marginY = M.fromListWith (+) . map swap . toList
+marginY = M.fromListWith (+) . map (\(x, y) -> (y, 1)) . toList
 ```
 
 We can distinguish keys from locks by checking if y=0 has all 5 points filled:
