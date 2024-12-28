@@ -18,7 +18,7 @@ crate, try to move the crate in the same direction, `Point -> Map Point a -> a
 -> Maybe (Map Point a)`. This will then recursively try to move any crates
 along the way and any crates glued to it. The whole thing is wrapped up in a
 big `Maybe` monad, sequenced together with `foldlM`, so if anything fails, the
-whole thing fails.
+whole thing fails. This is essentially a recursion-based DFS.
 
 ```haskell
 type Point = V2 Int

@@ -122,7 +122,6 @@ data BFSActionState a n = BAS
   -- ^ queue
   }
 
-
 -- | Breadth-first search, with loop detection, that outputs actions
 bfsActions ::
   forall a n.
