@@ -75,8 +75,8 @@ day15b =
           . M.keys
           . M.filter not
           . snd
-          . foldl' (stepper glue walls') (person', crates') $
-          path
+          . foldl' (stepper glue walls') (person', crates')
+          $ path
     }
   where
     doublePoint (V2 x y) = ($ y) <$> [V2 (2 * x), V2 (2 * x + 1)]
@@ -86,11 +86,12 @@ day15b =
       True -> subtract (V2 1 0)
 
 stepper ::
+  forall a.
   (Point -> Dir -> a -> [(Point, a)]) ->
   Set Point ->
-  (V2 Int, Map (V2 Int) a) ->
+  (Point, Map Point a) ->
   Dir ->
-  (V2 Int, Map (V2 Int) a)
+  (Point, Map Point a)
 stepper glue walls (person, crates) d
   | person' `S.member` walls = (person, crates)
   | otherwise = case M.lookup person' crates of
@@ -98,8 +99,10 @@ stepper glue walls (person, crates) d
       Nothing -> (person', crates)
   where
     person' = person + dirPoint d
+    tryMove :: Point -> Map Point a -> a -> Maybe (Map Point a)
     tryMove p crates' moved = do
       foldlM (\cs (p', moved') -> tryMoveSingle p' cs moved') crates' ((p, moved) : glue p d moved)
+    tryMoveSingle :: Point -> Map Point a -> a -> Maybe (Map Point a)
     tryMoveSingle p crates' moved =
       commit
         <$> if p' `S.member` walls
