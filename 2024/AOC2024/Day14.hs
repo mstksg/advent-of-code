@@ -17,7 +17,7 @@ import AOC.Common.Parser (pDecimal, parseMaybe', sepByLines, sequenceSepBy)
 import AOC.Common.Point (Point)
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Lens (view)
-import Control.Monad (join)
+import Control.Monad (join, mfilter)
 import Data.Bifunctor (Bifunctor (second))
 import Data.Foldable1 (foldMap1)
 import qualified Data.List.NonEmpty as NE
@@ -45,14 +45,7 @@ day14a =
   where
     score = product . freqs . mapMaybe quadrant . VS.toList
       where
-        quadrant (V2 x y) = do
-          qx <- classify $ compare x 50
-          qy <- classify $ compare y 51
-          pure (qx, qy)
-        classify = \case
-          LT -> Just False
-          EQ -> Nothing
-          GT -> Just True
+        quadrant p = mfilter (notElem EQ) $ Just (compare <$> p <*> V2 50 51)
 
 day14b :: [V2 Point] :~> Int
 day14b =
