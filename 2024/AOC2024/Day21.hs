@@ -53,12 +53,19 @@ dirPad =
     , (V2 2 1, Nothing)
     ]
 
-class Ord a => Pushable a where
+class (Ord a, Show a) => Pushable a where
   allPushable :: [a]
-  pushLayout :: Map Point (Maybe a)
+  pushMap :: Map (Maybe a) (Map Dir (Maybe a))
 
 allPushable' :: Pushable a => [Maybe a]
 allPushable' = Nothing : fmap Just allPushable
+
+pushMapFromLayout :: Pushable a => Map Point (Maybe a) -> Map (Maybe a) (Map Dir (Maybe a))
+pushMapFromLayout pushLayout =
+  M.fromList
+    [ (x, M.fromList [(d, y) | d <- [North ..], y <- maybeToList $ M.lookup (p + dirPoint d) pushLayout])
+    | (p, x) <- M.toList pushLayout
+    ]
 
 applyPush :: forall a. Pushable a => Maybe Dir -> Maybe a -> Maybe (Maybe a, Maybe (Maybe a))
 applyPush = \case
@@ -66,21 +73,14 @@ applyPush = \case
   Just d -> \x -> do
     y <- M.lookup d =<< M.lookup x pushMap
     pure (y, Nothing)
-  where
-    pushMap :: Map (Maybe a) (Map Dir (Maybe a))
-    pushMap =
-      M.fromList
-        [ (x, M.fromList [(d, y) | d <- [North ..], y <- maybeToList $ M.lookup (p + dirPoint d) pushLayout])
-        | (p, x) <- M.toList pushLayout
-        ]
 
 instance Pushable Dir where
   allPushable = [North ..]
-  pushLayout = dirPad
+  pushMap = pushMapFromLayout dirPad
 
 instance Pushable (Finite 10) where
   allPushable = finites
-  pushLayout = numPad
+  pushMap = pushMapFromLayout numPad
 
 -- | Best way to get from button to button. penalize motion two bots down
 dirPath :: forall a. Pushable a => Map (Maybe a) (Map (Maybe a) [DirPad])
