@@ -41,7 +41,7 @@ import GHC.TypeNats (KnownNat)
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 
-data NTrie n a = CT {ctHere :: Maybe a, ctThere :: SV.Vector n (Maybe (NTrie n a))}
+data NTrie n a = CT {ctHere :: Maybe a, ctThere :: SV.Vector n (NTrie n a)}
   deriving stock (Show, Functor, Traversable, Foldable, Generic)
 
 deriving anyclass instance NFData a => NFData (NTrie n a)
@@ -52,7 +52,7 @@ instance Semigroup a => Semigroup (NTrie n a) where
   CT h1 t1 <> CT h2 t2 = CT (h1 <> h2) (SV.zipWith (<>) t1 t2)
 
 instance (KnownNat n, Semigroup a) => Monoid (NTrie n a) where
-  mempty = CT Nothing (SV.replicate Nothing)
+  mempty = CT Nothing (SV.replicate mempty)
 
 bindTrie :: Semigroup b => NTrie n a -> (a -> NTrie n b) -> NTrie n b
 bindTrie t f = flip cata t \case
@@ -61,58 +61,55 @@ bindTrie t f = flip cata t \case
     Just x -> case f x of
       CT here' there' -> CT here' (SV.zipWith (<>) ctThereF there')
 
-fromMap :: KnownNat n => Map [Finite n] a -> NTrie n a
-fromMap = ana \mp ->
-  let (here, there) = flip M.foldMapWithKey mp \case
-        [] -> \x -> (Just (First x), mempty)
-        k : ks -> \x -> (mempty, SV.generate \i -> [(ks, x)] <$ guard (i == k))
-   in CTF (getFirst <$> here) (fmap M.fromList <$> there)
+-- fromMap :: KnownNat n => Map [Finite n] a -> NTrie n a
+-- fromMap = ana \mp ->
+--   let (here, there) = flip M.foldMapWithKey mp \case
+--         [] -> \x -> (Just (First x), mempty)
+--         k : ks -> \x -> (mempty, SV.generate \i -> [(ks, x)] <$ guard (i == k))
+--    in CTF (getFirst <$> here) (fmap M.fromList <$> there)
 
 fromMapForever ::
-  forall n a. (KnownNat n, Semigroup a) => NEMap (NonEmpty (Finite n)) a -> NTrie n a
-fromMapForever mp0 = ana (fromMapCoalg mp0) (That mp0)
+  forall n a. (KnownNat n, Semigroup a) => Map (NonEmpty (Finite n)) a -> NTrie n a
+fromMapForever mp0 = ana (fromMapCoalg mp0) (Nothing, mp0)
 
 fromMapCoalg ::
   forall n a.
   (KnownNat n, Semigroup a) =>
-  NEMap (NonEmpty (Finite n)) a ->
-  These a (NEMap (NonEmpty (Finite n)) a) ->
-  NTrieF n a (These a (NEMap (NonEmpty (Finite n)) a))
-fromMapCoalg mp0 = \case
-  This x -> CTF (Just x) $ fmap separateMap <$> initialSplit x
-  That ks -> CTF Nothing $ fmap separateMap <$> splitTrie ks
-  These x ks ->
-    CTF (Just x) $
-      fmap separateMap <$> SV.zipWith combineMaybe (initialSplit x) (splitTrie ks)
+  Map (NonEmpty (Finite n)) a ->
+  (Maybe a, Map (NonEmpty (Finite n)) a) ->
+  NTrieF n a (Maybe a, Map (NonEmpty (Finite n)) a)
+fromMapCoalg mp0 = \(x, ks) ->
+  -- This x -> CTF (Just x) $ separateMap <$> initialSplit x
+  -- That ks -> CTF Nothing $ separateMap <$> splitTrie ks
+  -- These x ks ->
+  CTF x $
+    separateMap <$> case x of
+      Just y -> SV.zipWith (M.unionWith (<>)) (initialSplit y) (splitTrie ks)
+      Nothing -> splitTrie ks
   where
-    initialSplit :: a -> SV.Vector n (Maybe (NEMap [Finite n] a))
-    initialSplit x = fmap (x <$) <$> splitTrie mp0
-    splitTrie :: NEMap (NonEmpty (Finite n)) a -> SV.Vector n (Maybe (NEMap [Finite n] a))
+    initialSplit :: a -> SV.Vector n (Map [Finite n] a)
+    initialSplit x = (x <$) <$> splitTrie mp0
+    splitTrie :: Map (NonEmpty (Finite n)) a -> SV.Vector n (Map [Finite n] a)
     splitTrie mp = SV.generate \i ->
-      NEM.nonEmptyMap $
-        M.fromListWith
-          (<>)
-          [ (ks, x)
-          | (k :| ks, x) <- toList $ NEM.toList mp
-          , k == i
-          ]
-    combineMaybe Nothing Nothing = Nothing
-    combineMaybe (Just x) Nothing = Just x
-    combineMaybe Nothing (Just y) = Just y
-    combineMaybe (Just x) (Just y) = Just $ NEM.unionWith (<>) x y
+      M.fromListWith
+        (<>)
+        [ (ks, x)
+        | (k :| ks, x) <- toList $ M.toList mp
+        , k == i
+        ]
 
-separateMap :: NEMap [Finite n] a -> These a (NEMap (NonEmpty (Finite n)) a)
-separateMap = first getFirst . NEM.foldMapWithKey go
+separateMap :: Map [Finite n] a -> (Maybe a, Map (NonEmpty (Finite n)) a)
+separateMap = first (fmap getFirst) . M.foldMapWithKey go
   where
     go = \case
-      [] -> This . First
-      k : ks -> That . NEM.singleton (k :| ks)
+      [] -> \x -> (Just (First x), mempty)
+      k : ks -> \x -> (mempty, M.singleton (k :| ks) x)
 
 trieFromList :: KnownNat n => [([Finite n], a)] -> NTrie n a
 trieFromList = ana \mp ->
   let (here, there) = flip foldMap mp \case
         ([], x) -> (Just (First x), mempty)
-        (k : ks, x) -> (mempty, SV.generate \i -> [(ks, x)] <$ guard (i == k))
+        (k : ks, x) -> (mempty, SV.generate \i -> [(ks, x) | i == k])
    in CTF (getFirst <$> here) there
 
 -- trieFromListForever :: KnownNat n => [([Finite n], a)] -> NTrie n a
@@ -122,10 +119,11 @@ trieFromList = ana \mp ->
 --         (k : ks, x) -> (mempty, SV.generate \i -> [(ks, x)] <$ guard (i == k))
 --    in CTF (getFirst <$> here) there
 
-singletonTrie :: KnownNat n => [Finite n] -> a -> NTrie n a
-singletonTrie str x = flip ana str \case
-  [] -> CTF (Just x) (SV.replicate Nothing)
-  c : cs -> CTF Nothing (SV.generate \i -> cs <$ guard (i == c))
+-- singletonTrie :: KnownNat n => [Finite n] -> a -> NTrie n a
+-- singletonTrie str x = flip ana str \case
+--   [] -> CTF (Just x) (SV.replicate undefined)
+--   c : cs -> CTF Nothing (SV.generate \i -> _)
+--   -- c : cs -> CTF Nothing (SV.generate \i -> [ cs | i == c])
 
 lookupTrie :: [Finite n] -> NTrie n a -> Maybe a
 lookupTrie str t = cata lookupAlg t str
@@ -133,19 +131,19 @@ lookupTrie str t = cata lookupAlg t str
 lookupAlg :: NTrieF n a ([Finite n] -> Maybe a) -> [Finite n] -> Maybe a
 lookupAlg CTF{..} = \case
   [] -> ctHereF
-  c : cs -> ($ cs) =<< ctThereF `SV.index` c
+  c : cs -> (ctThereF `SV.index` c) cs
 
-foreverTrie' :: (KnownNat n, Semigroup w) => NonEmpty (NonEmpty (Finite n)) -> w -> NTrie n w
-foreverTrie' strs x = fromMapForever $ NEM.fromList ((,x) <$> strs)
+foreverTrie' :: (KnownNat n, Semigroup w) => [NonEmpty (Finite n)] -> w -> NTrie n w
+foreverTrie' strs x = fromMapForever $ M.fromList ((,x) <$> strs)
 
-foreverTrie :: (KnownNat n, Semigroup w) => [[Finite n]] -> w -> NTrie n w
-foreverTrie strs x = infiniTrie
-  where
-    tr = trieFromList $ (,x) <$> strs
-    infiniTrie = singletonTrie [] x <> (tr `bindTrie` const infiniTrie)
+-- foreverTrie :: (KnownNat n, Semigroup w) => [[Finite n]] -> w -> NTrie n w
+-- foreverTrie strs x = infiniTrie
+--   where
+--     tr = trieFromList $ (,x) <$> strs
+--     infiniTrie = singletonTrie [] x <> (tr `bindTrie` const infiniTrie)
 
-buildable :: (KnownNat n, Semigroup a) => NEMap (NonEmpty (Finite n)) a -> [Finite n] -> Maybe a
-buildable mp0 = hylo lookupAlg (fromMapCoalg mp0) (That mp0)
+buildable :: (KnownNat n, Semigroup a) => Map (NonEmpty (Finite n)) a -> [Finite n] -> Maybe a
+buildable mp0 = hylo lookupAlg (fromMapCoalg mp0) (Nothing, mp0)
 
 day19 :: Semigroup w => w -> ([w] -> Int) -> ([String], [String]) :~> Int
 day19 x agg =
@@ -159,7 +157,7 @@ day19 x agg =
           pure (ws, ls)
     , sShow = show
     , sSolve = \(ws, ls) -> do
-        ws' <- NE.nonEmpty =<< traverse (NE.nonEmpty <=< toFinites) ws
+        ws' <- traverse (NE.nonEmpty <=< toFinites) ws
         ls' <- traverse toFinites ls
         pure $ agg $ mapMaybe (`lookupTrie` (foreverTrie' @5) ws' x) ls'
     }
