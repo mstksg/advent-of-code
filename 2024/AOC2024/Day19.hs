@@ -31,6 +31,8 @@ import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Map.NonEmpty (NEMap)
+import qualified Data.Set as S
+import Data.Set (Set)
 import qualified Data.Map.NonEmpty as NEM
 import Data.Maybe (mapMaybe)
 import Data.Semigroup
@@ -69,13 +71,13 @@ bindTrie t f = flip cata t \case
 --    in CTF (getFirst <$> here) (fmap M.fromList <$> there)
 
 fromMapForever ::
-  forall n a. (KnownNat n, Semigroup a) => Map (NonEmpty (Finite n)) a -> NTrie n a
-fromMapForever mp0 = ana (fromMapCoalg mp0) (Nothing, mp0)
+  forall n a. (KnownNat n, Semigroup a) => a -> Set (NonEmpty (Finite n)) -> NTrie n a
+fromMapForever x0 mp0 = ana (fromMapCoalg mp0) (Nothing, M.fromSet (const x0) mp0)
 
 fromMapCoalg ::
   forall n a.
   (KnownNat n, Semigroup a) =>
-  Map (NonEmpty (Finite n)) a ->
+  Set (NonEmpty (Finite n)) ->
   (Maybe a, Map (NonEmpty (Finite n)) a) ->
   NTrieF n a (Maybe a, Map (NonEmpty (Finite n)) a)
 fromMapCoalg mp0 = \(x, ks) ->
@@ -84,26 +86,30 @@ fromMapCoalg mp0 = \(x, ks) ->
   -- These x ks ->
   CTF x $
     separateMap <$> case x of
-      Just y -> SV.zipWith (M.unionWith (<>)) (initialSplit y) (splitTrie ks)
+      Just y -> SV.zipWith (M.unionWith (<>)) (M.fromSet (const y) <$> initialSplit) (splitTrie ks)
       Nothing -> splitTrie ks
   where
-    initialSplit :: a -> SV.Vector n (Map [Finite n] a)
-    initialSplit x = (x <$) <$> splitTrie mp0
+    initialSplit :: SV.Vector n (Set [Finite n])
+    initialSplit = SV.generate \i ->
+      S.fromDistinctAscList
+        [ ks
+        | k :| ks <- toList mp0
+        , k == i
+        ]
     splitTrie :: Map (NonEmpty (Finite n)) a -> SV.Vector n (Map [Finite n] a)
     splitTrie mp = SV.generate \i ->
-      M.fromListWith
-        (<>)
+      M.fromDistinctAscList
         [ (ks, x)
-        | (k :| ks, x) <- toList $ M.toList mp
+        | (k :| ks, x) <- M.toList mp
         , k == i
         ]
 
 separateMap :: Map [Finite n] a -> (Maybe a, Map (NonEmpty (Finite n)) a)
-separateMap = first (fmap getFirst) . M.foldMapWithKey go
+separateMap = bimap (fmap getFirst) (M.fromDistinctAscList . ($ [])) . M.foldMapWithKey go
   where
     go = \case
       [] -> \x -> (Just (First x), mempty)
-      k : ks -> \x -> (mempty, M.singleton (k :| ks) x)
+      k : ks -> \x -> (mempty, ((k :| ks, x):))
 
 trieFromList :: KnownNat n => [([Finite n], a)] -> NTrie n a
 trieFromList = ana \mp ->
@@ -134,7 +140,7 @@ lookupAlg CTF{..} = \case
   c : cs -> (ctThereF `SV.index` c) cs
 
 foreverTrie' :: (KnownNat n, Semigroup w) => [NonEmpty (Finite n)] -> w -> NTrie n w
-foreverTrie' strs x = fromMapForever $ M.fromList ((,x) <$> strs)
+foreverTrie' strs x = fromMapForever x (S.fromList strs)
 
 -- foreverTrie :: (KnownNat n, Semigroup w) => [[Finite n]] -> w -> NTrie n w
 -- foreverTrie strs x = infiniTrie
@@ -142,8 +148,8 @@ foreverTrie' strs x = fromMapForever $ M.fromList ((,x) <$> strs)
 --     tr = trieFromList $ (,x) <$> strs
 --     infiniTrie = singletonTrie [] x <> (tr `bindTrie` const infiniTrie)
 
-buildable :: (KnownNat n, Semigroup a) => Map (NonEmpty (Finite n)) a -> [Finite n] -> Maybe a
-buildable mp0 = hylo lookupAlg (fromMapCoalg mp0) (Nothing, mp0)
+buildable :: (KnownNat n, Semigroup a) => a -> Set (NonEmpty (Finite n)) -> [Finite n] -> Maybe a
+buildable x0 mp0 = hylo lookupAlg (fromMapCoalg mp0) (Nothing, M.fromSet (const x0) mp0)
 
 day19 :: Semigroup w => w -> ([w] -> Int) -> ([String], [String]) :~> Int
 day19 x agg =
