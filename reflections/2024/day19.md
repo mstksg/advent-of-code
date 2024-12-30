@@ -35,8 +35,9 @@ If we had a `CharTrie a`, then `cata lookupAlg myTree "hello"` would look up
 
 The buildup co-algebra is an interesting one.  We will convert a `Map String a`
 into a `CharTrie a`, _but_, every time we reach the end of the string, we
-"restart" the building from the start. So, we'll take a `Set String` as well,
-which we will trigger when we hit the end of a pattern.
+"restart" the building from the start, while merging all of the resulting
+leaves monoidally. So, we'll take a `Set String` as well, which we will trigger
+when we hit the end of a pattern.
 
 ```haskell
 fromMapCoalg ::
@@ -74,3 +75,8 @@ part1 pats = length . mapMaybe (buildable () pats)
 part2 :: Set String -> [String] -> Int
 part2 pats = getSum . foldMap (fold . buildable (Sum 1) pats)
 ```
+
+However, this may be a case where the hylomorphism is slower than doing the
+unfold and fold separately, because the full `CharTrie` is actually going to be
+re-used multiple times for each design. However, there's something a little
+more satisfying about just re-building and tearing down every time.
