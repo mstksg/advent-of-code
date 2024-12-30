@@ -55,7 +55,7 @@ fromMapCoalg mp0 = \ks ->
     initialSplit =
       S.fromDistinctDescList . ($ [])
         <$> IM.fromAscListWith
-          (<>)
+          (.)
           [ (k, (ks :))
           | k : ks <- toList mp0
           ]
