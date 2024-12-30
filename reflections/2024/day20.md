@@ -42,10 +42,8 @@ findCheats walls start end len thresh = do
     go (i, xs) x =
       ( (i + 1, M.insert x i xs)
       , M.size $
-          M.filterWithKey (\y j -> i - j - mannDist x y >= thresh) $
-            xs `M.restrictKeys` S.mapMonotonic (+ x) diamond
+          M.filterWithKey (\y j -> let d = mannDist x y in d <= len && i - j - d >= thresh) xs
       )
-    diamond = floodFill (S.filter ((<= len) . mannNorm) . cardinalNeighbsSet) (S.singleton 0)
 ```
 
 Our `mapAccumR` here iterates from the end of the list with the index (`i`) and
