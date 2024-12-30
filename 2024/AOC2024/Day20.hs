@@ -14,7 +14,6 @@ where
 
 import AOC.Common (findKeyFor, floodFill)
 import AOC.Common.Point (Point, cardinalNeighbsSet, mannDist, mannNorm, parseAsciiMap)
-import AOC.Common.Search (bfs)
 import AOC.Solver (noFail, type (:~>) (..))
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -23,6 +22,26 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Traversable (mapAccumR)
 import Data.Tuple.Strict (T2 (..))
+
+racePath ::
+  -- | walls
+  Set Point ->
+  -- | start
+  Point ->
+  -- | end
+  Point ->
+  Maybe [Point]
+racePath walls start end = go Nothing start
+  where
+    go :: Maybe Point -> Point -> Maybe [Point]
+    go prev here = do
+      next <- S.lookupMin candidates
+      (here :)
+        <$> if next == end
+          then pure [end]
+          else go (Just here) next
+      where
+        candidates = maybe id S.delete prev $ cardinalNeighbsSet here `S.difference` walls
 
 findCheats ::
   -- | walls
@@ -37,7 +56,7 @@ findCheats ::
   Int ->
   Maybe Int
 findCheats walls start end len thresh = do
-  path <- (start :) <$> bfs ((`S.difference` walls) . cardinalNeighbsSet) start (== end)
+  path <- racePath walls start end
   pure . sum . snd $ mapAccumR go (T2 0 M.empty) path
   where
     go :: T2 Int (Map Point Int) -> Point -> (T2 Int (Map Point Int), Int)
