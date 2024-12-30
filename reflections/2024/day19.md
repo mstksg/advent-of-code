@@ -64,7 +64,7 @@ we never actually generate any trie structure: we basically build up only the
 branch we care about (driven by the lookup) and stop when we finish looking up
 or hit a dead end.
 
-````haskell
+```haskell
 buildable :: (Semigroup a) => a -> Set String -> String -> Maybe a
 buildable x mp = hylo lookupAlg (fromMapCoalg mp) (M.fromSet (const x) mp)
 
