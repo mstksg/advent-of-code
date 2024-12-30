@@ -16,17 +16,7 @@ data BFSState n = BS
   -- ^ queue
   }
 
-bfs ::
-  forall n.
-  Ord n =>
-  -- | neighborhood
-  (n -> Set n) ->
-  -- | start
-  n ->
-  -- | target
-  (n -> Bool) ->
-  -- | the shortest path, if it exists
-  Maybe [n]
+bfs :: forall n. Ord n => (n -> Set n) -> n -> (n -> Bool) -> Maybe [n]
 bfs ex x0 dest = reconstruct <$> go (addBack x0 Nothing (BS M.empty Seq.empty))
   where
     reconstruct :: (n, Map n (Maybe n)) -> [n]
