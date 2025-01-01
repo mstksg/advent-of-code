@@ -1,19 +1,19 @@
 >> Day 16a
 benchmarking...
-time                 313.6 ms   (307.1 ms .. 319.8 ms)
-                     1.000 R²   (1.000 R² .. 1.000 R²)
-mean                 314.8 ms   (313.9 ms .. 316.4 ms)
-std dev              1.616 ms   (315.0 μs .. 2.207 ms)
+time                 314.6 ms   (288.1 ms .. 337.2 ms)
+                     0.998 R²   (0.995 R² .. 1.000 R²)
+mean                 322.6 ms   (315.8 ms .. 327.8 ms)
+std dev              7.420 ms   (5.508 ms .. 9.232 ms)
 variance introduced by outliers: 16% (moderately inflated)
 
 * parsing and formatting times excluded
 
 >> Day 16b
 benchmarking...
-time                 322.2 ms   (311.2 ms .. 332.4 ms)
+time                 323.8 ms   (320.3 ms .. 330.2 ms)
                      1.000 R²   (0.999 R² .. 1.000 R²)
-mean                 320.8 ms   (317.9 ms .. 324.1 ms)
-std dev              3.921 ms   (2.314 ms .. 5.846 ms)
+mean                 323.5 ms   (319.1 ms .. 326.7 ms)
+std dev              4.496 ms   (2.480 ms .. 6.795 ms)
 variance introduced by outliers: 16% (moderately inflated)
 
 * parsing and formatting times excluded

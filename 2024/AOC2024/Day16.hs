@@ -15,7 +15,6 @@ where
 import AOC.Common.Point (Dir (..), Point, dirPoint, parseAsciiMap)
 import AOC.Solver (noFail, type (:~>) (..))
 import Data.Bifunctor (Bifunctor (second))
-import Data.Foldable (Foldable (fold))
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Sequence.NonEmpty (NESeq (..))
@@ -50,7 +49,7 @@ day16b =
   MkSol
     { sParse = sParse day16a
     , sShow = show
-    , sSolve = fmap (S.size . fold . snd) . solve
+    , sSolve = fmap (S.size . mconcat . snd) . solve
     }
 
 step :: Set Point -> (Point, Dir) -> Map (Point, Dir) Int
@@ -66,7 +65,7 @@ step walls (p, d) =
   where
     p' = p + dirPoint d
 
-data Path n m p = Path {pCurr :: n, pSeen :: Set m, pCost :: p}
+data Path n m p = Path {pCurr :: !n, pSeen :: !(Set m), pCost :: !p}
   deriving stock (Eq, Ord, Show)
 
 allMinimalPaths ::
