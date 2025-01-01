@@ -15,9 +15,11 @@ where
 import AOC.Common (strictIterate, (!!!))
 import AOC.Common.Parser (pDecimal, parseMaybe', sepByLines)
 import AOC.Solver (noFail, type (:~>) (..))
+import Control.Monad (unless)
 import Data.Bits (Bits (shift, xor, (.&.)))
-import Data.Foldable (Foldable (toList))
-import qualified Data.IntMap as IM
+import Data.Foldable (for_)
+import qualified Data.Vector.Storable as VS
+import qualified Data.Vector.Storable.Mutable as MVS
 import Safe.Foldable (maximumMay)
 
 step :: Int -> Int
@@ -41,18 +43,31 @@ day22b =
   MkSol
     { sParse = sParse day22a
     , sShow = show
-    , sSolve = maximumMay . toList . IM.unionsWith (+) . map genSeries
+    , sSolve = \xs -> do
+        let serieses = take 2000 . map (`mod` 10) . strictIterate step <$> xs
+            tots = VS.create do
+              v <- MVS.replicate maxSeq 0
+              for_ serieses \series -> do
+                seens <- MVS.replicate maxSeq False
+                for_ (chompChomp series) \(i, n) -> do
+                  seen <- MVS.exchange seens i True
+                  unless seen $
+                    MVS.modify v (+ n) i
+              pure v
+        maximumMay $ VS.toList tots
     }
   where
-    encodeSeq = sum . zipWith (\i x -> x * 19 ^ (i :: Int)) [0 ..] . map (+ 9)
-    genSeries = IM.fromListWith (const id) . chompChomp . take 2000 . map (`mod` 10) . strictIterate step
-      where
-        chompChomp :: [Int] -> [(Int, Int)]
-        chompChomp (a : b : c : d : e : fs) =
-          (encodeSeq [da, db, dc, dd], e) : chompChomp (b : c : d : e : fs)
-          where
-            da = b - a
-            db = c - b
-            dc = d - c
-            dd = e - d
-        chompChomp _ = []
+    maxSeq = encodeSeq [9, 9, 9, 9]
+
+encodeSeq :: [Int] -> Int
+encodeSeq = sum . zipWith (\i x -> x * 19 ^ (i :: Int)) [0 ..] . map (+ 9)
+
+chompChomp :: [Int] -> [(Int, Int)]
+chompChomp (a : b : c : d : e : fs) =
+  (encodeSeq [da, db, dc, dd], e) : chompChomp (b : c : d : e : fs)
+  where
+    da = b - a
+    db = c - b
+    dc = d - c
+    dd = e - d
+chompChomp _ = []
