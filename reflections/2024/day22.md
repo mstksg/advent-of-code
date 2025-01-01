@@ -45,4 +45,7 @@ part2 = maximum . M.elems . M.fromListWith (+) . map priceForChain
 ```
 
 I'm not super happy with the fact that this takes 3 seconds (even after
-optimizing to using `IntMap` on a base-19 encoding of the sequence).
+optimizing to using `IntMap` on a base-19 encoding of the sequence). Switching
+to a single mutable vector doing all of the summing (and a mutable vector for
+every seed preventing double-adds) we bring it down to 800ms which still isn't
+particularly ideal.
