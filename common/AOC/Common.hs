@@ -120,12 +120,6 @@ module AOC.Common (
   caeser,
   eitherItem,
   chooseEither,
-  toNatural,
-  factorial,
-  integerFactorial,
-  pascals,
-  triangles,
-  triangleNumber,
   mapMaybeSet,
   findKeyFor,
   flipMap,
@@ -138,6 +132,18 @@ module AOC.Common (
   listDigits,
   unListDigits,
   _DigitList,
+
+  -- * Integers
+  egcd,
+  modInverse,
+  bezout,
+  inv22Int,
+  toNatural,
+  factorial,
+  integerFactorial,
+  pascals,
+  triangles,
+  triangleNumber,
 
   -- * Comonad stuff
   matchMap,
@@ -214,7 +220,7 @@ import qualified Data.Vector.Unboxed.Mutable.Sized as UVM
 import Data.Word
 import Debug.Trace
 import GHC.TypeNats
-import Linear (Additive (..), R1 (..), R2 (..), R3 (..), R4 (..), V2 (..), V3 (..), V4 (..))
+import Linear (Additive (..), R1 (..), R2 (..), R3 (..), R4 (..), V2 (..), V3 (..), V4 (..), det22, M22)
 import qualified Numeric.Lens as L
 import Safe
 
@@ -1038,6 +1044,70 @@ factorial n = go 2 1
     go i !x
       | i > n = x
       | otherwise = go (i + 1) (x * i)
+
+-- | case egcd a b of
+--      (d, u, v) ->
+--          u * a + v * b = d
+--       && d == gcd(a,b)
+--
+-- from arithmoi library
+egcd :: Integral a => a -> a -> (a, a, a)
+egcd a b = (d, u, v)
+  where
+    (d, x, y) = eGCD 0 1 1 0 (abs a) (abs b)
+    u
+      | a < 0 = negate x
+      | otherwise = x
+    v
+      | b < 0 = negate y
+      | otherwise = y
+    eGCD !n1 o1 !n2 o2 r s
+      | s == 0 = (r, o1, o2)
+      | otherwise = case r `quotRem` s of
+          (q, t) -> eGCD (o1 - q * n1) n1 (o2 - q * n2) n2 s t
+{-# SPECIALIZE egcd ::
+  Int -> Int -> (Int, Int, Int)
+  , Word -> Word -> (Word, Word, Word)
+  , Integer -> Integer -> (Integer, Integer, Integer)
+  #-}
+
+-- | modInverse(a,b) is (a^-1 in Z_b, b^-1 in Z_a)
+modInverse :: Integral a => a -> a -> Maybe (a, a)
+modInverse x y = case egcd x y of
+  (1, u, v) -> Just (u, v)
+  _ -> Nothing
+
+-- | gives (V2 (V2 mx bx) (V2 my by)), where x solutions are (mx k + bx) and y
+-- solutions are (my k + by)
+bezout :: Integral a => a -> a -> a -> Maybe (V2 (V2 a))
+bezout a b c
+  | r == 0 =
+      Just $
+        V2
+          (V2 (b `div` d) (u * c'))
+          (V2 (- (a `div` d)) (v * c'))
+  | otherwise = Nothing
+  where
+    (d, u, v) = egcd a b
+    (c', r) = c `divMod` d
+{-# SPECIALIZE bezout ::
+  Int -> Int -> Int -> Maybe (V2 (V2 Int)),
+  Word -> Word -> Word -> Maybe (V2 (V2 Word)),
+  Integer -> Integer -> Integer -> Maybe (V2 (V2 Integer))
+  #-}
+
+-- | Returns det(A) and inv(A)det(A)
+inv22Int :: (Num a, Eq a) => M22 a -> Maybe (a, M22 a)
+inv22Int m@(V2 (V2 a b) (V2 c d))
+  | det == 0 = Nothing
+  | otherwise = Just (det, V2 (V2 d (-b)) (V2 (-c) a))
+  where
+    det = det22 m
+{-# SPECIALIZE inv22Int ::
+   M22 Int -> Maybe (Int, M22 Int),
+   M22 Word -> Maybe (Word, M22 Word),
+   M22 Integer -> Maybe (Integer, M22 Integer)
+  #-}
 
 integerFactorial :: Integer -> Integer
 integerFactorial n = go 2 1

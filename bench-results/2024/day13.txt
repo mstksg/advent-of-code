@@ -1,18 +1,19 @@
 >> Day 13a
 benchmarking...
-time                 1.887 ms   (1.881 ms .. 1.893 ms)
-                     1.000 R²   (1.000 R² .. 1.000 R²)
-mean                 1.891 ms   (1.887 ms .. 1.898 ms)
-std dev              18.44 μs   (14.30 μs .. 26.49 μs)
+time                 10.70 μs   (10.55 μs .. 10.96 μs)
+                     0.993 R²   (0.987 R² .. 0.997 R²)
+mean                 11.74 μs   (11.23 μs .. 12.34 μs)
+std dev              1.963 μs   (1.546 μs .. 2.237 μs)
+variance introduced by outliers: 95% (severely inflated)
 
 * parsing and formatting times excluded
 
 >> Day 13b
 benchmarking...
-time                 12.28 ms   (12.09 ms .. 12.54 ms)
-                     0.998 R²   (0.996 R² .. 1.000 R²)
-mean                 12.06 ms   (12.00 ms .. 12.22 ms)
-std dev              246.8 μs   (174.1 μs .. 402.2 μs)
+time                 11.78 μs   (11.76 μs .. 11.80 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 11.79 μs   (11.77 μs .. 11.81 μs)
+std dev              70.24 ns   (48.18 ns .. 88.93 ns)
 
 * parsing and formatting times excluded
 
