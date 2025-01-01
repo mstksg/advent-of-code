@@ -32,9 +32,8 @@ getPrize :: V2 Point -> Point -> Maybe Int
 getPrize coeff targ = do
   (det, invCoeff) <- inv22Int (distribute coeff)
   let resDet = invCoeff !* targ
-      residues = (`mod` det) <$> resDet
       V2 a b = (`div` det) <$> resDet
-  guard $ all (== 0) residues
+  guard $ all ((== 0) . (`mod` det)) resDet
   pure $ 3 * a + b
 
 day13a :: [(V2 Point, Point)] :~> Int
