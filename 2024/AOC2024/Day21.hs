@@ -95,16 +95,8 @@ buttonGraph = (G.mkGraph (swap <$> M.toList nodes) edges, startMap, endMap)
       M.fromList . flip zip [0 ..] $
         (Left <$> liftA3 (,,) allPushable' allPushable' allPushable')
           ++ (Right <$> allPushable')
-    startMap =
-      M.fromList
-        [ (n, i)
-        | (Left (n, Nothing, Nothing), i) <- M.toList nodes
-        ]
-    endMap =
-      M.fromList
-        [ (n, i)
-        | (Right n, i) <- M.toList nodes
-        ]
+    startMap = M.fromList [(n, i) | (Left (n, Nothing, Nothing), i) <- M.toList nodes]
+    endMap = M.fromList [(n, i) | (Right n, i) <- M.toList nodes]
     edges :: [(Int, Int, DirPad)]
     edges = do
       (Left (b, d, e), node) <- M.toList nodes
@@ -156,8 +148,8 @@ runPath x = \case
 dirPathChain :: Int -> Map DirPad (Map DirPad Int)
 dirPathChain n = iterate (`composeDirPathLengths` dirPath @Dir) (dirPathCosts @Dir) !!! n
 
-solveCodeNoSearch :: Int -> [NumPad] -> Int
-solveCodeNoSearch n = spellDirPathLengths mp . (Nothing :)
+solveCode :: Int -> [NumPad] -> Int
+solveCode n = spellDirPathLengths mp . (Nothing :)
   where
     mp = dirPathChain (n - 1) `composeDirPathLengths` dirPath @(Finite 10)
 
@@ -174,7 +166,7 @@ day21 n =
           sum . map solve
     }
   where
-    solve p = num * solveCodeNoSearch n p
+    solve p = num * solveCode n p
       where
         num = read (map intToDigit (mapMaybe (fmap fromIntegral) p :: [Int]))
 

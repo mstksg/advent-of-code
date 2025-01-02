@@ -1,19 +1,19 @@
 >> Day 21a
 benchmarking...
-time                 3.965 μs   (3.959 μs .. 3.970 μs)
-                     1.000 R²   (1.000 R² .. 1.000 R²)
-mean                 3.967 μs   (3.961 μs .. 3.973 μs)
-std dev              17.27 ns   (14.75 ns .. 20.43 ns)
+time                 3.840 μs   (3.834 μs .. 3.851 μs)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 3.883 μs   (3.848 μs .. 4.052 μs)
+std dev              222.9 ns   (19.15 ns .. 512.1 ns)
+variance introduced by outliers: 69% (severely inflated)
 
 * parsing and formatting times excluded
 
 >> Day 21b
 benchmarking...
-time                 3.971 μs   (3.958 μs .. 3.988 μs)
-                     0.999 R²   (0.996 R² .. 1.000 R²)
-mean                 4.020 μs   (3.971 μs .. 4.206 μs)
-std dev              304.7 ns   (22.58 ns .. 645.9 ns)
-variance introduced by outliers: 80% (severely inflated)
+time                 3.839 μs   (3.831 μs .. 3.849 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 3.841 μs   (3.835 μs .. 3.845 μs)
+std dev              16.92 ns   (13.66 ns .. 20.87 ns)
 
 * parsing and formatting times excluded
 
