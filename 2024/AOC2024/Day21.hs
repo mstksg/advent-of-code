@@ -14,15 +14,17 @@ where
 
 import AOC.Common (digitToIntSafe, (!!!))
 import AOC.Common.Point (Dir (..), Point, V2 (V2), dirPoint)
-import AOC.Common.Search (bfsActions)
 import AOC.Solver (noFail, type (:~>) (..))
+import Control.Applicative (liftA3)
 import Control.Monad (mfilter, (<=<))
 import Data.Char (intToDigit, isDigit)
 import Data.Finite (Finite, finites)
+import Data.Functor ((<&>))
+import qualified Data.Graph.Inductive as G
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe (fromJust, mapMaybe, maybeToList)
-import qualified Data.Set as S
+import Data.Maybe (mapMaybe, maybeToList)
+import Data.Tuple (swap)
 
 type NumPad = Maybe (Finite 10)
 type DirPad = Maybe Dir
@@ -82,32 +84,50 @@ instance Pushable (Finite 10) where
   allPushable = finites
   pushMap = pushMapFromLayout numPad
 
+buttonGraph ::
+  forall a.
+  Pushable a =>
+  (G.Gr (Either (Maybe a, DirPad, DirPad) (Maybe a)) DirPad, Map (Maybe a) Int, Map (Maybe a) Int)
+buttonGraph = (G.mkGraph (swap <$> M.toList nodes) edges, startMap, endMap)
+  where
+    nodes :: Map (Either (Maybe a, DirPad, DirPad) (Maybe a)) Int
+    nodes =
+      M.fromList . flip zip [0 ..] $
+        (Left <$> liftA3 (,,) allPushable' allPushable' allPushable')
+          ++ (Right <$> allPushable')
+    startMap =
+      M.fromList
+        [ (n, i)
+        | (Left (n, Nothing, Nothing), i) <- M.toList nodes
+        ]
+    endMap =
+      M.fromList
+        [ (n, i)
+        | (Right n, i) <- M.toList nodes
+        ]
+    edges :: [(Int, Int, DirPad)]
+    edges = do
+      (Left (b, d, e), node) <- M.toList nodes
+      push <- reverse allPushable'
+      (e', eout) <- maybeToList $ applyPush push e
+      (d', dout) <- case eout of
+        Nothing -> pure (d, Nothing)
+        Just push' -> maybeToList $ applyPush push' d
+      (b', bout) <- case dout of
+        Nothing -> pure (b, Nothing)
+        Just push' -> maybeToList $ applyPush push' b
+      pure case bout of
+        Nothing -> (node, nodes M.! Left (b', d', e'), push)
+        Just o -> (node, nodes M.! Right o, push)
+
 -- | Best way to get from button to button. penalize motion two bots down
 dirPath :: forall a. Pushable a => Map (Maybe a) (Map (Maybe a) [DirPad])
-dirPath = M.fromSet ((`M.fromSet` S.fromList allPushable') . go) (S.fromList allPushable')
+dirPath =
+  st <&> \i ->
+    en <&> \j ->
+      runPath Nothing . runPath Nothing . drop 1 . map snd . G.unLPath $ G.lesp i j bg
   where
-    go :: Maybe a -> Maybe a -> [DirPad]
-    go x y =
-      runPath Nothing . runPath Nothing . fromJust $
-        bfsActions step (Left (x, Nothing, Nothing)) (== Right y)
-      where
-        step (Left (b, d, e)) =
-          reverse
-            [ ( push
-              , case bout of
-                  Nothing -> Left (b', d', e')
-                  Just o -> Right o
-              )
-            | push <- allPushable'
-            , (e', eout) <- maybeToList $ applyPush push e
-            , (d', dout) <- case eout of
-                Nothing -> pure (d, Nothing)
-                Just push' -> maybeToList $ applyPush push' d
-            , (b', bout) <- case dout of
-                Nothing -> pure (b, Nothing)
-                Just push' -> maybeToList $ applyPush push' b
-            ]
-        step (Right _) = []
+    (bg, st, en) = buttonGraph
 
 dirPathCosts :: Pushable a => Map (Maybe a) (Map (Maybe a) Int)
 dirPathCosts = (fmap . fmap) length dirPath

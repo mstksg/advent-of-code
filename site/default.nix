@@ -41,7 +41,7 @@ let
                     *[Top](#)* / *[Prompt][d${daylong}p]* / *[Code][d${daylong}g]*${standaloneLink}
 
                     [d${daylong}p]: https://adventofcode.com/${year}/day/${dayshort}
-                    [d${daylong}g]: https://github.com/${github}/advent-of-code/blob/master/${year}/AOC${year}/Day${daylong}.hs
+                    [d${daylong}g]: https://github.com/${github}/advent-of-code/blob/main/${year}/AOC${year}/Day${daylong}.hs
                     [d${daylong}s]: https://github.com/mstksg/advent-of-code/blob/main/reflections/${year}/day${daylong}.md
 
                     ${lib.optionalString

@@ -320,8 +320,6 @@ centeredFinite =
     (subtract d . (% 1) . getFinite)
     (Finite . numerator . (+ d))
   where
-    -- Finite . numerator . (+ d) <$> f ((getFinite i % 1) - d)
-
     d = fromIntegral (natVal (Proxy @n) - 1) % 2
 
 parseDir :: Char -> Maybe Dir
