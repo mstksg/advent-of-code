@@ -29,13 +29,13 @@ where
 -- day17b,
 -- )
 
-import AOC.Prelude hiding (Finite, modulo, packFinite)
+import AOC.Prelude
 import Control.Monad.Primitive
 import Control.Monad.ST
 import Data.Bits
 import qualified Data.Conduino as C
 import qualified Data.Conduino.Combinators as C
-import Data.Finite.Integral hiding (shift)
+import Data.Finite hiding (shift)
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
 import qualified Data.IntMap.NonEmpty as IM
@@ -84,25 +84,25 @@ day17a =
     }
 
 data Combo
-  = CLiteral (Finite Word 4)
-  | CReg (Finite Word 3)
+  = CLiteral (Finite 4)
+  | CReg (Finite 3)
   deriving stock (Show, Eq, Ord)
 
 data Instr
   = ADV Combo
-  | BXL (Finite Word 8)
+  | BXL (Finite 8)
   | BST Combo
-  | JNZ (Finite Word 4)
+  | JNZ (Finite 4)
   | BXC
   | OUT Combo
   | BDV Combo
   | CDV Combo
   deriving stock (Show, Eq, Ord)
 
-comboParser :: Finite Word 7 -> Combo
+comboParser :: Finite 7 -> Combo
 comboParser = either CLiteral CReg . separateSum
 
-instrParser :: Finite Word 8 -> Finite Word 8 -> Maybe Instr
+instrParser :: Finite 8 -> Finite 8 -> Maybe Instr
 instrParser i =
   SV.fromTuple @_ @8
     ( fmap (ADV . comboParser) . strengthen
@@ -125,15 +125,12 @@ parseProgram xs = do
 readComboV3 :: Combo -> V3 Word -> Word
 readComboV3 = \case
   CLiteral l -> \_ -> fromIntegral l
-  CReg 0 -> \(V3 a _ _) -> a
-  CReg 1 -> \(V3 _ b _) -> b
-  CReg 2 -> \(V3 _ _ c) -> c
-  _ -> undefined
+  CReg r -> view (SV.fromTuple (_x, _y, _z) `SV.index` r)
 
-stepProg :: SV.Vector 8 Instr -> V3 Word -> [Finite Word 8]
+stepProg :: SV.Vector 8 Instr -> V3 Word -> [Finite 8]
 stepProg tp = go' 0
   where
-    go' :: Finite Word 8 -> V3 Word -> [Finite Word 8]
+    go' :: Finite 8 -> V3 Word -> [Finite 8]
     go' i v@(V3 a b c) = case tp `SV.index` fromIntegral i of
       ADV r -> withStep $ V3 (a `div` (2 ^ combo r)) b c
       BXL l -> withStep $ V3 a (b `xor` fromIntegral l) c
@@ -142,7 +139,7 @@ stepProg tp = go' 0
         | a == 0 -> withStep v
         | otherwise -> go' (weakenN l) v
       BXC -> withStep $ V3 a (b `xor` c) c
-      OUT r -> modulo (combo r) : withStep v
+      OUT r -> modulo (fromIntegral (combo r)) : withStep v
       BDV r -> withStep $ V3 a (a `div` (2 ^ combo r)) c
       CDV r -> withStep $ V3 a b (a `div` (2 ^ combo r))
       where
