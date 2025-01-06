@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
@@ -20,14 +21,21 @@
 --     types @_ :~> _@ with the actual types of inputs and outputs of the
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
-module AOC2024.Day17 (
-  day17a,
-  day17b,
-)
+module AOC2024.Day17
 where
 
-import AOC.Prelude
+-- (
+-- day17a,
+-- day17b,
+-- )
+
+import AOC.Prelude hiding (Finite, modulo, packFinite)
+import Control.Monad.Primitive
+import Control.Monad.ST
 import Data.Bits
+import qualified Data.Conduino as C
+import qualified Data.Conduino.Combinators as C
+import Data.Finite.Integral hiding (shift)
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
 import qualified Data.IntMap.NonEmpty as IM
@@ -39,36 +47,109 @@ import qualified Data.List.PointedList.Circular as PLC
 import qualified Data.Map as M
 import qualified Data.Map.NonEmpty as NEM
 import qualified Data.OrdPSQ as PSQ
+import Data.Primitive.MutVar
+import Data.STRef
 import qualified Data.Sequence as Seq
 import qualified Data.Sequence.NonEmpty as NESeq
 import qualified Data.Set as S
 import qualified Data.Set.NonEmpty as NES
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import qualified Data.Vector.Mutable.Sized as SMV
+import qualified Data.Vector.Sized as SV
+import qualified Data.Vector.Storable.Mutable.Sized as SMVS
+import qualified Data.Vector.Storable.Sized as SVS
 import qualified Linear as L
 import qualified Numeric.Lens as L
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
-day17a :: _ :~> _
+day17a :: _ :~> [Int]
 day17a =
   MkSol
     { sParse = parseMaybe' do
-        a <- "Register A: " *> pDecimal
-        P.newline
-        b <- "Register B: " *> pDecimal
-        P.newline
-        c <- "Register C: " *> pDecimal
-        P.newline
+        a <- "Register A: " *> pDecimal <* P.newline
+        b <- "Register B: " *> pDecimal <* P.newline
+        c <- "Register C: " *> pDecimal <* P.newline
         P.newline
         d <- "Program: " *> (pDecimal `sepBy'` ",")
-        pure (a, b, c, d)
+        p <- case parseProgram d of
+          Nothing -> fail "Bad program"
+          Just p -> pure p
+        pure (a, b, c, p)
     , sShow = intercalate "," . map show
-    , sSolve =
-        noFail $ \(a, b, c, p :: [Int]) ->
-          go 0 (V3 a b c) (Seq.fromList p)
+    , sSolve = \(a, b, c, instrs) -> do
+        pure . map fromIntegral $ stepProg instrs (V3 a b c)
     }
+
+data Combo
+  = CLiteral (Finite Word 4)
+  | CReg (Finite Word 3)
+  deriving stock (Show, Eq, Ord)
+
+data Instr
+  = ADV Combo
+  | BXL (Finite Word 8)
+  | BST Combo
+  | JNZ (Finite Word 4)
+  | BXC
+  | OUT Combo
+  | BDV Combo
+  | CDV Combo
+  deriving stock (Show, Eq, Ord)
+
+comboParser :: Finite Word 7 -> Combo
+comboParser = either CLiteral CReg . separateSum
+
+instrParser :: Finite Word 8 -> Finite Word 8 -> Maybe Instr
+instrParser i =
+  SV.fromTuple @_ @8
+    ( fmap (ADV . comboParser) . strengthen
+    , Just . BXL
+    , fmap (BST . comboParser) . strengthen
+    , Just . JNZ . snd . separateProduct @2 @4
+    , const $ Just BXC
+    , fmap (OUT . comboParser) . strengthen
+    , fmap (BDV . comboParser) . strengthen
+    , fmap (CDV . comboParser) . strengthen
+    )
+    `SV.index` fromIntegral i
+
+parseProgram :: [Int] -> Maybe (SV.Vector 8 Instr)
+parseProgram xs = do
+  xsVec <- SV.fromList @16 =<< traverse (packFinite . fromIntegral) xs
+  SV.generateM \i ->
+    instrParser (xsVec `SV.index` combineProduct (0, i)) (xsVec `SV.index` combineProduct (1, i))
+
+readComboV3 :: Combo -> V3 Word -> Word
+readComboV3 = \case
+  CLiteral l -> \_ -> fromIntegral l
+  CReg 0 -> \(V3 a _ _) -> a
+  CReg 1 -> \(V3 _ b _) -> b
+  CReg 2 -> \(V3 _ _ c) -> c
+  _ -> undefined
+
+stepProg :: SV.Vector 8 Instr -> V3 Word -> [Finite Word 8]
+stepProg tp = go' 0
+  where
+    go' :: Finite Word 8 -> V3 Word -> [Finite Word 8]
+    go' i v@(V3 a b c) = case tp `SV.index` fromIntegral i of
+      ADV r -> withStep $ V3 (a `div` (2 ^ combo r)) b c
+      BXL l -> withStep $ V3 a (b `xor` fromIntegral l) c
+      BST r -> withStep $ V3 a (combo r `mod` 8) c
+      JNZ l
+        | a == 0 -> withStep v
+        | otherwise -> go' (weakenN l) v
+      BXC -> withStep $ V3 a (b `xor` c) c
+      OUT r -> modulo (combo r) : withStep v
+      BDV r -> withStep $ V3 a (a `div` (2 ^ combo r)) c
+      CDV r -> withStep $ V3 a b (a `div` (2 ^ combo r))
+      where
+        combo = flip readComboV3 v
+        withStep
+          | i == maxBound = const []
+          | otherwise = go' (succ i)
 
 go :: Int -> V3 Int -> Seq Int -> [Int]
 -- go i (V3 a b c) tp = case (,) <$> Seq.lookup i tp <*> Seq.lookup (i + 1) tp of
@@ -158,10 +239,18 @@ go i (V3 a b c) tp = case (,) <$> Seq.lookup i tp <*> Seq.lookup (i + 1) tp of
 day17b :: _ :~> _
 day17b =
   MkSol
-    { sParse = sParse day17a
+    { sParse = parseMaybe' do
+        _ <- "Register A: " *> pDecimal @Int
+        P.newline
+        _ <- "Register B: " *> pDecimal @Int
+        P.newline
+        _ <- "Register C: " *> pDecimal @Int
+        P.newline
+        P.newline
+        "Program: " *> (pDecimal `sepBy'` ",")
     , sShow = show
     , sSolve =
-        \(_, _, _, p :: [Int]) -> listToMaybe do
+        \p -> listToMaybe do
           option <- stepBackwards (reverse p)
           guard $ go 0 (V3 option 0 0) (Seq.fromList p) == p
           pure option
