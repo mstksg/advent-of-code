@@ -1,7 +1,3 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- |
 -- Module      : AOC2024.Day17
 -- License     : BSD3
@@ -114,7 +110,7 @@ instrParser i =
     , fmap (BDV . comboParser) . strengthen
     , fmap (CDV . comboParser) . strengthen
     )
-    `SV.index` fromIntegral i
+    `SV.index` i
 
 parseProgram :: [Int] -> Maybe (SV.Vector 8 Instr)
 parseProgram xs = do
@@ -122,57 +118,71 @@ parseProgram xs = do
   SV.generateM \i ->
     instrParser (xsVec `SV.index` combineProduct (0, i)) (xsVec `SV.index` combineProduct (1, i))
 
-readComboV3 :: Combo -> V3 Word -> Word
-readComboV3 = \case
+readCombo :: Combo -> V3 Word -> Word
+readCombo = \case
   CLiteral l -> \_ -> fromIntegral l
   CReg r -> view (SV.fromTuple (_x, _y, _z) `SV.index` r)
 
 stepProg :: SV.Vector 8 Instr -> V3 Word -> [Finite 8]
-stepProg tp = go' 0
+stepProg tp (V3 a0 b0 c0) = go' 0 a0 b0 c0
   where
-    go' :: Finite 8 -> V3 Word -> [Finite 8]
-    go' i v@(V3 a b c) = case tp `SV.index` fromIntegral i of
-      ADV r -> withStep $ V3 (a `div` (2 ^ combo r)) b c
-      BXL l -> withStep $ V3 a (b `xor` fromIntegral l) c
-      BST r -> withStep $ V3 a (combo r `mod` 8) c
+    go' :: Finite 8 -> Word -> Word -> Word -> [Finite 8]
+    go' i !a !b !c = case tp `SV.index` i of
+      ADV r -> withStep (a `div` (2 ^ combo r)) b c
+      BXL l -> withStep a (b `xor` fromIntegral l) c
+      BST r -> withStep a (combo r `mod` 8) c
       JNZ l
-        | a == 0 -> withStep v
-        | otherwise -> go' (weakenN l) v
-      BXC -> withStep $ V3 a (b `xor` c) c
-      OUT r -> modulo (fromIntegral (combo r)) : withStep v
-      BDV r -> withStep $ V3 a (a `div` (2 ^ combo r)) c
-      CDV r -> withStep $ V3 a b (a `div` (2 ^ combo r))
+        | a == 0 -> withStep 0 b c
+        | otherwise -> go' (weakenN l) a b c
+      BXC -> withStep a (b `xor` c) c
+      OUT r -> modulo (fromIntegral (combo r)) : withStep a b c
+      BDV r -> withStep a (a `div` (2 ^ combo r)) c
+      CDV r -> withStep a b (a `div` (2 ^ combo r))
       where
-        combo = flip readComboV3 v
+        combo = \case
+          CLiteral l -> fromIntegral l
+          CReg 0 -> a
+          CReg 1 -> b
+          CReg _ -> c
         withStep
-          | i == maxBound = const []
-          | otherwise = go' (succ i)
+          | i == maxBound = \_ _ _ -> []
+          | otherwise = go' (i + 1)
 
-go :: Int -> V3 Int -> Seq Int -> [Int]
--- go i (V3 a b c) tp = case (,) <$> Seq.lookup i tp <*> Seq.lookup (i + 1) tp of
-go i (V3 a b c) tp = case (,) <$> Seq.lookup i tp <*> Seq.lookup (i + 1) tp of
-  Nothing -> []
-  Just (q, o) ->
-    let x = case o of
-          0 -> 0
-          1 -> 1
-          2 -> 2
-          3 -> 3
-          4 -> a
-          5 -> b
-          6 -> c
-     in case q of
-          0 -> go (i + 2) (V3 (a `div` (2 ^ x)) b c) tp
-          1 -> go (i + 2) (V3 a (b `xor` o) c) tp
-          2 -> go (i + 2) (V3 a (x `mod` 8) c) tp
-          3
-            | a == 0 -> go (i + 2) (V3 a b c) tp
-            | otherwise -> go o (V3 a b c) tp
-          4 -> go (i + 2) (V3 a (b `xor` c) c) tp
-          5 -> (x `mod` 8) : go (i + 2) (V3 a b c) tp
-          -- 5 -> trace (show (x `mod` 8, o, x)) (x `mod` 8) : go (i + 2) (V3 a b c) tp
-          6 -> go (i + 2) (V3 a (a `div` (2 ^ x)) c) tp
-          7 -> go (i + 2) (V3 a b (a `div` (2 ^ x))) tp
+-- | Assumes that:
+--
+-- 1. Only A is persistent across each "loop"
+-- 2. The last instruction is a jump to 0
+unstepProg :: SV.Vector 8 Instr -> [Finite 8] -> [Int]
+unstepProg prog = unLoop jnzIx 0 Nothing Nothing
+  where
+    jnzIx :: Finite 8
+    jnzIx = maxBound
+    unLoop :: Finite 8 -> Word -> Maybe Word -> Maybe Word -> [Finite 8] -> [Int]
+    unLoop i a b c = case prog `SV.index` i of
+      ADV r -> _ (combo r)
+      -- JNZ l
+      --   | a == 0    -> unLoop
+      --   | otherwise -> undefined
+      where
+        combo = \case
+          CLiteral l -> [fromIntegral l]
+          CReg 0 -> pure a
+          CReg 1 -> maybeToList b   -- hmm could really be anything
+          CReg _ -> maybeToList c   -- hmm could really be anything
+        withStep
+          | i == minBound = undefined
+          | otherwise = unLoop (pred i)
+
+  -- search 0
+  -- where
+  --   search a = \case
+  --     [] -> pure a
+  --     o : os -> do
+  --       a' <- ((a `shift` 3) +) <$> [0 .. 7]
+  --       let b0 = (a' .&. 7) `xor` 6
+  --       let c = a' `shift` (-b0)
+  --       guard $ modulo (fromIntegral $ (b0 `xor` c) `xor` 4) == o
+  --       search a' os
 
 -- 2,4, 1,6, 7,5, 4,6, 1,4, 5,5, 0,3, 3,0
 --
@@ -252,6 +262,33 @@ day17b =
           guard $ go 0 (V3 option 0 0) (Seq.fromList p) == p
           pure option
     }
+
+go :: Int -> V3 Int -> Seq Int -> [Int]
+-- go i (V3 a b c) tp = case (,) <$> Seq.lookup i tp <*> Seq.lookup (i + 1) tp of
+go i (V3 a b c) tp = case (,) <$> Seq.lookup i tp <*> Seq.lookup (i + 1) tp of
+  Nothing -> []
+  Just (q, o) ->
+    let x = case o of
+          0 -> 0
+          1 -> 1
+          2 -> 2
+          3 -> 3
+          4 -> a
+          5 -> b
+          6 -> c
+     in case q of
+          0 -> go (i + 2) (V3 (a `div` (2 ^ x)) b c) tp
+          1 -> go (i + 2) (V3 a (b `xor` o) c) tp
+          2 -> go (i + 2) (V3 a (x `mod` 8) c) tp
+          3
+            | a == 0 -> go (i + 2) (V3 a b c) tp
+            | otherwise -> go o (V3 a b c) tp
+          4 -> go (i + 2) (V3 a (b `xor` c) c) tp
+          5 -> (x `mod` 8) : go (i + 2) (V3 a b c) tp
+          -- 5 -> trace (show (x `mod` 8, o, x)) (x `mod` 8) : go (i + 2) (V3 a b c) tp
+          6 -> go (i + 2) (V3 a (a `div` (2 ^ x)) c) tp
+          7 -> go (i + 2) (V3 a b (a `div` (2 ^ x))) tp
+
 
 -- [ (go 0 (V3 i b c) (Seq.fromList p))
 -- -- | i <- [45184372088832]
