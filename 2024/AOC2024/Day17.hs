@@ -124,65 +124,107 @@ readCombo = \case
   CReg r -> view (SV.fromTuple (_x, _y, _z) `SV.index` r)
 
 stepProg :: SV.Vector 8 Instr -> V3 Word -> [Finite 8]
-stepProg tp (V3 a0 b0 c0) = go' 0 a0 b0 c0
+stepProg tp (V3 a0 b0 c0) = stepAll 0 a0 b0 c0
   where
-    go' :: Finite 8 -> Word -> Word -> Word -> [Finite 8]
-    go' i !a !b !c = case tp `SV.index` i of
-      ADV r -> withStep (a `div` (2 ^ combo r)) b c
-      BXL l -> withStep a (b `xor` fromIntegral l) c
-      BST r -> withStep a (combo r `mod` 8) c
-      JNZ l
-        | a == 0 -> withStep 0 b c
-        | otherwise -> go' (weakenN l) a b c
-      BXC -> withStep a (b `xor` c) c
-      OUT r -> modulo (fromIntegral (combo r)) : withStep a b c
-      BDV r -> withStep a (a `div` (2 ^ combo r)) c
-      CDV r -> withStep a b (a `div` (2 ^ combo r))
-      where
-        combo = \case
-          CLiteral l -> fromIntegral l
-          CReg 0 -> a
-          CReg 1 -> b
-          CReg _ -> c
-        withStep
-          | i == maxBound = \_ _ _ -> []
-          | otherwise = go' (i + 1)
+    stepAll = stepWith tp (\o i a b c -> o : stepAll i a b c) stepAll
 
--- | Assumes that:
---
--- 1. Only A is persistent across each "loop"
--- 2. The last instruction is a jump to 0
-unstepProg :: SV.Vector 8 Instr -> [Finite 8] -> [Int]
-unstepProg prog = unLoop jnzIx 0 Nothing Nothing
+type Stepper a = Finite 8 -> Word -> Word -> Word -> a
+
+stepWith ::
+  Monoid a =>
+  SV.Vector 8 Instr ->
+  -- | out
+  (Finite 8 -> Stepper a) ->
+  -- | next
+  Stepper a ->
+  Stepper a
+stepWith tp out next i !a !b !c = case tp `SV.index` i of
+  ADV r -> withStep next (a `div` (2 ^ combo r)) b c
+  BXL l -> withStep next a (b `xor` fromIntegral l) c
+  BST r -> withStep next a (combo r `mod` 8) c
+  JNZ l
+    | a == 0 -> withStep next 0 b c
+    | otherwise -> next (weakenN l) a b c
+  BXC -> withStep next a (b `xor` c) c
+  OUT r ->
+    let o = modulo (fromIntegral (combo r))
+     in withStep (out o) a b c
+  BDV r -> withStep next a (a `div` (2 ^ combo r)) c
+  CDV r -> withStep next a b (a `div` (2 ^ combo r))
   where
-    jnzIx :: Finite 8
-    jnzIx = maxBound
-    unLoop :: Finite 8 -> Word -> Maybe Word -> Maybe Word -> [Finite 8] -> [Int]
-    unLoop i a b c = case prog `SV.index` i of
-      ADV r -> _ (combo r)
-      -- JNZ l
-      --   | a == 0    -> unLoop
-      --   | otherwise -> undefined
-      where
-        combo = \case
-          CLiteral l -> [fromIntegral l]
-          CReg 0 -> pure a
-          CReg 1 -> maybeToList b   -- hmm could really be anything
-          CReg _ -> maybeToList c   -- hmm could really be anything
-        withStep
-          | i == minBound = undefined
-          | otherwise = unLoop (pred i)
+    combo = \case
+      CLiteral l -> fromIntegral l
+      CReg 0 -> a
+      CReg 1 -> b
+      CReg _ -> c
+    withStep p
+      | i == maxBound = \_ _ _ -> mempty
+      | otherwise = p (i + 1)
 
-  -- search 0
-  -- where
-  --   search a = \case
-  --     [] -> pure a
-  --     o : os -> do
-  --       a' <- ((a `shift` 3) +) <$> [0 .. 7]
-  --       let b0 = (a' .&. 7) `xor` 6
-  --       let c = a' `shift` (-b0)
-  --       guard $ modulo (fromIntegral $ (b0 `xor` c) `xor` 4) == o
-  --       search a' os
+-- -- | Assumes that:
+-- --
+-- -- 1. Only A is persistent across each "loop"
+-- -- 2. The last instruction is a jump to 0
+-- unstepProg :: SV.Vector 8 Instr -> [Finite 8] -> [Int]
+-- unstepProg prog = unLoop jnzIx 0 Nothing Nothing
+--   where
+--     jnzIx :: Finite 8
+--     jnzIx = maxBound
+--     unLoop :: Finite 8 -> Word -> Maybe Word -> Maybe Word -> [Finite 8] -> [Int]
+--     unLoop i a b c os = case prog `SV.index` i of
+--       ADV r -> do
+--         unshift <- fromIntegral <$> combo r
+--         possibleUnshifts <- [0.. 2^unshift - 1]
+--         withStep (a `shift` unshift + possibleUnshifts) b c os
+--       BXL l -> do
+--         b' <- maybeToList b
+--         withStep a (Just $ b' `xor` fromIntegral l) c os
+--       BST r -> case r of
+--          CLiteral l -> do
+--            for_ b \b' -> guard $ fromIntegral l == b'
+--            withStep a b c os
+--          CReg g -> do
+--            possibleUnshift <- [0 .. 7]
+--            let stored = fromMaybe 0 b `shift` 3 + possibleUnshift
+--            case g of
+--              0 -> withStep stored b c os
+--              1 -> withStep a (Just stored) c os
+--              _ -> withStep a b (Just stored) os
+--       JNZ _
+--         | a == 0    -> undefined
+--         | otherwise -> undefined
+--       BXC -> _
+--         -- withStep a (b `xor` c) c
+--       OUT r -> do
+--         o:os' <- pure os
+--         let setModulo x = ((x `shift` (-3)) `shift` 3) + fromIntegral o
+--         case r of
+--           CLiteral l -> do
+--             guard $ weakenN l == o
+--             withStep a b c os'
+--           CReg 0 -> withStep (setModulo a) b c os'
+--           CReg 1 -> withStep a (Just $ maybe (fromIntegral o) setModulo b) c os'
+--           CReg _ -> withStep a b (Just $ maybe (fromIntegral o) setModulo c) os'
+--       where
+--         combo = \case
+--           CLiteral l -> [fromIntegral l]
+--           CReg 0 -> pure a
+--           CReg 1 -> maybeToList b   -- hmm could really be anything
+--           CReg _ -> maybeToList c   -- hmm could really be anything
+--         withStep
+--           | i == minBound = undefined
+--           | otherwise = unLoop (pred i)
+
+-- search 0
+-- where
+--   search a = \case
+--     [] -> pure a
+--     o : os -> do
+--       a' <- ((a `shift` 3) +) <$> [0 .. 7]
+--       let b0 = (a' .&. 7) `xor` 6
+--       let c = a' `shift` (-b0)
+--       guard $ modulo (fromIntegral $ (b0 `xor` c) `xor` 4) == o
+--       search a' os
 
 -- 2,4, 1,6, 7,5, 4,6, 1,4, 5,5, 0,3, 3,0
 --
@@ -288,7 +330,6 @@ go i (V3 a b c) tp = case (,) <$> Seq.lookup i tp <*> Seq.lookup (i + 1) tp of
           -- 5 -> trace (show (x `mod` 8, o, x)) (x `mod` 8) : go (i + 2) (V3 a b c) tp
           6 -> go (i + 2) (V3 a (a `div` (2 ^ x)) c) tp
           7 -> go (i + 2) (V3 a b (a `div` (2 ^ x))) tp
-
 
 -- [ (go 0 (V3 i b c) (Seq.fromList p))
 -- -- | i <- [45184372088832]
