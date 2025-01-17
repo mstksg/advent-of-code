@@ -30,6 +30,7 @@ import Data.Finite (
 import Data.Foldable (Foldable (toList))
 import Data.List (intercalate)
 import Data.Maybe (listToMaybe)
+import Data.Monoid (Alt (..))
 import Data.Semigroup (Endo (Endo, appEndo))
 import qualified Data.Vector.Sized as SV
 import qualified Text.Megaparsec.Char as P
@@ -139,9 +140,7 @@ searchStep tp outs = do
   search 0 (reverse outs)
   where
     stepForward :: Word -> Maybe (Finite 8)
-    stepForward a0 = appEndo (go 0 a0 0 0) Nothing
-      where
-        go = stepWith tp (Endo . const . Just)
+    stepForward a0 = getAlt $ stepWith tp (Alt . Just) 0 a0 0 0
     stepBack :: Word -> [Word]
     stepBack = go' maxBound
       where
