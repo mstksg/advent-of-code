@@ -73,9 +73,9 @@ day17a =
         p <- case parseProgram d of
           Nothing -> fail "Bad program"
           Just p -> pure p
-        pure (a, b, c, p)
+        pure (a, b, c, p, fromIntegral <$> d)
     , sShow = intercalate "," . map show
-    , sSolve = \(a, b, c, instrs) -> do
+    , sSolve = \(a, b, c, instrs, _) -> do
         pure . map fromIntegral $ stepProg instrs (V3 a b c)
     }
 
@@ -161,6 +161,70 @@ stepWith tp out next i !a !b !c = case tp `SV.index` i of
       | i == maxBound = \_ _ _ -> mempty
       | otherwise = p (i + 1)
 
+-- BST A    --- b = a & 111
+-- BXL 6    --- b ^= 110    (6)
+-- CDV B    --- c = a >> b
+-- BXC      --- b ^= c
+-- BXL 4    --- b ^= 100    (4)
+-- OUT B    --- print b
+-- ADV 3    --- a >> 3
+-- JNZ 0
+--
+-- ok maybe we step from the back until the Out (to generate the options), and
+-- then jump from the beginning to the out (to generate the constraints)
+--
+-- so "step backwards" from JNZ 2 to OUT B to generate all possible previous
+-- values of a, then jump from BST A down to OUT B to limit which ones are
+-- possible.
+
+searchStep :: SV.Vector 8 Instr -> [Finite 8] -> [Word]
+searchStep tp outs = do
+  JNZ 0 <- pure $ tp `SV.index` maxBound
+  [CReg _] <- pure [r | OUT r <- toList tp]
+  let search a = \case
+        o : os -> do
+          a' <- stepBack a
+          guard $ stepForward a' == Just o
+          search a' os
+        [] -> pure a
+  search 0 (reverse outs)
+  where
+    stepForward :: Word -> Maybe (Finite 8)
+    stepForward a0 = getFirst <$> go' 0 a0 0 0
+      where
+        go' = stepWith tp (\o _ _ _ _ -> Just (First o)) go'
+    stepBack :: Word -> [Word]
+    stepBack = go' maxBound
+      where
+        go' i a = case tp `SV.index` i of
+          ADV r -> do
+            a' <- case r of
+              CLiteral l -> ((a `shift` fromIntegral l) +) <$> [0 .. 2 ^ getFinite l - 1]
+              CReg _ -> []
+            go' (pred i) a'
+          OUT _ -> pure a
+          _ -> go' (pred i) a
+
+-- stepProg tp (V3 a0 b0 c0) = stepAll 0 a0 b0 c0
+--   where
+--     stepAll = stepWith tp (\o i a b c -> o : stepAll i a b c) stepAll
+
+-- 0 undefined undefined
+-- go' (o : os) = stepWith tp (\r i a b c -> guard (o == r) >> go' os i a b c) \i a b c ->
+--     if i == 0
+--        then go' (o:os) i a undefined undefined
+--        else go' (o:os) i a b c
+
+-- where
+--   search a = \case
+--     [] -> pure a
+--     o : os -> do
+--       a' <- ((a `shift` 3) +) <$> [0 .. 7]
+--       let b0 = (a' .&. 7) `xor` 6
+--       let c = a' `shift` (-b0)
+--       guard $ ((b0 `xor` c) `xor` 4) .&. 7 == o
+--       search a' os
+
 -- -- | Assumes that:
 -- --
 -- -- 1. Only A is persistent across each "loop"
@@ -237,6 +301,17 @@ stepWith tp out next i !a !b !c = case tp `SV.index` i of
 -- ADV 3    --- a /= 8
 -- JNZ 0
 
+-- 2,4, 1,6, 7,5, 4,6, 1,4, 5,5, 0,3, 3,0
+--
+-- BST A    --- b = a & 111
+-- BXL 6    --- b ^= 110    (6)
+-- CDV B    --- c = a >> b
+-- BXC      --- b ^= c
+-- BXL 4    --- b ^= 100    (4)
+-- OUT B    --- print b
+-- ADV 3    --- a >> 3
+-- JNZ 0
+
 -- The *`adv`* instruction (opcode *`0`*) performs *division*. The
 -- numerator is the value in the `A` register. The denominator is found by
 -- raising 2 to the power of the instruction's *combo* operand. (So, an
@@ -287,22 +362,31 @@ stepWith tp out next i !a !b !c = case tp `SV.index` i of
 
 day17b :: _ :~> _
 day17b =
+  -- MkSol
+    -- { sParse = parseMaybe' do
+    --     _ <- "Register A: " *> pDecimal @Int
+    --     P.newline
+    --     _ <- "Register B: " *> pDecimal @Int
+    --     P.newline
+    --     _ <- "Register C: " *> pDecimal @Int
+    --     P.newline
+    --     P.newline
+    --     "Program: " *> (pDecimal `sepBy'` ",")
+    -- , sShow = show
+    -- , sSolve =
+    --     \p -> listToMaybe do
+    --       option <- stepBackwards (reverse p)
+    --       guard $ go 0 (V3 option 0 0) (Seq.fromList p) == p
+    --       pure option
   MkSol
-    { sParse = parseMaybe' do
-        _ <- "Register A: " *> pDecimal @Int
-        P.newline
-        _ <- "Register B: " *> pDecimal @Int
-        P.newline
-        _ <- "Register C: " *> pDecimal @Int
-        P.newline
-        P.newline
-        "Program: " *> (pDecimal `sepBy'` ",")
-    , sShow = show
-    , sSolve =
-        \p -> listToMaybe do
-          option <- stepBackwards (reverse p)
-          guard $ go 0 (V3 option 0 0) (Seq.fromList p) == p
-          pure option
+    { sParse = sParse day17a 
+    , sShow = show 
+    , sSolve = \(_, _, _, instrs, o) -> listToMaybe $
+        searchStep instrs o
+-- searchStep :: SV.Vector 8 Instr -> [Finite 8] -> [Word]
+-- searchStep tp outs = do
+
+        -- pure . map fromIntegral $ stepProg instrs (V3 a b c)
     }
 
 go :: Int -> V3 Int -> Seq Int -> [Int]
