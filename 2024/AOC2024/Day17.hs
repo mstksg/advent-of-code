@@ -89,7 +89,7 @@ day17a =
         pure (a, b, c, p, fromIntegral <$> d)
     , sShow = intercalate "," . map (show . getFinite)
     , sSolve = noFail \(a0, b0, c0, instrs, _) ->
-        appEndo (stepWith instrs (Endo . (:)) 0 a0 b0 c0) []
+        appEndo (stepWith instrs (Endo . (:)) a0 b0 c0) []
     }
 
 stepWith ::
@@ -97,12 +97,14 @@ stepWith ::
   SV.Vector 8 Instr ->
   -- | out
   (Finite 8 -> a) ->
-  Finite 8 ->
+  -- | Starting a
   Word ->
+  -- | Starting b
   Word ->
+  -- | Starting c
   Word ->
   a
-stepWith tp out = go
+stepWith tp out = go 0
   where
     go i !a !b !c = case tp `SV.index` i of
       ADV r -> withStep go (a `div` (2 ^ combo r)) b c
@@ -131,16 +133,16 @@ searchStep :: SV.Vector 8 Instr -> [Finite 8] -> [Word]
 searchStep tp outs = do
   JNZ 0 <- pure $ tp `SV.index` maxBound
   [CReg _] <- pure [r | OUT r <- toList tp]
-  let search a = \case
-        o : os -> do
-          a' <- stepBack a
-          guard $ stepForward a' == Just o
-          search a' os
-        [] -> pure a
   search 0 (reverse outs)
   where
+    search a = \case
+      o : os -> do
+        a' <- stepBack a
+        guard $ stepForward a' == Just o
+        search a' os
+      [] -> pure a
     stepForward :: Word -> Maybe (Finite 8)
-    stepForward a0 = getAlt $ stepWith tp (Alt . Just) 0 a0 0 0
+    stepForward a0 = getAlt $ stepWith tp (Alt . Just) a0 0 0
     stepBack :: Word -> [Word]
     stepBack = go' maxBound
       where
