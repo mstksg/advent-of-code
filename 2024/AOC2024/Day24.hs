@@ -15,11 +15,10 @@ where
 import AOC.Common (asString, parseBinary)
 import AOC.Common.Parser (CharParser, pAlphaNumWord, parseMaybe', sepByLines, tokenAssoc)
 import AOC.Solver (noFail, type (:~>) (..))
-import Control.Applicative (Alternative (empty, many, (<|>)), asum)
 import Control.DeepSeq (NFData)
-import Control.Lens ((%=), (.=))
+import Control.Monad ((>=>))
 import Control.Monad.Free (Free, MonadFree (wrap), iterA)
-import Control.Monad.State (MonadState (get, put), State, StateT, execStateT, runState)
+import Control.Monad.State (MonadState (get, put), State, runState)
 import Data.Bifunctor (Bifunctor (second))
 import Data.Either (lefts)
 import Data.Foldable (Foldable (toList))
@@ -72,7 +71,7 @@ parseGate = do
   pure Gate{..}
 
 parseInitial :: CharParser (String, Bool)
-parseInitial = (,) <$> many P.alphaNumChar <* ": " <*> tokenAssoc [('0', False), ('1', True)]
+parseInitial = (,) <$> P.many P.alphaNumChar <* ": " <*> tokenAssoc [('0', False), ('1', True)]
 
 applyOp :: Op -> Bool -> Bool -> Bool
 applyOp = \case
@@ -166,36 +165,36 @@ nameGate ::
   Map (Gate String) String ->
   Int ->
   Gate (Either Int VarBit) ->
-  StateT NameState [] ()
-nameGate avail ng g0 = do
-  NS{..} <- get
-  let gate = either (nsNames IM.!) showVarBit <$> g0
+  NameState ->
+  [NameState]
+nameGate avail ng g0 NS{..} =
   case applySwaps nsRenames <$> M.lookup gate avail of
-    Nothing -> empty
+    Nothing -> []
     Just here ->
-      (#nsNames %= IM.insert ng here)
-        <|> asum
-          [ put (NS renames (IM.insert ng there nsNames) True)
+      NS{nsNames = IM.insert ng here nsNames, ..}
+        : [ NS renames (IM.insert ng there nsNames) True
           | not nsFound
           , there <- toList avail
           , here /= there
           , let renames = M.fromList [(here, there), (there, here)] <> nsRenames
           ]
   where
-    applySwaps :: Map String String -> String -> String
+    gate = either (nsNames IM.!) showVarBit <$> g0
     applySwaps mp x = M.findWithDefault x x mp
 
-nameTree ::
-  Map (Gate String) String ->
-  [Map String String]
-nameTree avail = nsRenames <$> execStateT (traverse go outGates) s0
+nameTree :: Map (Gate String) String -> [Map String String]
+nameTree avail = nsRenames <$> foldr (\o -> (go o >=>)) pure outGates s0
   where
     s0 = NS M.empty IM.empty False
     (outGates, gates) = unrollAdderTree 44
-    go outGate = do
-      #nsFound .= False
-      IM.traverseWithKey (nameGate avail) $
-        IM.takeWhileAntitone (<= outGate) gates
+    go outGate ns0
+      | M.size (nsRenames ns0) == 8 = [ns0]
+      | otherwise =
+          IM.foldrWithKey
+            (\k g -> (nameGate avail k g >=>))
+            pure
+            (IM.takeWhileAntitone (<= outGate) gates)
+            (ns0{nsFound = False})
 
 day24b :: [(Gate String, String)] :~> [String]
 day24b =
