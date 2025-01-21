@@ -6,27 +6,23 @@
 -- Portability : non-portable
 --
 -- Day 24.  See "AOC.Solver" for the types used in this module!
-module AOC2024.Day24
+module AOC2024.Day24 (
+  day24a,
+  day24b,
+)
 where
 
--- (
--- day24a,
--- day24b,
--- )
-
-import AOC.Common (asString, loopEither, parseBinary)
+import AOC.Common (asString, parseBinary)
 import AOC.Common.Parser (CharParser, pAlphaNumWord, parseMaybe', sepByLines, tokenAssoc)
 import AOC.Solver (noFail, type (:~>) (..))
-import Control.Applicative (Alternative (empty, many))
+import Control.Applicative (Alternative (empty, many, (<|>)), asum)
 import Control.DeepSeq (NFData)
-import Control.Lens
+import Control.Lens ((%=), (.=))
 import Control.Monad.Free (Free, MonadFree (wrap), iterA)
-import Control.Monad.Logic
-import Control.Monad.State
+import Control.Monad.State (MonadState (get, put), State, StateT, execStateT, runState)
 import Data.Bifunctor (Bifunctor (second))
-import Data.Either
+import Data.Either (lefts)
 import Data.Foldable (Foldable (toList))
-import Data.Functor
 import Data.Generics.Labels ()
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
@@ -35,8 +31,8 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
+import Data.Maybe (listToMaybe)
 import Data.Tuple (swap)
-import Debug.Trace
 import GHC.Generics (Generic)
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
@@ -170,7 +166,7 @@ nameGate ::
   Map (Gate String) String ->
   Int ->
   Gate (Either Int VarBit) ->
-  LogicT (StateT NameState Maybe) ()
+  StateT NameState [] ()
 nameGate avail ng g0 = do
   NS{..} <- get
   let gate = either (nsNames IM.!) showVarBit <$> g0
@@ -178,17 +174,11 @@ nameGate avail ng g0 = do
     Nothing -> empty
     Just here ->
       (#nsNames %= IM.insert ng here)
-        `interleave` foldr
-          interleave
-          empty
+        <|> asum
           [ put (NS renames (IM.insert ng there nsNames) True)
           | not nsFound
-          , here `M.notMember` nsRenames
-          , here `notElem` nsNames
           , there <- toList avail
           , here /= there
-          , there `M.notMember` nsRenames
-          , there `notElem` nsNames
           , let renames = M.fromList [(here, there), (there, here)] <> nsRenames
           ]
   where
@@ -197,8 +187,8 @@ nameGate avail ng g0 = do
 
 nameTree ::
   Map (Gate String) String ->
-  Maybe (Map String String)
-nameTree avail = nsRenames <$> execStateT (observeT (traverse go outGates)) s0
+  [Map String String]
+nameTree avail = nsRenames <$> execStateT (traverse go outGates) s0
   where
     s0 = NS M.empty IM.empty False
     (outGates, gates) = unrollAdderTree 44
@@ -212,5 +202,5 @@ day24b =
   MkSol
     { sParse = fmap snd . sParse day24a
     , sShow = intercalate ","
-    , sSolve = fmap M.keys . nameTree . M.fromList
+    , sSolve = fmap M.keys . listToMaybe . nameTree . M.fromList
     }
