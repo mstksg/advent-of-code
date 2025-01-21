@@ -198,7 +198,6 @@ common solver-deps
     , aoc-common
     , aoc-core
     , arithmoi
-    , semirings
     , barbies
     , base                       >=4.7   && <5
     , bitvec
@@ -220,11 +219,11 @@ common solver-deps
     , fin
     , finitary
     , finite-typelits
-    , logict
-    , free
     , foldl
+    , free
     , free-algebras
     , generic-lens
+    , ghc-typelits-knownnat
     , ghc-typelits-natnormalise
     , graphviz
     , grid
@@ -232,6 +231,7 @@ common solver-deps
     , hashable
     , lens
     , linear
+    , logict
     , megaparsec
     , memory
     , microlens-th
@@ -253,6 +253,7 @@ common solver-deps
     , safe
     , semialign
     , semigroupoids
+    , semirings
     , split
     , statistics
     , strict-tuple
