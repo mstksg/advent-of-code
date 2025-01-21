@@ -1,20 +1,20 @@
 >> Day 24a
 benchmarking...
-time                 97.06 μs   (95.96 μs .. 97.88 μs)
-                     0.999 R²   (0.999 R² .. 1.000 R²)
-mean                 94.19 μs   (93.47 μs .. 94.95 μs)
-std dev              2.477 μs   (2.155 μs .. 2.931 μs)
-variance introduced by outliers: 23% (moderately inflated)
+time                 104.0 μs   (103.9 μs .. 104.2 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 104.9 μs   (104.5 μs .. 106.1 μs)
+std dev              2.157 μs   (1.014 μs .. 4.014 μs)
+variance introduced by outliers: 16% (moderately inflated)
 
 * parsing and formatting times excluded
 
 >> Day 24b
 benchmarking...
-time                 1.696 s    (1.664 s .. 1.734 s)
-                     1.000 R²   (1.000 R² .. 1.000 R²)
-mean                 1.699 s    (1.690 s .. 1.712 s)
-std dev              12.02 ms   (88.75 μs .. 14.67 ms)
-variance introduced by outliers: 19% (moderately inflated)
+time                 1.569 ms   (1.554 ms .. 1.604 ms)
+                     0.997 R²   (0.991 R² .. 1.000 R²)
+mean                 1.550 ms   (1.542 ms .. 1.572 ms)
+std dev              46.62 μs   (11.57 μs .. 87.93 μs)
+variance introduced by outliers: 17% (moderately inflated)
 
 * parsing and formatting times excluded
 

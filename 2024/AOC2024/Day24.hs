@@ -12,7 +12,6 @@ module AOC2024.Day24 (
 )
 where
 
-import AOC.Common (asString, parseBinary)
 import AOC.Common.Parser (CharParser, pAlphaNumWord, parseMaybe', sepByLines, tokenAssoc)
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.DeepSeq (NFData)
@@ -25,7 +24,7 @@ import Data.Foldable (Foldable (toList))
 import Data.Generics.Labels ()
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
-import Data.List (intercalate, isPrefixOf)
+import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
@@ -82,7 +81,7 @@ applyOp = \case
 applyGate :: Gate Bool -> Bool
 applyGate Gate{..} = applyOp gOp gX gY
 
-day24a :: ([(String, Bool)], [(Gate String, String)]) :~> _
+day24a :: ([(String, Bool)], [(Gate String, String)]) :~> Int
 day24a =
   MkSol
     { sParse = parseMaybe' do
@@ -95,24 +94,8 @@ day24a =
         noFail \(st, xs) ->
           let rules = M.fromList $ swap <$> xs
               res = M.fromList st <> (applyGate . fmap (res M.!) <$> rules)
-           in parseBinary . reverse . toList $ M.filterWithKey (\k _ -> "z" `isPrefixOf` k) res
+           in sum [2 ^ read @Int n | ('z' : n, True) <- M.toList res]
     }
-
-data Var = VX | VY | VZ
-  deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (NFData)
-
-data VarBit = VB {vbVar :: Var, vbBit :: Int}
-  deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (NFData)
-
-showVarBit :: VarBit -> String
-showVarBit VB{..} = printf (asString "%s%02d") vstr vbBit
-  where
-    vstr = asString case vbVar of
-      VX -> "x"
-      VY -> "y"
-      VZ -> "z"
 
 type GateTree = Free Gate
 
@@ -125,12 +108,12 @@ fullAdder x y carry0 = (wrap $ Gate OOr carry1 carry2, o)
     (carry1, z) = halfAdder x y
     (carry2, o) = halfAdder z carry0
 
-adderTree :: Int -> (GateTree VarBit, NonEmpty (GateTree VarBit))
+adderTree :: Int -> (GateTree String, NonEmpty (GateTree String))
 adderTree n
-  | n == 0 = (:| []) `second` halfAdder (pure (VB VX 0)) (pure (VB VY 0))
+  | n == 0 = (:| []) `second` halfAdder (pure "x00") (pure "y00")
   | otherwise =
       let (carryIn, rest) = adderTree (n - 1)
-          (carryOut, new) = fullAdder (pure (VB VX n)) (pure (VB VY n)) carryIn
+          (carryOut, new) = fullAdder (pure (printf "x%02d" n)) (pure (printf "y%02d" n)) carryIn
        in (carryOut, new `NE.cons` rest)
 
 unrollGates ::
@@ -146,7 +129,7 @@ unrollGates = iterA go . fmap Right
           pure $ Left currIx
         Just i -> pure $ Left i
 
-unrollAdderTree :: Int -> ([Int], IntMap (Gate (Either Int VarBit)))
+unrollAdderTree :: Int -> ([Int], IntMap (Gate (Either Int String)))
 unrollAdderTree n = (lefts $ toList outs, IM.fromList $ swap <$> M.toList mp)
   where
     (carry, adder) = adderTree n
@@ -161,12 +144,7 @@ data NameState = NS
   deriving stock (Generic, Show, Eq, Ord)
   deriving anyclass (NFData)
 
-nameGate ::
-  Map (Gate String) String ->
-  Int ->
-  Gate (Either Int VarBit) ->
-  NameState ->
-  [NameState]
+nameGate :: Map (Gate String) String -> Int -> Gate (Either Int String) -> NameState -> [NameState]
 nameGate avail ng g0 NS{..} =
   case applySwaps nsRenames <$> M.lookup gate avail of
     Nothing -> []
@@ -179,7 +157,7 @@ nameGate avail ng g0 NS{..} =
           , let renames = M.fromList [(here, there), (there, here)] <> nsRenames
           ]
   where
-    gate = either (nsNames IM.!) showVarBit <$> g0
+    gate = either (nsNames IM.!) id <$> g0
     applySwaps mp x = M.findWithDefault x x mp
 
 nameTree :: Map (Gate String) String -> [Map String String]
