@@ -6,23 +6,27 @@
 -- Portability : non-portable
 --
 -- Day 24.  See "AOC.Solver" for the types used in this module!
-module AOC2024.Day24 (
-  day24a,
-  day24b,
-)
+module AOC2024.Day24
 where
+
+-- (
+-- day24a,
+-- day24b,
+-- )
 
 import AOC.Common (asString, loopEither, parseBinary)
 import AOC.Common.Parser (CharParser, pAlphaNumWord, parseMaybe', sepByLines, tokenAssoc)
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Applicative (Alternative (empty, many))
 import Control.DeepSeq (NFData)
-import Control.Lens ((%=))
+import Control.Lens
 import Control.Monad.Free (Free, MonadFree (wrap), iterA)
-import Control.Monad.Logic (LogicT, MonadLogic (interleave), observeT)
-import Control.Monad.State (MonadState (get, put), State, StateT, execState, execStateT)
+import Control.Monad.Logic
+import Control.Monad.State
 import Data.Bifunctor (Bifunctor (second))
+import Data.Either
 import Data.Foldable (Foldable (toList))
+import Data.Functor
 import Data.Generics.Labels ()
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
@@ -32,6 +36,7 @@ import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Tuple (swap)
+import Debug.Trace
 import GHC.Generics (Generic)
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
@@ -146,16 +151,17 @@ unrollGates = iterA go . fmap Right
           pure $ Left currIx
         Just i -> pure $ Left i
 
-unrollAdderTree :: Int -> IntMap (Gate (Either Int VarBit))
-unrollAdderTree n = IM.fromList $ swap <$> M.toList mp
+unrollAdderTree :: Int -> ([Int], IntMap (Gate (Either Int VarBit)))
+unrollAdderTree n = (lefts $ toList outs, IM.fromList $ swap <$> M.toList mp)
   where
     (carry, adder) = adderTree n
-    full = carry `NE.cons` adder
-    (_, mp) = execState (traverse unrollGates full) (0, M.empty)
+    full = NE.reverse $ carry `NE.cons` adder
+    (outs, (_, mp)) = runState (traverse unrollGates full) (0, M.empty)
 
 data NameState = NS
   { nsRenames :: Map String String
   , nsNames :: IntMap String
+  , nsFound :: Bool
   }
   deriving stock (Generic, Show, Eq, Ord)
   deriving anyclass (NFData)
@@ -163,52 +169,48 @@ data NameState = NS
 nameGate ::
   Map (Gate String) String ->
   Int ->
-  Int ->
   Gate (Either Int VarBit) ->
-  LogicT (StateT NameState Maybe) String
-nameGate avail renameLimit ng g0 = do
+  LogicT (StateT NameState Maybe) ()
+nameGate avail ng g0 = do
   NS{..} <- get
   let gate = either (nsNames IM.!) showVarBit <$> g0
-  Just here <- pure $ applySwaps nsRenames <$> M.lookup gate avail
-  (here <$ (#nsNames %= IM.insert ng here))
-    `interleave` foldr
-      interleave
-      empty
-      [ there <$ put (NS renames (IM.insert ng there nsNames))
-      | here `M.notMember` nsRenames
-      , here `notElem` nsNames
-      , M.size nsRenames < renameLimit
-      , there <- toList avail
-      , here /= there
-      , there `M.notMember` nsRenames
-      , there `notElem` nsNames
-      , let renames = M.fromList [(here, there), (there, here)] <> nsRenames
-      ]
+  case applySwaps nsRenames <$> M.lookup gate avail of
+    Nothing -> empty
+    Just here ->
+      (#nsNames %= IM.insert ng here)
+        `interleave` foldr
+          interleave
+          empty
+          [ put (NS renames (IM.insert ng there nsNames) True)
+          | not nsFound
+          , here `M.notMember` nsRenames
+          , here `notElem` nsNames
+          , there <- toList avail
+          , here /= there
+          , there `M.notMember` nsRenames
+          , there `notElem` nsNames
+          , let renames = M.fromList [(here, there), (there, here)] <> nsRenames
+          ]
   where
     applySwaps :: Map String String -> String -> String
     applySwaps mp x = M.findWithDefault x x mp
 
 nameTree ::
   Map (Gate String) String ->
-  Map String String ->
-  IntMap (Gate (Either Int VarBit)) ->
   Maybe (Map String String)
-nameTree avail renames0 =
-  fmap nsRenames
-    . flip execStateT s0
-    . observeT
-    . IM.traverseWithKey (nameGate avail (min 8 $ M.size renames0 + 2))
+nameTree avail = nsRenames <$> execStateT (observeT (traverse go outGates)) s0
   where
-    s0 = NS renames0 IM.empty
+    s0 = NS M.empty IM.empty False
+    (outGates, gates) = unrollAdderTree 44
+    go outGate = do
+      #nsFound .= False
+      IM.traverseWithKey (nameGate avail) $
+        IM.takeWhileAntitone (<= outGate) gates
 
 day24b :: [(Gate String, String)] :~> [String]
 day24b =
   MkSol
     { sParse = fmap snd . sParse day24a
     , sShow = intercalate ","
-    , sSolve = noFail \xs ->
-        flip loopEither (0, M.empty) \(i, subs) ->
-          case nameTree (M.fromList xs) subs (unrollAdderTree i) of
-            Nothing -> Left $ M.keys subs
-            Just subs' -> Right (i + 1, subs')
+    , sSolve = fmap M.keys . nameTree . M.fromList
     }
