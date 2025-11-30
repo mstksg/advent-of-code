@@ -54,7 +54,7 @@
         packages = advent-of-code.components.exes //
           {
             inherit (pkgs.advent-of-code.site) site;
-            default = advent-of-code.components.exes.aoc2024;
+            default = advent-of-code.components.exes.aoc2025;
           };
         devShells.default = advent-of-code-project.shell;
         legacyPackages = pkgs;
