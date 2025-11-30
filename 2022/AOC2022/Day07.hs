@@ -48,7 +48,7 @@ buildSizes = ssnd . foldl' go (T2 [] M.empty)
   where
     go (T2 currDir mp) = \case
       CD Root -> T2 [] mp
-      CD GoUp -> T2 (tail currDir) mp
+      CD GoUp -> T2 (drop 1 currDir) mp
       CD (GoDown d) -> T2 (d : currDir) mp
       File sz ->
         T2 currDir $

@@ -1,6 +1,7 @@
 #!/usr/bin/env nix-shell
 #!nix-shell --pure -i runghc -p "haskellPackages.ghcWithPackages (pkgs: [ pkgs.text pkgs.template pkgs.optparse-applicative ])"
 
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -38,7 +39,7 @@ main = do
         (parseOpts <**> O.helper)
         (O.fullDesc <> O.progDesc "Generate haskell daily challenge files" <> O.header "generate_days")
   temp <- template <$> T.readFile "template/DayXX.hs.template"
-  forM_ [1 .. 25] $ \i -> do
+  forM_ [1 .. 25] \i -> do
     let newFilePath = outRoot oYear </> printf "Day%02d.hs" i
         Just newFile = renderA temp (ctx oYear i)
     alreadyExists <- doesFileExist newFilePath
@@ -49,7 +50,8 @@ main = do
             then False <$ printf "%s exists, but overwriting: --force supplied.\n" newFilePath
             else True <$ printf "%s exists, skipping (use --force to overwrite)\n" newFilePath
         else pure False
-    unless skip $
+    unless skip do
+      createDirectoryIfMissing True (takeDirectory newFilePath)
       TL.writeFile newFilePath newFile
 
 ctx :: Integer -> Int -> ContextA Maybe

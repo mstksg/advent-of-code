@@ -819,3 +819,71 @@ benchmark aoc2024-bench
     , aoc-core
     , aoc2024-lib
     , base           >=4.7 && <5
+
+-- 2025
+
+library aoc2025-lib
+  import:          common-options
+  import:          solver-extensions
+  import:          solver-deps
+  exposed-modules:
+    AOC2025
+    AOC2025.Day01
+    AOC2025.Day02
+    AOC2025.Day03
+    AOC2025.Day04
+    AOC2025.Day05
+    AOC2025.Day06
+    AOC2025.Day07
+    AOC2025.Day08
+    AOC2025.Day09
+    AOC2025.Day10
+    AOC2025.Day11
+    AOC2025.Day12
+    AOC2025.Day13
+    AOC2025.Day14
+    AOC2025.Day15
+    AOC2025.Day16
+    AOC2025.Day17
+    AOC2025.Day18
+    AOC2025.Day19
+    AOC2025.Day20
+    AOC2025.Day21
+    AOC2025.Day22
+    AOC2025.Day23
+    AOC2025.Day24
+    AOC2025.Day25
+
+  hs-source-dirs:  2025
+
+executable aoc2025
+  import:         executable-options
+  main-is:        aoc2025.hs
+  hs-source-dirs: app
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2025-lib
+    , base           >=4.7 && <5
+
+test-suite aoc2025-test
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2025-test.hs
+  hs-source-dirs: test
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2025-lib
+    , base           >=4.7 && <5
+
+benchmark aoc2025-bench
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2025-bench.hs
+  hs-source-dirs: bench
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2025-lib
+    , base           >=4.7 && <5
