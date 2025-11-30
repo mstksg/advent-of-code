@@ -20,7 +20,7 @@
                   {
                     name = "advent-of-code";
                     src = ./.;
-                    compiler-nix-name = "ghc982";
+                    compiler-nix-name = "ghc9103";
                     shell = {
                       withHoogle = false;
                       buildInputs = [ format-haskell ];

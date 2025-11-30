@@ -240,7 +240,6 @@ common solver-deps
     , monoidal-containers
     , mtl
     , nonempty-containers
-    , one-liner-instances
     , parallel
     , parsec
     , parser-combinators

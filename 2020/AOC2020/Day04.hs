@@ -24,8 +24,7 @@ import Data.Functor.Identity (Identity (..))
 import Data.List.Split (splitOn)
 import Data.Maybe (mapMaybe)
 import Data.Monoid (First (..))
-import Data.Monoid.OneLiner (GMonoid (..))
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generically (..))
 import Refined (FromTo, Refined, SizeEqualTo, refineThrow)
 import Text.Read (readMaybe)
 
@@ -66,9 +65,12 @@ instance B.ConstraintsB Passport
 
 deriving stock instance B.AllBF Show f Passport => Show (Passport f)
 
-deriving via GMonoid (Passport f) instance B.AllBF Semigroup f Passport => Semigroup (Passport f)
+deriving via
+  Generically (Passport f)
+  instance
+    B.AllBF Semigroup f Passport => Semigroup (Passport f)
 
-deriving via GMonoid (Passport f) instance B.AllBF Monoid f Passport => Monoid (Passport f)
+deriving via Generically (Passport f) instance B.AllBF Monoid f Passport => Monoid (Passport f)
 
 newtype Parser a = Parser {runParser :: String -> Maybe a}
 

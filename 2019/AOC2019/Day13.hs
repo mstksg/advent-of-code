@@ -39,11 +39,10 @@ import qualified Data.Conduino.Combinators as C
 import Data.Foldable (forM_)
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Monoid.OneLiner (GMonoid (..))
 import Data.Semigroup (Dual (..), Last (..), Max (..))
 import Data.Set (Set)
 import qualified Data.Set as S
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generically (..))
 import qualified Graphics.Vty as V
 import qualified Graphics.Vty.CrossPlatform as V
 import Linear.V2 (V2 (..))
@@ -112,8 +111,8 @@ data AI = AI
   , aiBlanks :: !(Set Point)
   }
   deriving stock (Generic)
-  deriving (Semigroup) via (GMonoid AI)
-  deriving (Monoid) via (GMonoid AI)
+  deriving (Semigroup) via (Generically AI)
+  deriving (Monoid) via (Generically AI)
 
 ai :: Memory -> Maybe (Maybe Int, Int)
 ai m =
@@ -143,8 +142,8 @@ data Display = Disp
   , dispScreen :: !(Dual (Map Point Tile))
   }
   deriving stock (Generic)
-  deriving (Semigroup) via (GMonoid Display)
-  deriving (Monoid) via (GMonoid Display)
+  deriving (Semigroup) via (Generically Display)
+  deriving (Monoid) via (Generically Display)
 
 playDay13 :: String -> IO ()
 playDay13 str = do
