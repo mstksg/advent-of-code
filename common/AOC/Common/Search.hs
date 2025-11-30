@@ -12,6 +12,7 @@ module AOC.Common.Search (
 where
 
 import Data.Bifunctor
+import Data.List (foldl')
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.OrdPSQ (OrdPSQ)
@@ -20,7 +21,6 @@ import Data.Sequence (Seq (..))
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.List (foldl')
 
 data AStarState n p = AS
   { _asClosed :: !(Map n (Maybe n))
@@ -155,7 +155,7 @@ bfsActions ex x0 dest = reconstruct <$> go (addBack x0 Nothing (BAS M.empty Seq.
         , _basOpen = _basOpen :|> x
         }
     processNeighbor :: n -> BFSActionState a n -> (a, n) -> BFSActionState a n
-    processNeighbor curr bs0@BAS{..} (act,neighb)
+    processNeighbor curr bs0@BAS{..} (act, neighb)
       | neighb `M.member` _basClosed = bs0
       | otherwise = addBack neighb (Just (act, curr)) bs0
 

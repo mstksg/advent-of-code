@@ -158,9 +158,9 @@ stepScheduler new = do
     toPop@((_, popTime) :| _) : stillActive -> do
       schedActive
         .= ( M.map (subtract popTime)
-              . M.fromDistinctAscList
-              . concatMap toList
-              $ stillActive
+               . M.fromDistinctAscList
+               . concatMap toList
+               $ stillActive
            )
       tell $ Sum popTime
       pure $ S.fromDistinctAscList . map fst . toList $ toPop

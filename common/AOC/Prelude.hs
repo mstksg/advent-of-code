@@ -123,4 +123,9 @@ import Safe as P (
 import Safe.Foldable as P (foldl1May, foldr1May, maximumByMay, maximumMay, minimumByMay, minimumMay)
 import Text.Printf as P
 import Text.Read as P (readMaybe)
-import Witherable as P (FilterableWithIndex (..), Witherable (..), WitherableWithIndex (..), forMaybe)
+import Witherable as P (
+  FilterableWithIndex (..),
+  Witherable (..),
+  WitherableWithIndex (..),
+  forMaybe,
+ )

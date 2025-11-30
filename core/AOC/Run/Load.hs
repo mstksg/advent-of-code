@@ -370,8 +370,8 @@ printMeta :: TestMeta -> [Text]
 printMeta TM{..} =
   map printData (M.toList _tmData)
     <> [ case _tmAnswer of
-          Just x -> ">>> " <> T.pack x
-          Nothing -> ">>>"
+           Just x -> ">>> " <> T.pack x
+           Nothing -> ">>>"
        ]
   where
     printData :: (String, DSum TestType Identity) -> Text

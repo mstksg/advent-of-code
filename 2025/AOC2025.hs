@@ -48,4 +48,3 @@ import AOC2025.Day25 as AOC
 
 challengeBundle2025 :: ChallengeBundle
 challengeBundle2025 = CB 2025 $ mkChallengeMap $$(solutionList)
-

@@ -220,7 +220,18 @@ import qualified Data.Vector.Unboxed.Mutable.Sized as UVM
 import Data.Word
 import Debug.Trace
 import GHC.TypeNats
-import Linear (Additive (..), R1 (..), R2 (..), R3 (..), R4 (..), V2 (..), V3 (..), V4 (..), det22, M22)
+import Linear (
+  Additive (..),
+  M22,
+  R1 (..),
+  R2 (..),
+  R3 (..),
+  R4 (..),
+  V2 (..),
+  V3 (..),
+  V4 (..),
+  det22,
+ )
 import qualified Numeric.Lens as L
 import Safe
 
@@ -1085,15 +1096,15 @@ bezout a b c
       Just $
         V2
           (V2 (b `div` d) (u * c'))
-          (V2 (- (a `div` d)) (v * c'))
+          (V2 (-(a `div` d)) (v * c'))
   | otherwise = Nothing
   where
     (d, u, v) = egcd a b
     (c', r) = c `divMod` d
 {-# SPECIALIZE bezout ::
-  Int -> Int -> Int -> Maybe (V2 (V2 Int)),
-  Word -> Word -> Word -> Maybe (V2 (V2 Word)),
-  Integer -> Integer -> Integer -> Maybe (V2 (V2 Integer))
+  Int -> Int -> Int -> Maybe (V2 (V2 Int))
+  , Word -> Word -> Word -> Maybe (V2 (V2 Word))
+  , Integer -> Integer -> Integer -> Maybe (V2 (V2 Integer))
   #-}
 
 -- | Returns det(A) and inv(A)det(A)
@@ -1104,9 +1115,9 @@ inv22Int m@(V2 (V2 a b) (V2 c d))
   where
     det = det22 m
 {-# SPECIALIZE inv22Int ::
-   M22 Int -> Maybe (Int, M22 Int),
-   M22 Word -> Maybe (Word, M22 Word),
-   M22 Integer -> Maybe (Integer, M22 Integer)
+  M22 Int -> Maybe (Int, M22 Int)
+  , M22 Word -> Maybe (Word, M22 Word)
+  , M22 Integer -> Maybe (Integer, M22 Integer)
   #-}
 
 integerFactorial :: Integer -> Integer
