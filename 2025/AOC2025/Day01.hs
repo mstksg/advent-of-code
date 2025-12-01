@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2025.Day01 (
--- day01a,
--- day01b
-
+  day01a,
+  day01b,
 )
 where
 
@@ -55,11 +54,11 @@ day01a =
   MkSol
     { sParse =
         noFail $
-          lines
+          map (\case 'R':n -> read n; 'L':n -> negate $ read n) . lines
     , sShow = show
     , sSolve =
         noFail $
-          id
+          length . filter (== 0) . map (`mod` 100) . tail . scanl' (+) 50
     }
 
 day01b :: _ :~> _
@@ -68,6 +67,24 @@ day01b =
     { sParse = sParse day01a
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail $ 
+          -- map (`mod` 100) . concat . snd . mapAccumL go (50 :: Int)
+          length . filter (== 0) . map (`mod` 100) . concat . snd . mapAccumL go (50 :: Int)
     }
+  where
+    go curr bump
+      | bump > 0 = swap ([curr + 1 .. curr + bump], curr+bump)
+      | otherwise = swap (reverse [curr + bump .. curr - 1], curr+bump)
+
+
+
+
+
+
+
+
+
+
+
+
+
