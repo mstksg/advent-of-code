@@ -47,10 +47,9 @@ day01b =
     go curr bump = (m, hits)
       where
         (d, m) = (curr + bump) `divMod` 100
+        -- uh...it works ok
         hits
           | bump > 0 = d
-          | otherwise = case (curr, m) of
-              (0, 0) -> abs d + 1
-              (0, _) -> abs d - 1
-              (_, 0) -> abs d + 1
-              (_, _) -> abs d
+          | m == 0 = abs d + 1
+          | curr == 0 = abs d - 1
+          | otherwise = abs d
