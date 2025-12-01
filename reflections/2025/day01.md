@@ -34,3 +34,5 @@ part2 = length . filter (== 0) . concat . snd . mapAccumL go 50
       | bump > 0 = (curr + bump, [curr + 1 .. curr + bump])
       | otherwise = (curr + bump, [curr + bump .. curr - 1])
 ```
+
+Because of lazy lists, this is constant space! :)
