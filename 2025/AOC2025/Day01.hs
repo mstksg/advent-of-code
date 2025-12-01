@@ -16,14 +16,13 @@ import AOC.Common (countTrue)
 import AOC.Solver (noFail, type (:~>) (..))
 import Data.Finite (modulo)
 import Data.List (scanl')
-import Data.Maybe (mapMaybe)
 import Data.Traversable (mapAccumL)
 import Text.Read (readMaybe)
 
 day01a :: [Integer] :~> Int
 day01a =
   MkSol
-    { sParse = traverse (readMaybe . mapMaybe align) . lines
+    { sParse = traverse (readMaybe . map align) . lines
     , sShow = show
     , sSolve =
         noFail $
@@ -31,9 +30,9 @@ day01a =
     }
   where
     align = \case
-      'R' -> Nothing
-      'L' -> Just '-'
-      d -> Just d
+      'R' -> ' '
+      'L' -> '-'
+      d -> d
 
 day01b :: [Integer] :~> Integer
 day01b =

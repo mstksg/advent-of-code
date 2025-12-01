@@ -4,11 +4,11 @@ Once we parse the input into a list of integers:
 
 ```haskell
 parseInp :: String -> [Int]
-parseInp = read . mapMaybe rephrase . lines
+parseInp = read . map rephrase . lines
   where
-    rephrase 'R' = Nothing
-    rephrase 'L' = Just '-'
-    rephrase d = Just d
+    rephrase 'R' = ' '
+    rephrase 'L' = '-'
+    rephrase d = d
 ```
 
 Then we can do the cumulative sum and count the zero's.  It actually becomes
