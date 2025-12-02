@@ -21,9 +21,9 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2025.Day02 (
--- day02a,
--- day02b
-
+  day02a,
+  day02b,
+  isDupper
 )
 where
 
@@ -50,17 +50,20 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
-day02a :: _ :~> _
+day02a :: [(Int, Int)] :~> _
 day02a =
   MkSol
     { sParse =
-        noFail $
-          lines
+          traverse (listTup . map read . splitOn "-") . splitOn ","
     , sShow = show
     , sSolve =
         noFail $
-          id
+          sum . filter (isDup . show) . concatMap (\(x, y) -> [x .. y])
     }
+  where
+    isDup xs = a == b && even (length xs)
+      where
+        (a, b) = splitAt (length xs `div` 2) xs
 
 day02b :: _ :~> _
 day02b =
@@ -69,5 +72,13 @@ day02b =
     , sShow = show
     , sSolve =
         noFail $
-          id
+          sum . filter (isDupper . show) . concatMap (\(x, y) -> [x .. y])
     }
+
+isDupper xs = not $ null $ do
+  (a,b) <- zip (inits xs) (tails xs)
+  guard $ not (null a)
+  guard $ not (null b)
+  guard $ length b `mod` length a == 0
+  let match = zip (cycle a) b
+  guard $ all (uncurry (==)) match
