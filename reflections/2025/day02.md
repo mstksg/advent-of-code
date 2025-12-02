@@ -19,7 +19,7 @@ And you can union together `rep2`, `rep3`, etc. too:
 
 ```haskell
 repN :: IntSet
-repN = flip foldMap [1..11] $ \n ->
+repN = flip foldMap [2..11] $ \n ->
   IS.fromAscList . takeWhile (< 1e11) . map (repDigits n) $ [1 ..]
 
 part2 :: [(Int, Int)] -> Int
