@@ -26,7 +26,7 @@ repDigits n = read . concat . replicate n . show
 
 -- | Up to 1e11
 repN :: [Int] -> IntSet
-repN ns = flip foldMap ns $ \n ->
+repN = foldMap \n ->
   IS.fromAscList . takeWhile (< 1e11) . map (repDigits n) $ [1 ..]
 
 day02 :: [Int] -> [(Int, Int)] :~> Int
