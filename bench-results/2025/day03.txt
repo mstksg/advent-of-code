@@ -1,0 +1,19 @@
+>> Day 03a
+benchmarking...
+time                 286.6 μs   (285.6 μs .. 288.0 μs)
+                     0.998 R²   (0.995 R² .. 1.000 R²)
+mean                 296.5 μs   (290.5 μs .. 309.3 μs)
+std dev              28.79 μs   (18.25 μs .. 45.33 μs)
+variance introduced by outliers: 78% (severely inflated)
+
+* parsing and formatting times excluded
+
+>> Day 03b
+benchmarking...
+time                 4.350 ms   (4.332 ms .. 4.383 ms)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 4.344 ms   (4.330 ms .. 4.357 ms)
+std dev              44.51 μs   (33.76 μs .. 58.07 μs)
+
+* parsing and formatting times excluded
+

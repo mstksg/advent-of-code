@@ -14,7 +14,8 @@ where
 
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad (replicateM, (<=<))
-import Control.Monad.Trans.State (StateT (StateT), evalStateT)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.State (StateT, evalStateT, modifyM)
 import Data.Char (digitToInt, intToDigit)
 import Data.List (tails)
 import Data.Maybe (listToMaybe)
@@ -30,7 +31,7 @@ day03 n =
     }
   where
     go :: StateT [Int] [] String
-    go = replicateM n (intToDigit <$> StateT descendPicks)
+    go = replicateM n (intToDigit <$> nextDigit)
 
 day03a :: [[Int]] :~> Int
 day03a = day03 2
@@ -38,15 +39,12 @@ day03a = day03 2
 day03b :: [[Int]] :~> Int
 day03b = day03 12
 
-dropWhileMany :: (a -> Bool) -> [a] -> [[a]]
-dropWhileMany p xs =
-  [ xs'
-  | x : xs' <- tails xs
-  , not $ p x
-  ]
-
-descendPicks :: [Int] -> [(Int, [Int])]
-descendPicks xs = do
-  n <- reverse [1 .. 9]
-  xs' <- dropWhileMany (/= n) xs
-  pure (n, xs')
+nextDigit :: StateT [Int] [] Int
+nextDigit = do
+  n <- lift [9,8,7,6,5,4,3,2,1]
+  modifyM \xs ->
+    [ xs'
+    | x : xs' <- tails xs
+    , x == n
+    ]
+  pure n
