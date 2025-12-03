@@ -24,7 +24,7 @@ import AOC.Common.Point (
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad (guard, join)
 import Data.Foldable (for_)
-import Data.List (foldl', unfoldr)
+import Data.List (unfoldr)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe, isJust, listToMaybe)

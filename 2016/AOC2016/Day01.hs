@@ -14,7 +14,6 @@ module AOC2016.Day01 (
 import AOC.Common (firstRepeated)
 import AOC.Common.Point (Dir (..), Point, dirPoint, mannDist, parseDir)
 import AOC.Solver ((:~>) (..))
-import Data.List (foldl')
 import Text.Read (readMaybe)
 
 data Turtle = (:@)

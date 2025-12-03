@@ -17,7 +17,7 @@ import AOC.Common (clearOut)
 import AOC.Common.Point (boundingBox, mannDist)
 import AOC.Solver ((:~>) (..))
 import Data.Char (isDigit)
-import Data.Foldable (foldl', maximumBy, toList)
+import Data.Foldable (maximumBy, toList)
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import Data.Ord (Down (..), comparing)

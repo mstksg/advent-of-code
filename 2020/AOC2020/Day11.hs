@@ -140,7 +140,7 @@ lineOfSights2 bb pts = M.fromSet go pts
     los p d =
       find (`S.member` pts)
         . takeWhile (inBoundingBox bb)
-        . tail
+        . drop 1
         $ iterate (+ d) p
 
 day11b :: Map Point Bool :~> Int

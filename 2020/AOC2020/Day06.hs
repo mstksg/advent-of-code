@@ -15,7 +15,6 @@ where
 import AOC.Solver ((:~>) (..))
 import Data.Bits (popCount, setBit, (.&.), (.|.))
 import Data.Char (ord)
-import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import Data.List.Split (splitOn)

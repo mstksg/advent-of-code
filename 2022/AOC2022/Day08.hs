@@ -14,7 +14,7 @@ where
 
 import AOC.Common (countTrue, digitToIntSafe)
 import AOC.Solver ((:~>) (..))
-import Data.List (foldl', mapAccumL, transpose)
+import Data.List (mapAccumL, transpose)
 import qualified Data.Map as M
 import Data.Profunctor (dimap)
 import Safe.Foldable (maximumMay)

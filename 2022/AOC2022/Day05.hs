@@ -20,7 +20,7 @@ import Data.Bitraversable (bitraverse)
 import Data.Char (isDigit, isLetter)
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
-import Data.List (foldl', transpose)
+import Data.List (transpose)
 import Data.List.Split (splitOn)
 import GHC.Generics (Generic)
 import Linear.V3 (V3 (..))

@@ -45,7 +45,7 @@ import qualified Data.IntMap.Strict as IM
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
 import Data.Ix (range)
-import Data.List (foldl', uncons)
+import Data.List (uncons)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.List.Split (splitOn)

@@ -273,7 +273,7 @@ stepper nxy syms cs = fmap (IM.keysSet . IM.filter validLiveCount) . coerce $
 
 neighbs :: (Num a, Eq a) => a -> [a] -> [[a]]
 neighbs mx =
-  tail
+  drop 1
     . traverse
       ( \x ->
           if

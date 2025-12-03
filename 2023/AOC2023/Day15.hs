@@ -22,7 +22,6 @@ import Control.Lens (makeLenses, set, unsnoc)
 import Data.Char (ord)
 import Data.Functor ((<&>))
 import qualified Data.IntMap as IM
-import Data.List (foldl')
 import Data.List.Split (splitOn)
 import Data.Map.NonEmpty (NEMap)
 import qualified Data.Map.NonEmpty as NEM

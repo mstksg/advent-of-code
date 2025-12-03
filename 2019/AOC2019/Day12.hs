@@ -23,7 +23,7 @@ import Text.Read (readMaybe)
 type Point = V3 Int
 
 data Phase a = Phase {pPos :: !a, pVel :: !a}
-  deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
+  deriving stock (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 parsePos :: String -> Maybe (Phase Point)
 parsePos str = do

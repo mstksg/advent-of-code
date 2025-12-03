@@ -25,7 +25,7 @@ import AOC.Common.Point (
 import AOC.Solver ((:~>) (..))
 import Control.Monad (guard)
 import Data.Foldable (asum, toList)
-import Data.List (findIndex, foldl', scanl')
+import Data.List (findIndex, scanl')
 import qualified Data.Map as M
 import Data.Set (Set)
 import qualified Data.Set as S

@@ -24,7 +24,6 @@ import Data.IntervalMap.Strict (IntervalMap)
 import qualified Data.IntervalMap.Strict as IVM
 import Data.IntervalSet (IntervalSet)
 import qualified Data.IntervalSet as IVS
-import Data.List (foldl')
 import Data.List.Split (chunksOf)
 import Safe (minimumMay)
 import qualified Text.Megaparsec.Char as P

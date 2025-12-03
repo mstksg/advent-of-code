@@ -15,7 +15,7 @@ where
 import AOC.Solver ((:~>) (..))
 import Control.DeepSeq (NFData)
 import Data.Foldable (toList)
-import Data.List (find, foldl', sort, tails)
+import Data.List (find, sort, tails)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (mapMaybe)

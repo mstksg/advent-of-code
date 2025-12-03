@@ -13,7 +13,7 @@ module AOC2016.Day02 (
 
 import AOC.Common.Point (Dir (..), Point, dirPoint, parseDir)
 import AOC.Solver ((:~>) (..))
-import Data.List (foldl', mapAccumL)
+import Data.List (mapAccumL)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (mapMaybe)

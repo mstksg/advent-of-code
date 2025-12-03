@@ -60,7 +60,7 @@ day13a =
     , sSolve = \(ptList, folds) ->
         Just
           let ptSet = S.fromList ptList
-           in S.size $ foldr go ptSet [head folds]
+           in S.size $ foldr go ptSet (take 1 folds)
     }
   where
     parseFold ax v = do

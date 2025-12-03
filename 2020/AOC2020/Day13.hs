@@ -16,7 +16,6 @@ import AOC.Common.Parser (CharParser, parseMaybeLenient)
 import AOC.Solver ((:~>) (..))
 import Control.Applicative ((<|>))
 import Data.Foldable (minimumBy)
-import Data.List (foldl')
 import Data.Maybe (catMaybes, mapMaybe)
 import Data.Ord (comparing)
 import qualified Text.Megaparsec as P

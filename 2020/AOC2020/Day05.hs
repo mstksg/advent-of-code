@@ -16,7 +16,6 @@ import AOC.Solver ((:~>) (..))
 import qualified Control.Foldl as F
 import Data.Bits (complement, shiftR, (.&.))
 import Data.Char (ord)
-import Data.List (foldl')
 
 seatId :: String -> Int
 seatId = foldl' iGuessWe'reDoingThis 0

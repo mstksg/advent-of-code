@@ -12,7 +12,6 @@ module AOC.Common.Search (
 where
 
 import Data.Bifunctor
-import Data.List (foldl')
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.OrdPSQ (OrdPSQ)

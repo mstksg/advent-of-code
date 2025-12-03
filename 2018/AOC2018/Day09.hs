@@ -17,7 +17,6 @@ import AOC.Solver ((:~>) (..))
 import Control.Lens (ix, (+~))
 import Data.Bifunctor (second)
 import Data.Function ((&))
-import Data.List (foldl')
 import Data.List.PointedList.Circular (PointedList (..))
 import qualified Data.List.PointedList.Circular as PL
 import Data.Maybe (fromJust, mapMaybe)

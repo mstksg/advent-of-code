@@ -16,7 +16,7 @@ import AOC.Common.Point (Dir (North, South), Point, dirPoint, parseAsciiMap, par
 import AOC.Solver (type (:~>) (..))
 import Data.Bifunctor (Bifunctor (second))
 import Data.Bool (bool)
-import Data.Foldable (foldl', foldlM, toList)
+import Data.Foldable (foldlM, toList)
 import Data.List.Split (splitOn)
 import Data.Map (Map)
 import qualified Data.Map as M

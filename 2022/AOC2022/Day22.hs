@@ -23,7 +23,7 @@ import Control.Monad.Trans.State (StateT (..), evalStateT)
 import Data.Bitraversable (bitraverse)
 import Data.Char (isDigit, isSpace)
 import Data.Coerce (coerce)
-import Data.List (foldl', uncons)
+import Data.List (uncons)
 import Data.List.Split (splitOn)
 import Data.Map (Map)
 import qualified Data.Map as M

@@ -16,7 +16,6 @@ import AOC.Common.Point (Dir (..), Point, dirPoint, mannDist, rotPoint)
 import AOC.Solver ((:~>) (..))
 import Control.DeepSeq (NFData)
 import Data.Group (pow)
-import Data.List (foldl')
 import Data.Map (Map)
 import qualified Data.Map as M
 import GHC.Generics (Generic)

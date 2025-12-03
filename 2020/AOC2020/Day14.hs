@@ -22,7 +22,6 @@ import Data.Bits (clearBit, setBit)
 import Data.Functor (void)
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
-import Data.List (foldl')
 import GHC.Generics (Generic)
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P

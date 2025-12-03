@@ -22,7 +22,7 @@ import Control.Monad.Combinators (between, sepBy1, sepEndBy1)
 import Control.Monad.State (evalStateT, gets, lift, modify)
 import Data.Bits ((.&.), (.|.))
 import Data.Finite (Finite, packFinite)
-import Data.Foldable (foldl', toList)
+import Data.Foldable (toList)
 import Data.Function ((&))
 import Data.Map (Map)
 import qualified Data.Map as M
