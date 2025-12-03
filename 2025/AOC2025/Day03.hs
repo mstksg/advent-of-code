@@ -16,32 +16,31 @@ import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad (replicateM, (<=<))
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (StateT, evalStateT, modifyM)
-import Data.Char (digitToInt, intToDigit)
 import Data.List (tails)
 import Data.Maybe (listToMaybe)
 import Text.Read (readMaybe)
 
-day03 :: Int -> [[Int]] :~> Int
+day03 :: Int -> [String] :~> Int
 day03 n =
   MkSol
-    { sParse = noFail $ map (map digitToInt) . lines
+    { sParse = noFail lines
     , sShow = show
     , sSolve =
         fmap sum . traverse (readMaybe @Int <=< listToMaybe . evalStateT go)
     }
   where
-    go :: StateT [Int] [] String
-    go = replicateM n (intToDigit <$> nextDigit)
+    go :: StateT String [] String
+    go = replicateM n nextDigit
 
-day03a :: [[Int]] :~> Int
+day03a :: [String] :~> Int
 day03a = day03 2
 
-day03b :: [[Int]] :~> Int
+day03b :: [String] :~> Int
 day03b = day03 12
 
-nextDigit :: StateT [Int] [] Int
+nextDigit :: StateT String [] Char
 nextDigit = do
-  n <- lift [9,8,7,6,5,4,3,2,1]
+  n <- lift "987654321"
   modifyM \xs ->
     [ xs'
     | x : xs' <- tails xs
