@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2025.Day04 (
--- day04a,
--- day04b
-
+  day04a,
+  day04b
 )
 where
 
@@ -55,12 +54,41 @@ day04a =
   MkSol
     { sParse =
         noFail $
-          lines
+          parseAsciiSet (== '@')
     , sShow = show
     , sSolve =
         noFail $
-          id
+          -- \mp -> let Just bb = boundingBox' mp
+          --            cands  = fillBoundingBox bb `S.difference` mp
+          --            spots = flip S.filter cands $ \pt -> 
+          --                 let ns = fullNeighbsSet pt `S.intersection` mp
+          --                  in S.size ns < 4
+          --            reachable = flip foldMap spots  $ \pt ->
+          --                   fullNeighbsSet pt `S.intersection` mp
+          --         in S.size reachable
+          \mp -> let 
+                     reachable = flip S.filter mp $ \pt ->
+                       S.size (fullNeighbsSet pt `S.intersection` mp) < 4
+                  in S.size reachable
     }
+-- fullNeighbsSet ::
+
+-- boundingBox :: (Foldable1 f, Applicative g, Ord a) => f (g a) -> V2 (g a)
+-- boundingBox =
+--   (\(T2 (Ap mn) (Ap mx)) -> V2 (getMin <$> mn) (getMax <$> mx))
+--     . foldMap1 (\p -> T2 (Ap (Min <$> p)) (Ap (Max <$> p)))
+
+-- -- | A version of 'boundingBox' that works for normal possibly-empty lists.
+-- boundingBox' :: (Foldable f, Applicative g, Ord a) => f (g a) -> Maybe (V2 (g a))
+-- boundingBox' = fmap boundingBox . NE.nonEmpty . toList
+
+-- fillBoundingBox ::
+--   (Foldable f, Applicative g, Ord a, Ord (g a), Traversable g, Enum a) =>
+--   f (g a) ->
+--   Set (g a)
+-- fillBoundingBox ps = case boundingBox' ps of
+--   Nothing -> S.empty
+--   Just (V2 mins maxs) -> S.fromList $ sequenceA $ liftA2 enumFromTo mins maxs
 
 day04b :: _ :~> _
 day04b =
@@ -69,5 +97,15 @@ day04b =
     , sShow = show
     , sSolve =
         noFail $
-          id
+          \mp -> 
+              S.size . fold . takeWhile (not . S.null) $ unfoldr go mp
+              -- let 
+              --        reachable = flip S.filter mp $ \pt ->
+              --          S.size (fullNeighbsSet pt `S.intersection` mp) < 4
+              --     in S.size reachable
     }
+  where
+    go pts = Just (reachable, pts `S.difference` reachable)
+      where
+        reachable = flip S.filter pts $ \pt ->
+          S.size (fullNeighbsSet pt `S.intersection` pts) < 4
