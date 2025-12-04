@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- |
 -- Module      : AOC2025.Day04
 -- License     : BSD3
@@ -9,103 +6,41 @@
 -- Portability : non-portable
 --
 -- Day 4.  See "AOC.Solver" for the types used in this module!
---
--- After completing the challenge, it is recommended to:
---
--- *   Replace "AOC.Prelude" imports to specific modules (with explicit
---     imports) for readability.
--- *   Remove the @-Wno-unused-imports@ and @-Wno-unused-top-binds@
---     pragmas.
--- *   Replace the partial type signatures underscores in the solution
---     types @_ :~> _@ with the actual types of inputs and outputs of the
---     solution.  You can delete the type signatures completely and GHC
---     will recommend what should go in place of the underscores.
 module AOC2025.Day04 (
   day04a,
-  day04b
+  day04b,
 )
 where
 
-import AOC.Prelude
-import qualified Data.Graph.Inductive as G
-import qualified Data.IntMap as IM
-import qualified Data.IntMap.NonEmpty as NEIM
-import qualified Data.IntSet as IS
-import qualified Data.IntSet.NonEmpty as NEIS
-import qualified Data.List.NonEmpty as NE
-import qualified Data.List.PointedList as PL
-import qualified Data.List.PointedList.Circular as PLC
-import qualified Data.Map as M
-import qualified Data.Map.NonEmpty as NEM
-import qualified Data.OrdPSQ as PSQ
-import qualified Data.Sequence as Seq
-import qualified Data.Sequence.NonEmpty as NESeq
+import AOC.Common.Point (Point, fullNeighbsSet, parseAsciiSet)
+import AOC.Solver (noFail, (:~>) (..))
+import Data.Foldable (fold)
+import Data.List (unfoldr)
+import Data.Set (Set)
 import qualified Data.Set as S
-import qualified Data.Set.NonEmpty as NES
-import qualified Data.Text as T
-import qualified Data.Vector as V
-import qualified Linear as L
-import qualified Text.Megaparsec as P
-import qualified Text.Megaparsec.Char as P
-import qualified Text.Megaparsec.Char.Lexer as PP
 
-day04a :: _ :~> _
+reachable :: Set Point -> Set Point
+reachable pts = flip S.filter pts \pt ->
+  S.size (fullNeighbsSet pt `S.intersection` pts) < 4
+
+day04a :: Set Point :~> Int
 day04a =
   MkSol
-    { sParse =
-        noFail $
-          parseAsciiSet (== '@')
+    { sParse = noFail $ parseAsciiSet (== '@')
     , sShow = show
-    , sSolve =
-        noFail $
-          -- \mp -> let Just bb = boundingBox' mp
-          --            cands  = fillBoundingBox bb `S.difference` mp
-          --            spots = flip S.filter cands $ \pt -> 
-          --                 let ns = fullNeighbsSet pt `S.intersection` mp
-          --                  in S.size ns < 4
-          --            reachable = flip foldMap spots  $ \pt ->
-          --                   fullNeighbsSet pt `S.intersection` mp
-          --         in S.size reachable
-          \mp -> let 
-                     reachable = flip S.filter mp $ \pt ->
-                       S.size (fullNeighbsSet pt `S.intersection` mp) < 4
-                  in S.size reachable
+    , sSolve = noFail $ S.size . reachable
     }
--- fullNeighbsSet ::
 
--- boundingBox :: (Foldable1 f, Applicative g, Ord a) => f (g a) -> V2 (g a)
--- boundingBox =
---   (\(T2 (Ap mn) (Ap mx)) -> V2 (getMin <$> mn) (getMax <$> mx))
---     . foldMap1 (\p -> T2 (Ap (Min <$> p)) (Ap (Max <$> p)))
-
--- -- | A version of 'boundingBox' that works for normal possibly-empty lists.
--- boundingBox' :: (Foldable f, Applicative g, Ord a) => f (g a) -> Maybe (V2 (g a))
--- boundingBox' = fmap boundingBox . NE.nonEmpty . toList
-
--- fillBoundingBox ::
---   (Foldable f, Applicative g, Ord a, Ord (g a), Traversable g, Enum a) =>
---   f (g a) ->
---   Set (g a)
--- fillBoundingBox ps = case boundingBox' ps of
---   Nothing -> S.empty
---   Just (V2 mins maxs) -> S.fromList $ sequenceA $ liftA2 enumFromTo mins maxs
-
-day04b :: _ :~> _
+day04b :: Set Point :~> Int
 day04b =
   MkSol
     { sParse = sParse day04a
     , sShow = show
     , sSolve =
         noFail $
-          \mp -> 
-              S.size . fold . takeWhile (not . S.null) $ unfoldr go mp
-              -- let 
-              --        reachable = flip S.filter mp $ \pt ->
-              --          S.size (fullNeighbsSet pt `S.intersection` mp) < 4
-              --     in S.size reachable
+          S.size . fold . takeWhile (not . S.null) . unfoldr (Just . go)
     }
   where
-    go pts = Just (reachable, pts `S.difference` reachable)
+    go pts = (removed, pts `S.difference` removed)
       where
-        reachable = flip S.filter pts $ \pt ->
-          S.size (fullNeighbsSet pt `S.intersection` pts) < 4
+        removed = reachable pts
