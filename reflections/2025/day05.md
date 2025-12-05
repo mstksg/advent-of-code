@@ -12,7 +12,7 @@ Part 1 is just filtering for the points in the set:
 
 ```haskell
 part1 :: IntervalSet Int -> [Int] -> Int
-part1 iset = length . filter (`IVS.member` buildSet iset)
+part1 iset = length . filter (`IVS.member` iset)
 ```
 
 And part 2 is just getting the size of that set:
