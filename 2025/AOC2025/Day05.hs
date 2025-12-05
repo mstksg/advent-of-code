@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2025.Day05 (
--- day05a,
--- day05b
-
+  day05a,
+  day05b,
 )
 where
 
@@ -42,6 +41,7 @@ import qualified Data.OrdPSQ as PSQ
 import qualified Data.Sequence as Seq
 import qualified Data.Sequence.NonEmpty as NESeq
 import qualified Data.Set as S
+import Data.ExtendedReal (Extended(..))
 import qualified Data.Set.NonEmpty as NES
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -49,17 +49,21 @@ import qualified Linear as L
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
+import qualified Data.Interval as I
+import qualified Data.IntervalSet as IVS
 
 day05a :: _ :~> _
 day05a =
   MkSol
     { sParse =
-        noFail $
-          lines
+        noFail \xs -> case splitOn "\n\n" xs of
+          [a,b] -> (fromJust . listTup . map (read @Int) . splitOn "-" <$> lines a, read @Int <$> lines b)
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \(ranges, xs) ->
+          countTrue (\x -> any (`inRange` x) ranges) xs
+          -- let allRange = foldMap (IS.fromRange) ranges
+          --  in IS.size $ IS.fromList xs `IS.intersection` allRange
     }
 
 day05b :: _ :~> _
@@ -68,6 +72,8 @@ day05b =
     { sParse = sParse day05a
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \(ranges, _) -> sum . map (succ . I.width) . IVS.toAscList $ foldMap (\(x,y) -> IVS.singleton $ Finite x I.<=..<= Finite y) ranges
+          -- countTrue (\x -> any (`inRange` x) ranges) xs
     }
+
+-- 402
