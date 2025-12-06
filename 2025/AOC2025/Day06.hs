@@ -50,34 +50,36 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
-day06a :: _ :~> _
+parseOp :: (Foldable t, Num a) => Char -> Maybe (t a -> a)
+parseOp '*' = Just product
+parseOp '+' = Just sum
+parseOp _ = Nothing
+
+day06a :: [[String]] :~> Int
 day06a =
   MkSol
-    { sParse =
-        noFail $
-          map reverse . transpose . map words . lines
+    { sParse = noFail $ map words . lines
     , sShow = show
     , sSolve =
-        noFail $
-          sum . map go
+          fmap sum . traverse (uncurry go <=< uncons . reverse) . transpose
     }
   where
-    go ("*":xs) = product $ map read xs
-    go ("+":xs) = sum $ map read xs
+    go [c] xs = parseOp c <*> traverse readMaybe xs
+    go _ _ = Nothing
 
-day06b :: _ :~> _
+day06b :: [String] :~> Int
 day06b =
   MkSol
-    { sParse = noFail $
-          splitWhen (all isSpace) . transpose . lines
+    { sParse = noFail lines
     , sShow = show
     , sSolve =
-        noFail $
-          sum . map go
+          fmap sum . traverse (uncurry go <=< uncons) . splitWhen (all isSpace) . transpose
     }
   where
-    go (x:xs) = case last x of
-                  '*' -> product $ map read (init x : xs)
-                  '+' -> sum $ map read (init x : xs)
+    go :: String -> [String] -> Maybe Int
+    go xAndOp xs = do
+      f <- parseOp =<< lastMay xAndOp
+      x <- initMay xAndOp
+      f <$> traverse readMaybe (x:xs)
 
 -- 14, 148
