@@ -1,2 +1,9 @@
 packages: ./
 multi-repl: True
+
+-- just for now until it gets on hackage
+source-repository-package
+  type: git
+  location: https://github.com/mstksg/advent-of-code-api
+  tag: deec6306fbac323336ff4923e63bbee11f96aabd
+  --sha256: 174xygy4s63l283fn35bmhci1jfxdih6q3lpib6jidps7wh4b5m3

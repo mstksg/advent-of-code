@@ -45,7 +45,7 @@ common common-options
 library aoc-core
   import:          common-options
   build-depends:
-    , advent-of-code-api    >=0.2.9.1
+    , advent-of-code-api    >=0.2.11
     , aeson
     , ansi-terminal
     , base                  >=4.7     && <5
