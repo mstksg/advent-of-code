@@ -269,7 +269,7 @@ mainSubmit CB{..} Cfg{..} MSO{..} = do
   cd@CD{..} <- liftIO $ challengeData _cfgSession _cbYear cs
   inp <- liftEither . first ("[PROMPT ERROR]" :) $ _cdInput
   opts <-
-    defaultAoCOpts aocUserAgent _cbYear
+    defaultAoCOpts' _cbYear
       <$> maybeToEither
         ["ERROR: Session Key Required to Submit"]
         _cfgSession

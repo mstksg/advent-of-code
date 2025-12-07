@@ -34,6 +34,7 @@ module AOC.Run.Load (
   dayInt,
   TestMeta (..),
   aocUserAgent,
+  defaultAoCOpts',
 
   -- * Parsers
   parseMeta,
@@ -125,6 +126,9 @@ makeChallengeDirs CP{..} =
     (createDirectoryIfMissing True . takeDirectory)
     [_cpPrompt, _cpCodeBlocks, _cpInput, _cpAnswer, _cpTests, _cpLog]
 
+defaultAoCOpts' :: Integer -> String -> AoCOpts
+defaultAoCOpts' y s = (defaultAoCOpts aocUserAgent y s) { _aInferRankOnSubmission = True }
+
 -- | Load data associated with a challenge from a given specification.
 -- Will fetch answers online and cache if required (and if giten a session
 -- token).
@@ -183,7 +187,7 @@ challengeData sess yr spec@CS{..} = do
         maybeToEither
           ["Session key needed to fetch input"]
           sess
-      let opts = defaultAoCOpts aocUserAgent yr s
+      let opts = defaultAoCOpts' yr s
       inp <-
         liftEither . bimap showAoCError T.unpack
           =<< liftIO (runAoC opts a)
@@ -204,7 +208,7 @@ challengeData sess yr spec@CS{..} = do
       liftIO $ T.writeFile _cpPrompt prompt
       pure prompt
       where
-        opts = defaultAoCOpts aocUserAgent yr $ fold sess
+        opts = defaultAoCOpts' yr $ fold sess
         a = AoCPrompt _csDay
         e = case sess of
           Just _ -> "Part not yet released"
@@ -222,7 +226,7 @@ challengeData sess yr spec@CS{..} = do
       liftIO $ T.writeFile _cpCodeBlocks $ T.intercalate codeBlockSep blocks
       pure blocks
       where
-        opts = defaultAoCOpts aocUserAgent yr $ fold sess
+        opts = defaultAoCOpts' yr $ fold sess
         a = AoCPrompt _csDay
         e = case sess of
           Just _ -> "Part not yet released"
