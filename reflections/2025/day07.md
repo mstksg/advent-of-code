@@ -27,8 +27,8 @@ that splitter itself got any light.
 part2 :: Point -> Set Point -> Int
 part2 sourcePos splitters = pathsFrom M.! (sourcePos + V2 0 2)
   where
-    maxY = maximum $ S.map (view _y) $ map splitters
-    downFrom (V2 x y0) = fromMaybe 1 $ listToMaybe 
+    maxY = maximum . map (view _y) $ toList splitters
+    downFrom (V2 x y0) = fromMaybe 1 $ listToMaybe
       [ n
       | Just n <- M.lookup . V2 x <$> [y0, y0 + 2 .. maxY]
       ]
