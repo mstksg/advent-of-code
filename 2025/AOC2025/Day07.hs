@@ -90,7 +90,7 @@ day07b =
     , sSolve =
         \(startPos, splitters) ->
           fmap getSum . M.lookup (startPos + V2 0 2) $
-            solve startPos splitters 0 1 $ \p ->
+            solve startPos splitters 0 1 \p ->
               [p' | (cond, dps) <- rules splitters, cond p, p' <- (p +) <$> dps] -- apply cond to src
     }
 
