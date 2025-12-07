@@ -19,7 +19,7 @@ import Control.Lens (view)
 import Control.Monad (guard)
 import Data.Foldable (toList)
 import qualified Data.Map as M
-import Data.Semigroup (Sum(..), Any(..))
+import Data.Semigroup (Any (..), Sum (..))
 import qualified Data.Set as S
 import Data.Set.NonEmpty (NESet)
 import qualified Data.Set.NonEmpty as NES
@@ -60,8 +60,8 @@ solve startPos splitters startVal boundary flow = result `M.restrictKeys` NES.to
     maxY = maximum . map (view _y) $ toList splitters
     points = S.fromList . takeWhile ((<= maxY) . view _y) $ buildTriangle (startPos + V2 0 2)
     result = flip M.fromSet points \p ->
-      mconcat (startVal <$ guard (p == startPos + V2 0 2))
-        <> foldMap (\n -> M.findWithDefault boundary n result) (flow p)
+      (if p == startPos + V2 0 2 then mappend startVal else id) $
+        foldMap (\n -> M.findWithDefault boundary n result) (flow p)
 
 day07a :: _ :~> _
 day07a =
