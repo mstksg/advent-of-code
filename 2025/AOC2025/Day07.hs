@@ -49,69 +49,44 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
+parseMap :: String -> Maybe (Point, NESet Point)
+parseMap =
+  reshape
+    . M.partition id
+    . parseAsciiMap \case 'S' -> Just True; '^' -> Just False; _ -> Nothing
+  where
+    reshape (startPos, rest) = (,) . fst <$> M.lookupMin startPos <*> NES.nonEmptySet (M.keysSet rest)
+
 day07a :: _ :~> _
 day07a =
   MkSol
-    { sParse =
-        noFail $
-          parseAsciiMap $ \case 'S' -> Just True
-                                '^' -> Just False
-                                _ -> Nothing
+    { sParse = parseMap
     , sShow = show
     , sSolve =
-        noFail $ \mp ->
-              let startPos = S.fromList [ p | (p, True) <- M.toList mp ]
--- boundingBox' :: (Foldable f, Applicative g, Ord a) => f (g a) -> Maybe (V2 (g a))
--- boundingBox' = fmap boundingBox . NE.nonEmpty . toList
-                  Just bb@(V2 _ (V2 _ maxY)) = boundingBox' (M.keys mp)
-                  filled = flip floodFill startPos $ \x -> S.filter (inBoundingBox bb)
-                              case M.lookup (x + V2 0 1) mp of
-                                      Nothing -> S.singleton $ x + V2 0 1
-                                      Just _ -> S.fromList [x + V2 1 1, x + V2 (-1) 1]
-               in length [ () | (p, False) <- M.toList mp, (p - V2 0 1) `S.member` filled]
-               -- length [ () | V2 _ y <- S.toList filled, y == maxY]
+        noFail $ \(startPos, splitters) ->
+          let pathsTo :: NEMap Point Bool
+              pathsTo = flip NEM.fromSet splitters \(V2 x y0) ->
+                let cands = takeWhile ((`NES.notMember` splitters) . V2 x) [y0 - 1, y0 - 2 .. 0]
+                 in flip any cands \y ->
+                      V2 x y == startPos
+                        || NEM.findWithDefault False (V2 (x - 1) y) pathsTo
+                        || NEM.findWithDefault False (V2 (x + 1) y) pathsTo
+           in countTrue id pathsTo
     }
-
--- -- | Flood fill from a starting set
--- floodFill ::
---   Ord a =>
---   -- | Expansion (be sure to limit allowed points)
---   (a -> Set a) ->
---   -- | Start points
---   Set a ->
---   -- | Flood filled
---   Set a
--- floodFill f = snd . floodFillCount f
 
 day07b :: _ :~> _
 day07b =
   MkSol
-    { sParse = sParse day07a
+    { sParse = parseMap
     , sShow = show
-    , sSolve =
-        noFail $ \mp ->
-              -- let startPos = head [ p | (p, True) <- M.toList mp ]
-              --     Just bb@(V2 _ (V2 _ maxY)) = boundingBox' (M.keys mp)
-              --     go = do 
-              --       StateT $ \x ->
-              --                 case M.lookup (x + V2 0 1) mp of
-              --                   Nothing -> [((),x + V2 0 1)]
-              --                   Just _ -> map ((),) [x + V2 1 1, x + V2 (-1) 1]
-              --       x' <- get
-              --       if inBoundingBox bb x'
-              --          then go
-              --          else pure ()
-              --  in length $ execStateT go startPos
-              --
-              let startPos = head [ p | (p, True) <- M.toList mp ]
-                  Just bb@(V2 _ (V2 _ maxY)) = boundingBox' (M.keys mp)
-                  pathsFrom :: Map Point Int
-                  pathsFrom = flip M.fromSet (fillBoundingBox bb) $ \p@(V2 x y) ->
-                    if y == maxY
-                       then 1
-                       else  case M.lookup (p + V2 0 1) mp of
-                               Just False -> M.findWithDefault 0 (p + V2 1 1) pathsFrom + M.findWithDefault 0 (p + V2 (-1) 1) pathsFrom
-                               Nothing -> pathsFrom M.! (p + V2 0 1)
-                               Just True -> pathsFrom M.! (p + V2 0 1)
-               in pathsFrom M.! startPos + 2
+    , sSolve = \(startPos, splitters) -> do
+        let maxY = maximum $ NES.map (view _y) splitters
+            downFrom (V2 x y0) = fromMaybe 1 $ flip firstJust [y0 .. maxY] \y ->
+              NEM.lookup (V2 x y) pathsFrom
+            pathsFrom :: NEMap Point Int
+            pathsFrom = flip NEM.fromSet splitters \p ->
+              downFrom (p + V2 1 2) + downFrom (p + V2 (-1) 2)
+        NEM.lookup (startPos + V2 0 2) pathsFrom
     }
+
+-- 502, 1491

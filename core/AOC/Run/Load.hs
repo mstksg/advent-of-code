@@ -127,7 +127,7 @@ makeChallengeDirs CP{..} =
     [_cpPrompt, _cpCodeBlocks, _cpInput, _cpAnswer, _cpTests, _cpLog]
 
 defaultAoCOpts' :: Integer -> String -> AoCOpts
-defaultAoCOpts' y s = (defaultAoCOpts aocUserAgent y s) { _aInferRankOnSubmission = True }
+defaultAoCOpts' y s = (defaultAoCOpts aocUserAgent y s){_aInferRankOnSubmission = True}
 
 -- | Load data associated with a challenge from a given specification.
 -- Will fetch answers online and cache if required (and if giten a session

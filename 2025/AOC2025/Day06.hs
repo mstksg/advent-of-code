@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2025.Day06 (
-day06a,
-day06b
-
+  day06a,
+  day06b,
 )
 where
 
@@ -61,7 +60,7 @@ day06a =
     { sParse = noFail $ map words . lines
     , sShow = show
     , sSolve =
-          fmap sum . traverse (uncurry go <=< uncons . reverse) . transpose
+        fmap sum . traverse (uncurry go <=< uncons . reverse) . transpose
     }
   where
     go [c] xs = parseOp c <*> traverse readMaybe xs
@@ -73,13 +72,13 @@ day06b =
     { sParse = noFail lines
     , sShow = show
     , sSolve =
-          fmap sum . traverse (uncurry go <=< uncons) . splitWhen (all isSpace) . transpose
+        fmap sum . traverse (uncurry go <=< uncons) . splitWhen (all isSpace) . transpose
     }
   where
     go :: String -> [String] -> Maybe Int
     go xAndOp xs = do
       f <- parseOp =<< lastMay xAndOp
       x <- initMay xAndOp
-      f <$> traverse readMaybe (x:xs)
+      f <$> traverse readMaybe (x : xs)
 
 -- 14, 148
