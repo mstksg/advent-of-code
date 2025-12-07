@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2025.Day07 (
--- day07a,
--- day07b
-
+  day07a,
+  day07b,
 )
 where
 
@@ -55,12 +54,34 @@ day07a =
   MkSol
     { sParse =
         noFail $
-          lines
+          parseAsciiMap $ \case 'S' -> Just True
+                                '^' -> Just False
+                                _ -> Nothing
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail $ \mp ->
+              let startPos = S.fromList [ p | (p, True) <- M.toList mp ]
+-- boundingBox' :: (Foldable f, Applicative g, Ord a) => f (g a) -> Maybe (V2 (g a))
+-- boundingBox' = fmap boundingBox . NE.nonEmpty . toList
+                  Just bb@(V2 _ (V2 _ maxY)) = boundingBox' (M.keys mp)
+                  filled = flip floodFill startPos $ \x -> S.filter (inBoundingBox bb)
+                              case M.lookup (x + V2 0 1) mp of
+                                      Nothing -> S.singleton $ x + V2 0 1
+                                      Just _ -> S.fromList [x + V2 1 1, x + V2 (-1) 1]
+               in length [ () | (p, False) <- M.toList mp, (p - V2 0 1) `S.member` filled]
+               -- length [ () | V2 _ y <- S.toList filled, y == maxY]
     }
+
+-- -- | Flood fill from a starting set
+-- floodFill ::
+--   Ord a =>
+--   -- | Expansion (be sure to limit allowed points)
+--   (a -> Set a) ->
+--   -- | Start points
+--   Set a ->
+--   -- | Flood filled
+--   Set a
+-- floodFill f = snd . floodFillCount f
 
 day07b :: _ :~> _
 day07b =
@@ -68,6 +89,29 @@ day07b =
     { sParse = sParse day07a
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail $ \mp ->
+              -- let startPos = head [ p | (p, True) <- M.toList mp ]
+              --     Just bb@(V2 _ (V2 _ maxY)) = boundingBox' (M.keys mp)
+              --     go = do 
+              --       StateT $ \x ->
+              --                 case M.lookup (x + V2 0 1) mp of
+              --                   Nothing -> [((),x + V2 0 1)]
+              --                   Just _ -> map ((),) [x + V2 1 1, x + V2 (-1) 1]
+              --       x' <- get
+              --       if inBoundingBox bb x'
+              --          then go
+              --          else pure ()
+              --  in length $ execStateT go startPos
+              --
+              let startPos = head [ p | (p, True) <- M.toList mp ]
+                  Just bb@(V2 _ (V2 _ maxY)) = boundingBox' (M.keys mp)
+                  pathsFrom :: Map Point Int
+                  pathsFrom = flip M.fromSet (fillBoundingBox bb) $ \p@(V2 x y) ->
+                    if y == maxY
+                       then 1
+                       else  case M.lookup (p + V2 0 1) mp of
+                               Just False -> M.findWithDefault 0 (p + V2 1 1) pathsFrom + M.findWithDefault 0 (p + V2 (-1) 1) pathsFrom
+                               Nothing -> pathsFrom M.! (p + V2 0 1)
+                               Just True -> pathsFrom M.! (p + V2 0 1)
+               in pathsFrom M.! startPos + 2
     }
