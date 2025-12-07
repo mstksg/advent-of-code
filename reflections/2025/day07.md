@@ -14,8 +14,8 @@ part1 sourcePos splitters = M.size $ M.filter id reached
       let cands = takeWhile ((`S.notMember` splitters) . V2 x) [y0 - 2, y0 - 4 .. 0]
        in flip any cands \y ->
             V2 x y == sourcePos
-              || NEM.findWithDefault False (V2 (x - 1) y) reached
-              || NEM.findWithDefault False (V2 (x + 1) y) reached
+              || M.findWithDefault False (V2 (x - 1) y) reached
+              || M.findWithDefault False (V2 (x + 1) y) reached
 ```
 
 `cands` climbs all the way up until it hits a splitter, which effectively
