@@ -12,15 +12,15 @@ module AOC2025.Day07 (
 )
 where
 
-import AOC.Common (countTrue, firstJust)
+import AOC.Common (countTrue)
 import AOC.Common.Point (Point, parseAsciiMap)
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Lens (view)
+import Control.Monad (guard)
 import Data.Foldable (toList)
 import qualified Data.Map as M
-import Data.Map.NonEmpty (NEMap)
-import qualified Data.Map.NonEmpty as NEM
-import Data.Maybe (fromMaybe)
+import Data.Semigroup (Sum(..), Any(..))
+import qualified Data.Set as S
 import Data.Set.NonEmpty (NESet)
 import qualified Data.Set.NonEmpty as NES
 import Linear.V2 (V2 (..), _y)
@@ -33,21 +33,47 @@ parseMap =
   where
     reshape (startPos, rest) = (,) . fst <$> M.lookupMin startPos <*> NES.nonEmptySet (M.keysSet rest)
 
-day07a :: (Point, NESet Point) :~> Int
+buildTriangle :: Point -> [Point]
+buildTriangle = go 0 0
+  where
+    go !r !c !p =
+      p
+        : if r == c
+          then go (r + 1) 0 (p + V2 (negate (r * 2 + 1)) 2)
+          else go r (c + 1) (p + V2 2 0)
+
+solve ::
+  (Monoid m) =>
+  -- | start pos
+  Point ->
+  -- | splitters
+  NESet Point ->
+  -- | value at start pos
+  m ->
+  -- | value out of bounds
+  m ->
+  -- | direction a point flows
+  (Point -> [Point]) ->
+  M.Map Point m
+solve startPos splitters startVal boundary flow = result `M.restrictKeys` NES.toSet splitters
+  where
+    maxY = maximum . map (view _y) $ toList splitters
+    points = S.fromList . takeWhile ((<= maxY) . view _y) $ buildTriangle (startPos + V2 0 2)
+    result = flip M.fromSet points \p ->
+      mconcat (startVal <$ guard (p == startPos + V2 0 2))
+        <> foldMap (\n -> M.findWithDefault boundary n result) (flow p)
+
+day07a :: _ :~> _
 day07a =
   MkSol
     { sParse = parseMap
     , sShow = show
     , sSolve =
-        noFail $ \(startPos, splitters) ->
-          let pathsTo :: NEMap Point Bool
-              pathsTo = flip NEM.fromSet splitters \(V2 x y0) ->
-                let cands = takeWhile ((`NES.notMember` splitters) . V2 x) [y0 - 2, y0 - 4 .. 0]
-                 in flip any cands \y ->
-                      V2 x y == startPos
-                        || NEM.findWithDefault False (V2 (x - 1) y) pathsTo
-                        || NEM.findWithDefault False (V2 (x + 1) y) pathsTo
-           in countTrue id pathsTo
+        noFail $
+          \(startPos, splitters) ->
+            countTrue getAny $ solve startPos splitters (Any True) (Any False) \p ->
+              [n | n <- [p - V2 1 2, p - V2 (-1) 2], n `NES.member` splitters]
+                <> [n | n <- [p - V2 0 4], n `NES.notMember` splitters]
     }
 
 day07b :: (Point, NESet Point) :~> Int
@@ -55,14 +81,13 @@ day07b =
   MkSol
     { sParse = parseMap
     , sShow = show
-    , sSolve = \(startPos, splitters) -> do
-        let maxY = maximum . map (view _y) $ toList splitters
-            downFrom (V2 x y0) = fromMaybe 1 $ flip firstJust [y0, y0 + 2 .. maxY] \y ->
-              NEM.lookup (V2 x y) pathsFrom
-            pathsFrom :: NEMap Point Int
-            pathsFrom = flip NEM.fromSet splitters \p ->
-              downFrom (p + V2 1 2) + downFrom (p + V2 (-1) 2)
-        NEM.lookup (startPos + V2 0 2) pathsFrom
+    , sSolve =
+        \(startPos, splitters) ->
+          fmap getSum . M.lookup (startPos + V2 0 2) $
+            solve startPos splitters 0 1 $ \p ->
+              if p `NES.member` splitters
+                then [p + V2 1 2, p + V2 (-1) 2]
+                else [p + V2 0 4]
     }
 
 -- 502, 1491
