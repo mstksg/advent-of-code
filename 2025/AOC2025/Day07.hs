@@ -16,7 +16,6 @@ import AOC.Common (countTrue)
 import AOC.Common.Point (Point, parseAsciiMap)
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Lens (view)
-import Control.Monad (guard)
 import Data.Foldable (toList)
 import qualified Data.Map as M
 import Data.Semigroup (Any (..), Sum (..))
@@ -41,6 +40,13 @@ buildTriangle = go 0 0
         : if r == c
           then go (r + 1) 0 (p + V2 (negate (r * 2 + 1)) 2)
           else go r (c + 1) (p + V2 2 0)
+
+-- | Splitters split, non-splitters go straight skipping past a row
+rules :: NES.NESet Point -> [(Point -> Bool, [Point])]
+rules splitters =
+  [ ((`NES.member` splitters), [V2 1 2, V2 (-1) 2])
+  , ((`NES.notMember` splitters), [V2 0 4])
+  ]
 
 solve ::
   (Monoid m) =>
@@ -71,9 +77,9 @@ day07a =
     , sSolve =
         noFail $
           \(startPos, splitters) ->
-            countTrue getAny $ solve startPos splitters (Any True) (Any False) \p ->
-              [n | n <- [p - V2 1 2, p - V2 (-1) 2], n `NES.member` splitters]
-                <> [n | n <- [p - V2 0 4], n `NES.notMember` splitters]
+            countTrue getAny $
+              solve startPos splitters (Any True) (Any False) \p ->
+                [p' | (cond, dps) <- rules splitters, p' <- (p -) <$> dps, cond p'] -- apply cond to dest
     }
 
 day07b :: (Point, NESet Point) :~> Int
@@ -85,9 +91,7 @@ day07b =
         \(startPos, splitters) ->
           fmap getSum . M.lookup (startPos + V2 0 2) $
             solve startPos splitters 0 1 $ \p ->
-              if p `NES.member` splitters
-                then [p + V2 1 2, p + V2 (-1) 2]
-                else [p + V2 0 4]
+              [p' | (cond, dps) <- rules splitters, cond p, p' <- (p +) <$> dps] -- apply cond to src
     }
 
 -- 502, 1491
