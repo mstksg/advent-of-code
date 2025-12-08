@@ -9,7 +9,7 @@ chomp = state \(clusts, (p, q) : pts) -> do
     let Just pclust = find (p `S.member`) clusts
         ~(Just qclust) = find (q `S.member`) clusts
         clusts'
-          | q `S.member` pclust -> clusts
+          | q `S.member` pclust = clusts
           | otherwise = S.insert (pclust <> qclust) . S.delete pclust . S.delete qclust $ clusts
     in  ((p, q), (clusts', pts))
 
