@@ -49,19 +49,6 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
-buildGraph :: [V3 Int] -> Int -> ((V3 Int, V3 Int), G.Gr (V3 Int) Double)
-buildGraph pts = \n ->
-  ( let (_, ((_, p), (_, q))) = dists !! (n - 1)
-     in (p, q)
-  , G.mkGraph
-      nodepts
-      [(i, j, sqrt $ fromIntegral d) | (d, ((i, _), (j, _))) <- take n dists]
-  )
-  where
-    nodepts :: [(Int, V3 Int)]
-    nodepts = zip [0 ..] pts
-    dists = sort [(p `L.qd` q, (pp, qq)) | pp@(_, p) : ps <- tails nodepts, qq@(_, q) <- ps]
-
 day08a :: [V3 Int] :~> Int
 day08a =
   MkSol
