@@ -22,7 +22,7 @@
 --     will recommend what should go in place of the underscores.
 module AOC2025.Day08 (
   day08a,
-  day08b
+  day08b,
 )
 where
 
@@ -49,73 +49,56 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
-day08a :: [V3 Int] :~> _
+buildGraph :: [V3 Int] -> Int -> ((V3 Int, V3 Int), G.Gr (V3 Int) Double)
+buildGraph pts = \n ->
+  ( let (_, ((_, p), (_, q))) = dists !! (n - 1)
+     in (p, q)
+  , G.mkGraph
+      nodepts
+      [(i, j, sqrt $ fromIntegral d) | (d, ((i, _), (j, _))) <- take n dists]
+  )
+  where
+    nodepts :: [(Int, V3 Int)]
+    nodepts = zip [0 ..] pts
+    dists = sort [(p `L.qd` q, (pp, qq)) | pp@(_, p) : ps <- tails nodepts, qq@(_, q) <- ps]
+
+day08a :: [V3 Int] :~> Int
 day08a =
   MkSol
     { sParse =
-        noFail $
-          map ((\[a,b,c] -> V3 a b c) . map read . splitOn ",") . lines
+        traverse (listV3 <=< traverse readMaybe . splitOn ",") . lines
     , sShow = show
     , sSolve =
         noFail \pts ->
-          let dists = sortOn fst $
-                  [ (sqrt . fromIntegral . sum $ fmap (^2) (p - q), (p, q))
-                    | p:ps <- tails pts
-                    , q <- ps
-                  ]
-              nodepts = zip [0..] pts
-              nodemap :: Map (V3 Int) Int
-              nodemap = M.fromList $ map swap nodepts
-              gr = G.mkUGraph @G.Gr
-                  (fst <$> nodepts)
-                  [ (nodemap M.! p, nodemap M.! q) | pq <- snd <$> take 1000 dists, (p,q) <- [pq, swap pq]]
-          in product . take 3 . sortOn negate . map length $ G.components gr
+          let ixedPts = zip [0 ..] pts
+              dists =
+                take (dyno_ "pairs" 1000) $ sort [(p `L.qd` q, (i, j)) | (i, p) : ps <- tails ixedPts, (j, q) <- ps]
+           in product . take 3 . sortOn Down . map length . G.components $
+                G.mkUGraph @G.Gr (fst <$> ixedPts) (snd <$> dists)
     }
 
-              -- conns = snd <$> take 10 dists
-              -- grab :: Ord a => (Set (Set a), [(a, a)]) -> (Bool, (Set (Set a), [(a,a)]))
-              -- grab (clusts, (p,q):pqs) = do 
-              --   let Just pclust = find (p `S.member`) clusts
-              --       Just qclust = find (q `S.member`) clusts
-              --       clusts' = S.insert (pclust <> qclust) . S.delete pclust . S.delete qclust $ clusts
-              --    in (clusts' /= clusts, (clusts', pqs))
-              -- groupUpN n
-              --   | n == 0 = pure ()
-              --   | otherwise = do
-              --       found <- state grab
-              --       if found
-              --          then groupUpN (n - 1)
-              --          else groupUpN n
-            -- -- in take 5 $ snd <$> dists
-          -- -- in execState (groupUpN 2) (S.fromList $ map S.singleton pts, snd <$> dists)
-          -- -- in product . take 3
-          -- --       . sortBy (flip compare) . map S.size . S.toList . fst $ execState (groupUpN 11)
-          -- --         (S.fromList $ map S.singleton pts, snd <$> dists)
-
-day08b :: _ :~> _
+day08b :: [V3 Int] :~> _
 day08b =
   MkSol
     { sParse = sParse day08a
     , sShow = show
     , sSolve =
         \pts -> do
-          let dists = sortOn fst $
-                  [ (sqrt . fromIntegral . sum $ fmap (^2) (p - q), (p, q))
-                    | p:ps <- tails pts
-                    , q <- ps
-                  ]
-              nodepts = zip [0..] pts
-              nodemap :: Map (V3 Int) Int
-              nodemap = M.fromList $ map swap nodepts
-              gr n = G.mkUGraph @G.Gr
-                  (fst <$> nodepts)
-                  [ (nodemap M.! p, nodemap M.! q) | pq <- snd <$> take n dists, (p,q) <- [pq, swap pq]]
-          neededDists <- binaryMinSearch (G.isConnected . gr) 0 (length dists)
-          let (p,q) = snd $ dists  !! (neededDists - 1)
-          pure $ view _x p * view _x q
--- binaryMinSearch ::
---   (Int -> Bool) ->
---   Int ->
---   Int ->
---   Maybe Int
+          let ixedPts = zip [0 ..] pts
+              gr =
+                G.mkGraph @G.Gr
+                  ixedPts
+                  [(i', j', p `L.qd` q) | (i, p) : ps <- tails ixedPts, (j, q) <- ps, (i', j') <- [(i, j), (j, i)]]
+              mst = G.msTree gr
+          (_, (i, j)) <-
+            maximumMay $
+              [ (w, (a, b))
+              | G.LP path <- mst
+              , ((a, w), (b, _)) <- slidingPairs path
+              ]
+          V3 px _ _ <- G.lab gr i
+          V3 qx _ _ <- G.lab gr j
+          pure $ px * qx
     }
+
+-- 405, 1548 ... spent 15 minutes debugging inits vs tails lol
