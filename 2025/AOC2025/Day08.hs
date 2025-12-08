@@ -76,11 +76,10 @@ day08b =
                 G.mkGraph @G.Gr
                   ixedPts
                   [(i', j', p `L.qd` q) | (i, p) : ps <- tails ixedPts, (j, q) <- ps, (i', j') <- [(i, j), (j, i)]]
-              mst = G.msTree gr
           (_, (i, j)) <-
             maximumMay $
               [ (w, (a, b))
-              | G.LP path <- mst
+              | G.LP path <- G.msTree gr
               , ((a, w), (b, _)) <- slidingPairs path
               ]
           V3 px _ _ <- G.lab gr i
