@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2025.Day11 (
--- day11a,
--- day11b
-
+  day11a,
+  day11b,
 )
 where
 
@@ -50,16 +49,23 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
-day11a :: _ :~> _
+day11a :: [(String, [String])] :~> _
 day11a =
   MkSol
     { sParse =
-        noFail $
-          lines
+          traverse (fmap (first init) . uncons . words) . lines
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \xs -> 
+          let conns :: Map String (Set String)
+              conns = M.fromList $ map (second S.fromList) xs
+              toOut :: Map String (Set [String])
+              toOut = flip M.mapWithKey conns \x nx ->
+                flip foldMap (S.toList nx) \y ->
+                    if y == "out"
+                       then S.singleton [x, "out"]
+                       else maybe S.empty (S.map (x:)) $ M.lookup y toOut
+           in S.size $ pathsTo conns S.empty "you" "out"
     }
 
 day11b :: _ :~> _
@@ -68,6 +74,38 @@ day11b =
     { sParse = sParse day11a
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \xs ->
+          let conns :: Map String (Set String)
+              conns = M.fromList $ map (second S.fromList) xs
+              svrToDac :: Set [String]
+              svrToDac = pathsTo conns (S.fromList ["out", "fft"]) "svr" "dac"
+              dacToFft :: Set [String]
+              dacToFft = pathsTo conns (S.fromList ["svr", "out"]) "dac" "fft"
+              fftToOut :: Set [String]
+              fftToOut = pathsTo conns (S.fromList ["svr", "dac"]) "fft" "out"
+
+              svrToFft :: Set [String]
+              svrToFft = pathsTo conns (S.fromList ["out", "dac"]) "svr" "fft"
+              fftToDac :: Set [String]
+              fftToDac = pathsTo conns (S.fromList ["svr", "out"]) "fft" "dac"
+              dacToOut :: Set [String]
+              dacToOut = pathsTo conns (S.fromList ["svr", "fft"]) "dac" "out"
+          in product $ map S.size [svrToFft, fftToDac, dacToOut]
+          -- in (svrToDac, dacToFft, fftToOut)
+              -- toOut :: Map String (Set [String])
+              -- toOut = flip M.mapWithKey conns \x nx ->
+              --   flip foldMap (S.toList nx) \y ->
+              --       if y == "out"
+              --          then S.singleton [x, "out"]
+              --          else maybe S.empty (S.map (x:)) $ M.lookup y toOut
+           -- in S.size $ S.filter (\q -> (== 2) . S.size $ S.intersection (S.fromList ["dac","fft"]) $ S.fromList $ traceShowId q) (toOut M.! "svr")
     }
+
+pathsTo :: Map String (Set String) -> Set String -> String -> String -> Set [String]
+pathsTo conns takeout start end = res M.! start
+  where
+    conns' = (`S.difference` takeout) <$> (conns `M.withoutKeys` takeout)
+    res = flip M.mapWithKey conns \x nx -> flip foldMap nx \y ->
+        if y == end
+           then S.singleton [x, end]
+           else maybe S.empty (S.map (x:)) $ M.lookup y res
