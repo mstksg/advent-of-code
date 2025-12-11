@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2025.Day10 (
--- day10a,
--- day10b
-
+  day10a,
+  day10b,
 )
 where
 
@@ -55,12 +54,58 @@ day10a =
   MkSol
     { sParse =
         noFail $
-          lines
+          map parseMe . lines
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail $ sum . map go
     }
+  where
+    parseMe :: String -> ([Bool], [[Int]], [Int])
+    parseMe ('[':xs) = (map (== '#') a, map read . splitOn "," . init . tail <$> init ps, map read . splitOn "," . init . tail $ last ps)
+      where
+        (a, ']':bs) = span (/= ']') xs
+        ps = words bs
+    go :: ([Bool], [[Int]], [Int]) -> Int
+    go (targ, buttons, _) = minimum
+        [ length onButts
+          | onButts <- filterM (\_ -> [False, True]) buttons
+        , foldr symmetricDifference S.empty (S.fromList <$> onButts) == targSet
+        ]
+      where
+        targSet = S.fromList $ map fst $ filter snd $ zip [0..] targ
+      -- traceShow vecs 3
+      -- where
+      --   vecs = flip map buttons \ixes -> zipWith (\i _ -> i `S.member` S.fromAscList ixes) [0..] targ
+
+symmetricDifference :: Ord a => Set a -> Set a -> Set a
+symmetricDifference x y = (x <> y) `S.difference` (x `S.intersection` y)
+
+-- [.##.]
+-- (...#)
+-- (.#.#)
+-- (..#.)
+-- (..##)
+-- (#.#.)
+-- (##..)
+-- {3,5,4,7}
+--
+-- ....## a   .
+-- .#...# b = #
+-- ..###. c   #
+-- ##.#.. d   .
+--        e
+--        f
+--
+--         e+f = 0 mod 2
+--   b+      f = 1 mod 2
+--     c+d+e   = 1 mod 2
+-- a+b+  d     = 0 mod 2
+
+-- [.##.] (...#) (.#.#) (..#.) (..##) (#.#.) (##..) {3,5,4,7}
+
+-- [.##.] (3)    (1,3) (2)     (2,3)  (0,2)  (0,1) {3,5,4,7}
+-- [...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}
+-- [.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}
 
 day10b :: _ :~> _
 day10b =
@@ -68,6 +113,42 @@ day10b =
     { sParse = sParse day10a
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail $ sum . map go
     }
+  where
+    go :: ([Bool], [[Int]], [Int]) -> Int
+    go (_, buttons, targ) = minimum $ flip evalStateT (0 <$ targMap) $ do
+          tots <- traverse (goo . IS.fromList) buttons
+          -- tots <- traverse (goo . IS.fromList) $ sortOn (Down . length) buttons
+          guard =<< gets (== targMap)
+          traceM (show tots)
+          pure $ sum tots
+      where
+        goo :: IntSet -> StateT (IntMap Int) [] Int
+        goo button = StateT $ \soFar -> traceShowId $
+          takeWhile (and . IM.intersectionWith (>=) targMap . snd) $
+              iterate (\(!i, mp) -> (i + 1, IM.unionWith (+) buttonMap mp)) (0, soFar)
+          -- let leftOver = IM.intersectionWith (-) targMap soFar
+          where
+            buttonMap = IM.fromSet (const 1) button
+        targMap = IM.fromList $ zip [0..] targ
+
+-- (...#)
+-- (.#.#)
+-- (..#.)
+-- (..##)
+-- (#.#.)
+-- (##..)
+-- {3547}
+
+--         e+f = 3
+--   b+      f = 5
+--     c+d+e   = 4
+-- a+b+  d     = 7
+
+-- ....## a   3
+-- .#...# b = 5
+-- ..###. c   4
+-- ##.#.. d   7
+--        e
+--        f
