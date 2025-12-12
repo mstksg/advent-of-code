@@ -21,9 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2025.Day12 (
--- day12a,
--- day12b
-
+day12a,
+day12b
 )
 where
 
@@ -50,17 +49,72 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
+pVec :: String -> Point
+pVec xs = case read <$> splitOn "x" (init xs) of
+                  [x,y] -> V2 x y
+              
+
 day12a :: _ :~> _
 day12a =
   MkSol
     { sParse =
-        noFail $
-          lines
+        noFail $ \xs ->
+          let chunkies = splitOn [""] $ lines xs
+              blockies = map (parseAsciiSet (== '#') . unlines . tail) $ init chunkies
+              thingies = map (bimap pVec (map (read @Int)). fromJust . uncons . words) $ last chunkies
+           in (blockies, thingies)
     , sShow = show
     , sSolve =
-        noFail $
-          id
+        noFail \(blocks, areas) -> countTrue (go blocks) areas
     }
+  where
+    -- go :: [Set Point] -> (Point, [Int]) -> Bool
+    -- go blocks (bounds, repeats) = not . null $ execStateT (zipWithM go2 blocks repeats) S.empty
+    --   where
+    --     go2 block rep = replicateM rep $ StateT (map ((),) . placer bounds block)
+    go :: [Set Point] -> (Point, [Int]) -> Bool
+    go blocks (bounds, repeats) = isJust $ traceShowId $ bfs
+          (popper bounds)
+          state0
+          (M.null . sToPlace)
+      where
+        state0 = S (M.filter (> 0) $ M.fromList (zip blocks repeats)) S.empty
+
+placer :: Point -> Set Point -> Set Point -> [Set Point]
+placer bounds x placed = nubOrd $ do
+    rot <- S.toList . S.fromList $ toList allD8 <&> \d -> map ((+ 1) . orientPoint d . subtract 1) $ S.toList x
+    coord <- toList $ fillBoundingBox (V2 0 (bounds - 3))
+    let place = S.fromList $ (+ coord) <$> rot
+    guard . null $ placed `S.intersection` place
+    pure $ placed <> place
+
+data SearchState = S { sToPlace :: Map (Set Point) Int, sPlaced :: Set Point }
+  deriving stock (Show, Eq, Ord)
+
+popper :: Point -> SearchState -> Set SearchState
+popper bounds (S toPlace placed) = traceShowId $ S.fromList do
+    (x, _) <- M.toList toPlace
+    rot <- S.toList . S.fromList $ toList allD8 <&> \d -> map ((+ 1) . orientPoint d . subtract 1) $ S.toList x
+    coord <- toList $ fillBoundingBox (V2 0 (bounds - 3))
+    let place = S.fromList $ (+ coord) <$> rot
+    guard . null $ placed `S.intersection` place
+    let placed' = placed <> place
+        toPlace' = M.update (mfilter (> 0) . Just . subtract 1) x toPlace
+    pure $ S toPlace' placed'
+    
+-- placeAll
+
+-- bfs ::
+--   forall n.
+--   Ord n =>
+--   -- | neighborhood
+--   (n -> Set n) ->
+--   -- | start
+--   n ->
+--   -- | target
+--   (n -> Bool) ->
+--   -- | the shortest path, if it exists
+--   Maybe [n]
 
 day12b :: _ :~> _
 day12b =
