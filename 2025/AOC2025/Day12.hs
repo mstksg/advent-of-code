@@ -65,7 +65,9 @@ day12a =
            in (blockies, thingies)
     , sShow = show
     , sSolve =
-        noFail \(blocks, areas) -> countTrue (go blocks) areas
+        noFail \(blocks, areas) -> countTrue (\(bounds, ns) -> (product bounds) >= (sum $ zipWith (*) (map S.size blocks) ns)) areas
+        -- noFail \(blocks, areas) -> map (\(bounds, ns) -> (product bounds, sum $ zipWith (*) (map S.size blocks) ns)) areas
+        -- noFail \(blocks, areas) -> countTrue (go blocks) areas
     }
   where
     -- go :: [Set Point] -> (Point, [Int]) -> Bool
@@ -101,7 +103,13 @@ popper bounds (S toPlace placed) = traceShowId $ S.fromList do
     let placed' = placed <> place
         toPlace' = M.update (mfilter (> 0) . Just . subtract 1) x toPlace
     pure $ S toPlace' placed'
-    
+
+allPlacements :: Point -> Set Point -> Set (Set Point)
+allPlacements bounds x = S.fromList do
+    rot <- S.toList . S.fromList $ toList allD8 <&> \d -> map ((+ 1) . orientPoint d . subtract 1) $ S.toList x
+    coord <- toList $ fillBoundingBox (V2 0 (bounds - 3))
+    pure $ S.fromList $ (+ coord) <$> rot
+
 -- placeAll
 
 -- bfs ::
