@@ -41,6 +41,9 @@ import qualified Data.Map as M
 import qualified Data.Map.NonEmpty as NEM
 import qualified Data.OrdPSQ as PSQ
 import qualified Data.Sequence as Seq
+import qualified Data.IntervalMap.Lazy as IVM
+import qualified Data.IntervalSet as IVS
+import qualified Data.Interval as IV
 import qualified Data.Sequence.NonEmpty as NESeq
 import qualified Data.Set as S
 import qualified Data.Set.NonEmpty as NES
@@ -51,12 +54,10 @@ import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
 import qualified Text.Megaparsec.Char.Lexer as PP
 
-day09a :: _ :~> _
+day09a :: [V2 Int] :~> Int
 day09a =
   MkSol
-    { sParse =
-        noFail $
-          mapMaybe (listV2 . map (read @Int) . splitOn ",") . lines
+    { sParse = traverse (listV2 <=< traverse readMaybe . splitOn ",") . lines
     , sShow = show
     , sSolve =
         noFail $
@@ -69,43 +70,98 @@ day09a =
               
     }
 
+-- | x coords to the y coordinates they cointain
+regions :: [V2 Int] -> IVM.IntervalMap Int (IVS.IntervalSet Int)
+regions pts = IVM.filter (not . IVS.null) $ IVM.fromList $ zip (drop 1 xRanges) yRanges
+  where
+    xs = M.toList $ M.fromListWith (<>)
+      [ (x, S.singleton y)
+        | V2 x y <- pts
+      ]
+    (xRanges, yRanges) = unzip $ scanl' go  (IV.NegInf IV.<..< IV.Finite 0, IVS.empty) xs
+      where
+        go (i0, curr) (x, ys) = (IV.upperBound i0 IV.<=..< IV.Finite x, curr')
+          where
+            curr' = (curr `IVS.union` ivs) `IVS.difference` (curr `IVS.intersection` ivs)
+            ivs = IVS.fromList
+              [ IV.Finite a IV.<=..< IV.Finite b
+               | [a,b] <- chunksOf 2 (S.toList ys)
+              ]
+
+
 lineTo' x y = S.fromList (lineTo x y) -- <> S.fromList [x,y]
 
-day09b :: _ :~> _
+day09b :: [V2 Int] :~> _
 day09b =
   MkSol
     { sParse = sParse day09a
     -- , sShow = ('\n':) . displayAsciiSet '.' '#'
     , sShow = show
-    , sSolve = \pts -> do
-          let loopPts = zip pts (tail pts ++ [head pts])
-              border = foldMap (uncurry lineTo') loopPts
-              Just bb@(V2 bmin bmax) = boundingBox' pts
-              loopMe turn = fold <$> go loopPts
-                where
-                  go ((p,q):xs) = (++) <$> newPoints <*> go xs
-                    where
-                      turnedMotion = motion <> turn
-                      motion = case signum (q - p) of
-                       V2 0 1 -> North
-                       V2 1 0 -> East
-                       V2 0 (-1) -> South
-                       V2 (-1) 0 -> West
-                       _ -> undefined
-                      newPoints = for (lineTo p q) \r ->
-                        let toEdge = traceShowId . takeWhile (inBoundingBox bb) . drop 1 $ iterate (+ dirPoint turnedMotion) r
-                            (toLine, rest) = span (`S.notMember` border) toEdge
-                         in S.fromList toLine <$ guard (not (null rest))
-                  go [] = Just []
-          interior <- loopMe East <> loopMe West
-          let allPoints = interior <> border <> S.fromList pts
-          maximumMay
-              [ S.size rect
-              | p:ps <- tails pts
-              , q <- ps
-              , let rect = traceShow (p,q) $ fillBoundingBox (V2 (min <$> p <*> q) (max <$> p <*> q))
-              , S.null $ rect `S.difference` allPoints
+    , sSolve = \pts ->
+        let allowedRegion = regions pts
+         in maximumMay
+              [ (x + 1) * (y + 1)
+         -- in sortOn (Down . fst) [ ((x + 1) * (y + 1), ((p, q, region, outOfBounds)))
+                | p@(V2 px py):ps <- tails pts
+              , q@(V2 qx qy) <- ps
+              , let V2 x y = abs $ p - q
+                    xRange = IV.Finite (min px qx) IV.<=..< IV.Finite (max px qx)
+                    yRange = IV.Finite (min py qy) IV.<=..< IV.Finite (max py qy)
+                    region = IVM.singleton xRange (IVS.singleton yRange)
+                    outOfBounds = IVM.intersectionWith IVS.difference region allowedRegion
+              , all IVS.null outOfBounds
               ]
+          -- \pts -> maximum
+          --     [ (x + 1) * (y + 1)
+          --       | p:ps <- tails pts
+          --     , q <- ps
+          --     , let V2 x y = abs $ p - q
+          --     ]
+      -- let xs = M.toList $ M.fromListWith (<>)
+      --       [ (x, S.singleton y)
+      --         | V2 x y <- pts
+      --       ]
+      --   in scanl go (IV.NegInf IV.<..< IV.Finite 0, IVS.empty) xs
+    }
+  where
+    go :: (IV.Interval Int, IVS.IntervalSet Int) -> (Int, Set Int) -> (IV.Interval Int, IVS.IntervalSet Int)
+    go (i0, curr) (x, ys) = (IV.upperBound i0 IV.<=..< IV.Finite x, curr')
+      where
+        curr' = (curr `IVS.union` ivs) `IVS.difference` (curr `IVS.intersection` ivs)
+        ivs = IVS.fromList
+          [ IV.Finite a IV.<=..< IV.Finite b
+           | [a,b] <- chunksOf 2 (S.toList ys)
+          ]
+
+        -- _ pts
+          -- let loopPts = zip pts (tail pts ++ [head pts])
+          --     border = foldMap (uncurry lineTo') loopPts
+          --     Just bb@(V2 bmin bmax) = boundingBox' pts
+          --     loopMe turn = fold <$> go loopPts
+          --       where
+          --         go ((p,q):xs) = (++) <$> newPoints <*> go xs
+          --           where
+          --             turnedMotion = motion <> turn
+          --             motion = case signum (q - p) of
+          --              V2 0 1 -> North
+          --              V2 1 0 -> East
+          --              V2 0 (-1) -> South
+          --              V2 (-1) 0 -> West
+          --              _ -> undefined
+          --             newPoints = for (lineTo p q) \r ->
+          --               let toEdge = traceShowId . takeWhile (inBoundingBox bb) . drop 1 $ iterate (+ dirPoint turnedMotion) r
+          --                   (toLine, rest) = span (`S.notMember` border) toEdge
+          --                in S.fromList toLine <$ guard (not (null rest))
+          --         go [] = Just []
+          -- interior <- loopMe East <> loopMe West
+          -- let allPoints = interior <> border <> S.fromList pts
+          -- maximumMay
+          --     [ S.size rect
+          --     | p:ps <- tails pts
+          --     , q <- ps
+          --     , let rect = traceShow (p,q) $ fillBoundingBox (V2 (min <$> p <*> q) (max <$> p <*> q))
+          --     , S.null $ rect `S.difference` allPoints
+          --     ]
               -- filled = fillBoundingBox bb
           -- let (verts, horiz) = partition (\(p, q) -> view _x p == view _x q) $ zipWith (,) pts (tail pts ++ [head pts])
           --     Just bb@(V2 bmin bmax) = boundingBox' pts
@@ -146,4 +202,3 @@ day09b =
             --           | xs <- rPairs
             --           , ys <- gPairs
             --           ]
-    }
