@@ -6,11 +6,12 @@
 -- Portability : non-portable
 --
 -- Day 11.  See "AOC.Solver" for the types used in this module!
-module AOC2025.Day11 (
-  day11a,
-  day11b,
-)
-where
+module AOC2025.Day11  where
+  -- (
+  -- day11a,
+  -- day11b,
+-- )
+-- where
 
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad ((<=<))
@@ -52,6 +53,17 @@ pathsTo conns start end = res M.! start
           [ if y == end then 1 else M.findWithDefault 0 y res
           | y <- nexts
           ]
+
+pathsToMap :: Ord a => Map a [a] -> a -> a -> Map a Int
+pathsToMap conns start end = res
+  where
+    res =
+      conns <&> \nexts ->
+        sum
+          [ if y == end then 1 else M.findWithDefault 0 y res
+          | y <- nexts
+          ]
+
 
 addVisited :: Ord a => Map a [a] -> Set a -> Map (a, Set a) [(a, Set a)]
 addVisited conns required =
