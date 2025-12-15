@@ -32,19 +32,6 @@ import AOC2025.Day09 as AOC
 import AOC2025.Day10 as AOC
 import AOC2025.Day11 as AOC
 import AOC2025.Day12 as AOC
-import AOC2025.Day13 as AOC
-import AOC2025.Day14 as AOC
-import AOC2025.Day15 as AOC
-import AOC2025.Day16 as AOC
-import AOC2025.Day17 as AOC
-import AOC2025.Day18 as AOC
-import AOC2025.Day19 as AOC
-import AOC2025.Day20 as AOC
-import AOC2025.Day21 as AOC
-import AOC2025.Day22 as AOC
-import AOC2025.Day23 as AOC
-import AOC2025.Day24 as AOC
-import AOC2025.Day25 as AOC
 
 challengeBundle2025 :: ChallengeBundle
 challengeBundle2025 = CB 2025 $ mkChallengeMap $$(solutionList)
