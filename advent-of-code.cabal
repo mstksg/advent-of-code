@@ -839,19 +839,6 @@ library aoc2025-lib
     AOC2025.Day10
     AOC2025.Day11
     AOC2025.Day12
-    AOC2025.Day13
-    AOC2025.Day14
-    AOC2025.Day15
-    AOC2025.Day16
-    AOC2025.Day17
-    AOC2025.Day18
-    AOC2025.Day19
-    AOC2025.Day20
-    AOC2025.Day21
-    AOC2025.Day22
-    AOC2025.Day23
-    AOC2025.Day24
-    AOC2025.Day25
 
   hs-source-dirs:  2025
 
