@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
 
 -- |
 -- Module      : AOC2025.Day10
@@ -30,7 +32,9 @@ import AOC.Prelude
 import qualified Data.Graph.Inductive as G
 import qualified Data.IntMap as IM
 import qualified Data.IntMap.NonEmpty as NEIM
+import Data.Finite
 import qualified Data.IntSet as IS
+import GHC.TypeNats
 import qualified Data.IntSet.NonEmpty as NEIS
 import qualified Data.List.NonEmpty as NE
 import qualified Data.List.PointedList as PL
@@ -44,6 +48,7 @@ import qualified Data.Set as S
 import qualified Data.Set.NonEmpty as NES
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import qualified Data.Vector.Sized as SV
 import qualified Linear as L
 import qualified Text.Megaparsec as P
 import qualified Text.Megaparsec.Char as P
@@ -113,25 +118,116 @@ day10b =
     { sParse = sParse day10a
     , sShow = show
     , sSolve =
-        noFail $ sum . map go
+        noFail $ map go
+        -- noFail $ sum . map go
     }
   where
-    go :: ([Bool], [[Int]], [Int]) -> Int
-    go (_, buttons, targ) = minimum $ flip evalStateT (0 <$ targMap) $ do
-          tots <- traverse (goo . IS.fromList) buttons
-          -- tots <- traverse (goo . IS.fromList) $ sortOn (Down . length) buttons
-          guard =<< gets (== targMap)
-          traceM (show tots)
-          pure $ sum tots
-      where
-        goo :: IntSet -> StateT (IntMap Int) [] Int
-        goo button = StateT $ \soFar -> traceShowId $
-          takeWhile (and . IM.intersectionWith (>=) targMap . snd) $
-              iterate (\(!i, mp) -> (i + 1, IM.unionWith (+) buttonMap mp)) (0, soFar)
-          -- let leftOver = IM.intersectionWith (-) targMap soFar
-          where
-            buttonMap = IM.fromSet (const 1) button
-        targMap = IM.fromList $ zip [0..] targ
+    go (_, buttons, targ) = withSizedButtons buttons targ \b t ->
+          show $ execState stepFullGauss $ toAugMat b t
+          -- toAugMat b t
+
+    -- go :: ([Bool], [[Int]], [Int]) -> Int
+    -- go (_, buttons, targ) = minimum $ flip evalStateT (0 <$ targMap) $ do
+    --       tots <- traverse (goo . IS.fromList) buttons
+    --       -- tots <- traverse (goo . IS.fromList) $ sortOn (Down . length) buttons
+    --       guard =<< gets (== targMap)
+    --       traceM (show tots)
+    --       pure $ sum tots
+    --   where
+    --     goo :: IntSet -> StateT (IntMap Int) [] Int
+    --     goo button = StateT $ \soFar -> traceShowId $
+    --       takeWhile (and . IM.intersectionWith (>=) targMap . snd) $
+    --           iterate (\(!i, mp) -> (i + 1, IM.unionWith (+) buttonMap mp)) (0, soFar)
+    --       -- let leftOver = IM.intersectionWith (-) targMap soFar
+    --       where
+    --         buttonMap = IM.fromSet (const 1) button
+    --     targMap = IM.fromList $ zip [0..] targ
+
+-- | n = number of lights (rows), m = number of buttons (cols)
+withSizedButtons
+    :: [[Int]]
+    -> [Int]
+    -> (forall n m. (KnownNat n, KnownNat m) => SV.Vector m (Set (Finite n)) -> SV.Vector n Int -> r)
+    -> r
+withSizedButtons buttons target f =
+    SV.withSizedList buttons \buttons' ->
+        SV.withSizedList target $
+          f (S.fromList . map fromIntegral <$> buttons')
+
+-- | n = number of lights (rows), m = number of buttons (cols)
+toAugMat
+    :: (KnownNat n, KnownNat m)
+    => SV.Vector m (Set (Finite n))
+    -> SV.Vector n Int
+    -> SV.Vector n (SV.Vector (m + 1) Int)
+toAugMat buttons target = SV.generate \i -> SV.generate \j ->
+    case strengthen j of
+      Nothing -> target `SV.index` i
+      Just j'
+        | i `S.member` (buttons `SV.index` j') -> 1
+        | otherwise -> 0
+
+data StepState n m = StepState
+    { ssRow :: Finite n
+    , ssCol :: Finite m
+    , ssMat :: SV.Vector n (SV.Vector (m + 1) Int)
+    }
+
+nextFin :: KnownNat n => Finite n -> Maybe (Finite n)
+nextFin = strengthen . shift
+
+-- type AugMat n m = SV.Vector n (SV.Vector (m + 1) Int)
+
+-- | Assums everything left of the index is already upper triangular/row
+-- echelon
+stepGauss :: forall n m. (KnownNat n, KnownNat m)
+    => (Finite n, Finite m) 
+    -> State (SV.Vector n (SV.Vector (m + 1) Int)) (Maybe (Finite n, Finite m)) 
+stepGauss (i, j) = state \mat ->
+  let origRow = mat `SV.index` i
+      pivotIx = SV.findIndex (\(k, row) -> k >= i && (row `SV.index` weaken j) /= 0) $ SV.indexed mat
+  in  case pivotIx of
+        Nothing -> ((i,) <$> nextFin j, mat)
+        Just p ->
+          let pivotRow = mat `SV.index` p
+              mat' = mat SV.// [(i, pivotRow), (p, origRow)]
+              pVal = pivotRow `SV.index` weaken j
+              mat'' = SV.indexed mat' <&> \(k, row) ->
+                       let elimVal = row `SV.index` weaken j
+                       in if k <= i
+                           then row
+                           else SV.zipWith (\x y -> pVal * y - elimVal * x) pivotRow row
+          in ((,) <$> nextFin i <*> nextFin j, mat'')
+
+stepFullGauss :: (KnownNat n, KnownNat m) => State (SV.Vector n (SV.Vector (m + 1) Int)) ()
+stepFullGauss = go (0, 0)
+  where
+    go = traverse_ go <=< stepGauss
+
+-- stepGuass (StepState i j mat)
+--     | j == maxBound = Just $ StepState i j mat
+--     | otherwise = case pivotIx of
+--       Nothing -> flip (StepState i) mat <$> nextFin j
+--       Just p ->
+--       -- pivotIx :: Finite n <- SV.findIndex (\(k, row) -> k >= i && (row `SV.index` weaken j) /= 0) $ SV.indexed mat
+--         let pivotRow = mat `SV.index` p
+--             mat' = mat SV.// [(i, pivotRow), (p, origRow)]
+--             pVal = pivotRow `SV.index` weaken j
+--             mat'' = SV.indexed mat' <&> \(k, row) ->
+--                      let elimVal = row `SV.index` weaken j
+--                      in if k <= i
+--                          then row
+--                          else SV.zipWith _ pivotRow row
+--         in do i' <-
+--             nextFin j <&> \j' ->
+--               StepState (i + 1) j'
+--   where
+--     origRow = mat `SV.index` i
+--     pivotIx = SV.findIndex (\(k, row) -> k >= i && (row `SV.index` weaken j) /= 0) $ SV.indexed mat
+
+    -- col :: SV.Vector n Int
+    -- col = (`SV.index` weaken i) mat
+    -- pivotIx = firstJust 
 
 -- (...#)
 -- (.#.#)
@@ -152,3 +248,95 @@ day10b =
 -- ##.#.. d   7
 --        e
 --        f
+
+-- [.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
+--
+-- 0 0 0 0 1 1 | 3
+-- 0 1 0 0 0 1 | 5
+-- 0 0 1 1 1 0 | 4
+-- 1 1 0 1 0 0 | 7
+
+-- 0 0 0 0 0 1  1 | 3
+-- 0 1 0 0 0 0  1 | 5
+-- 0 0 1 1 1 0  0 | 4
+-- 1 0 0 1 0 0 -1 | 2
+
+-- 1 0 0 1 0 0 -1 | 2
+-- 0 1 0 0 0 0  1 | 5
+-- 0 0 1 1 1 0  0 | 4
+-- 0 0 0 0 0 1  1 | 3
+
+-- [..#...#.] (0,1,4,5,6,7) (0,2,3) (0,1,2,3,5,6,7) (0,1,2,3,6) (1,4) (0,1,2,5,6,7) {215,215,28,19,198,204,204,204}
+--
+--
+-- 0   1 1 1 1 0 1 215
+-- 1   1 0 1 1 1 1 215
+-- 2   0 1 1 1 0 1  28
+-- 3   0 1 1 1 0 0  19
+-- 4   1 0 0 0 1 0 198
+-- 5   1 0 1 0 0 1 204
+-- 6   1 0 1 1 0 1 204
+-- 7   1 0 1 0 0 1 204
+
+-- 0   1  1  1  1  1  0  1  215
+-- 1   0 -1 -1  0  0  1  0    0
+-- 2   0  1  1  1  1  0  1   28
+-- 3   0  1  1  1  1  0  0   19
+-- 4   0 -1 -1 -1 -1  1 -1  -17
+-- 5   0 -1 -1  0 -1  0  0  -11
+-- 6   0 -1 -1  0  0  0  0  -11
+-- 7   0 -1 -1  0 -1  0  0  -11
+
+-- 0   1  1  1  1  1  0  1  215
+-- 1   0 -1 -1  0  0  1  0    0
+-- 2   0  0  0  1  1  1  1   28
+-- 3   0  1  1  1  1  0  0   19
+-- 4   0 -1 -1 -1 -1  1 -1  -17
+-- 5   0 -1 -1  0 -1  0  0  -11
+-- 6   0 -1 -1  0  0  0  0  -11
+-- 7   0 -1 -1  0 -1  0  0  -11
+
+-- 0   1  1  1  1  1  0  1  215
+-- 1   0 -1 -1  0  0  1  0    0
+-- 2   0  0  0  1  1  1  1   28
+-- 3   0  0  0  1  1  1  0   19
+-- 4   0  0  0 -1 -1  0 -1  -17
+-- 5   0  0  0  0 -1 -1  0  -11
+-- 6   0  0  0  0  0 -1  0  -11
+-- 7   0  0  0  0 -1 -1  0  -11
+
+-- 0   1  1  1  1  1  0  1  215
+-- 1   0 -1 -1  0  0  1  0    0
+-- 2   0  0  0  1  1  1  1   28
+-- 3   0  0  0  0  0  0 -1   -9
+-- 4   0  0  0  0  0  1  0   12
+-- 5   0  0  0  0 -1 -1  0  -11
+-- 6   0  0  0  0  0 -1  0  -11
+-- 7   0  0  0  0 -1 -1  0  -11
+
+-- 0   1  1  1  1  1  0  1  215
+-- 1   0 -1 -1  0  0  1  0    0
+-- 2   0  0  0  1  1  1  1   28
+-- 3   0  0  0  0  0  0 -1   -9
+-- 4   0  0  0  0  0  1  0   12
+-- 5   0  0  0  0 -1 -1  0  -11
+-- 6   0  0  0  0  0 -1  0  -11
+-- 7   0  0  0  0  0  0  0    0
+
+-- 0   1  1  1  1  1  0  1  215
+-- 1   0 -1 -1  0  0  1  0    0
+-- 2   0  0  0  1  1  1  1   28
+-- 3   0  0  0  0  0  0 -1   -9
+-- 4   0  0  0  0  0  1  0   12
+-- 5   0  0  0  0 -1 -1  0  -11
+-- 6   0  0  0  0  0  0  0    1
+-- 7   0  0  0  0  0  0  0    0
+
+-- 0   1  1  1  1  1  0  1  215
+-- 1   0 -1 -1  0  0  1  0    0
+-- 2   0  0  0  1  1  1  1   28
+-- 5   0  0  0  0 -1 -1  0  -11
+-- 4   0  0  0  0  0  1  0   12
+-- 3   0  0  0  0  0  0 -1   -9
+-- 6   0  0  0  0  0  0  0    1
+-- 7   0  0  0  0  0  0  0    0
