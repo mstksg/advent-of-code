@@ -283,11 +283,12 @@ backsolve' maxSearch augMat pivots = mapMaybe (execStateT (traverse go (reverse 
       guard $ est == targs
       res <- get
       unless (all (>= 0) res) $
-        traceM $ show res
-      -- traceM . show =<< get
-      -- traceM $ show $ est == targs
-      -- guard $ est == targs
+        traceM $
+          show res
 
+-- traceM . show =<< get
+-- traceM $ show $ est == targs
+-- guard $ est == targs
 
 stepBacksolve' :: KnownNat m => SV.Vector m Int -> Int -> SV.Vector m Int -> Maybe (SV.Vector m Int)
 stepBacksolve' coeffs targ known = case SV.findIndex (/= 0) coeffs of
