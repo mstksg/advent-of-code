@@ -222,6 +222,7 @@ import Debug.Trace
 import GHC.TypeNats
 import Linear (
   Additive (..),
+  Metric (..),
   M22,
   R1 (..),
   R2 (..),
@@ -1206,6 +1207,8 @@ instance (Functor v, KnownNat n, forall a. VG.Vector v a) => Additive (SVG.Vecto
   x ^-^ y = SVG.zipWith (-) x y
   liftU2 = SVG.zipWith
   liftI2 = SVG.zipWith
+
+instance (Functor v, Foldable v, KnownNat n, forall a. VG.Vector v a) => Metric (SVG.Vector v n) where
 
 -- instance Hashable a => Hashable (Seq a) where
 --     hashWithSalt s = hashWithSalt s . toList

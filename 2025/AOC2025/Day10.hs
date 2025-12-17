@@ -123,8 +123,7 @@ day10b =
   MkSol
     { sParse = sParse day10a
     , sShow = show
-    , sSolve = Just
-    -- fmap sum . traverse (traceShowId . go)
+    , sSolve = fmap sum . traverse (traceShowId . go)
     -- noFail $ sum . map go
     }
   where
@@ -270,7 +269,7 @@ backsolve' ::
   forall n m.
   (KnownNat n, KnownNat m) =>
   Int -> SV.Vector n (SV.Vector (m + 1) Int) -> SV.Vector m (Maybe (Finite n)) -> [SV.Vector m Int]
-backsolve' maxSearch augMat pivots = mapMaybe (execStateT (traverse go (reverse finites))) starting
+backsolve' maxSearch augMat pivots = mapMaybe (execStateT (traverse go (reverse finites) >> validate)) starting
   where
     starting = traverse (\case Nothing -> [0 .. maxSearch]; Just _ -> [0]) pivots
     coeffs :: SV.Vector n (SV.Vector m Int)
@@ -279,12 +278,22 @@ backsolve' maxSearch augMat pivots = mapMaybe (execStateT (traverse go (reverse 
     targs = SV.last <$> augMat
     go :: Finite n -> StateT (SV.Vector m Int) Maybe ()
     go i = StateT $ fmap ((),) . stepBacksolve' (coeffs `SV.index` i) (targs `SV.index` i)
+    validate = do
+      est <- gets $ \b -> (`L.dot` b) <$> coeffs
+      guard $ est == targs
+      res <- get
+      unless (all (>= 0) res) $
+        traceM $ show res
+      -- traceM . show =<< get
+      -- traceM $ show $ est == targs
+      -- guard $ est == targs
 
-stepBacksolve' :: SV.Vector m Int -> Int -> SV.Vector m Int -> Maybe (SV.Vector m Int)
+
+stepBacksolve' :: KnownNat m => SV.Vector m Int -> Int -> SV.Vector m Int -> Maybe (SV.Vector m Int)
 stepBacksolve' coeffs targ known = case SV.findIndex (/= 0) coeffs of
   Nothing -> pure known
   Just pivot -> do
-    let goal = targ - sum (SV.zipWith (*) coeffs known)
+    let goal = targ - (coeffs `L.dot` known)
         (x, residue) = goal `divMod` (coeffs `SV.index` pivot)
     -- traceM $ show (coeffs, targ, known, pivot, goal, x, residue, residue == 0 && x >= 0)
     guard $ residue == 0
