@@ -35,6 +35,7 @@ day12a =
         thingies <- traverse (bitraverse pVec (traverse readMaybe) <=< uncons . words) =<< lastMay chunkies
         pure (blockies, thingies)
     , sShow = show
-    , sSolve = noFail \(blocks, areas) ->
-        countTrue (\(bounds, ns) -> product bounds >= sum (zipWith (*) (map S.size blocks) ns)) areas
+    , sSolve = noFail \(blocks, areas) -> countTrue (go (map S.size blocks)) areas
     }
+  where
+    go blockSizes (bounds, ns) = product bounds >= sum (zipWith (*) blockSizes ns)
