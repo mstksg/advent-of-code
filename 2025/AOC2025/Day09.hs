@@ -14,10 +14,14 @@ where
 
 import AOC.Common (listV2)
 import AOC.Common.Point (Point, V2 (..))
-import AOC.Solver (noFail, (:~>) (..))
+import AOC.Solver ((:~>) (..))
 import Control.Monad ((<=<))
+import Data.Interval (Extended (..), (<..<), (<=..<), Interval)
 import qualified Data.Interval as IV
+import Data.IntervalMap.Lazy (IntervalMap)
 import qualified Data.IntervalMap.Lazy as IVM
+import Data.IntervalSet (IntervalSet)
+import Data.Set (Set)
 import qualified Data.IntervalSet as IVS
 import Data.List (scanl', tails)
 import Data.List.Split (chunksOf, splitOn)
@@ -32,14 +36,14 @@ rectArea x y = product do
   y' <- y
   pure $ abs (x' - y') + 1
 
-day09a :: [V2 Int] :~> Int
+day09a :: [Point] :~> Int
 day09a =
   MkSol
     { sParse = traverse (listV2 <=< traverse readMaybe . splitOn ",") . lines
     , sShow = show
     , sSolve =
-        noFail \pts ->
-          maximum
+        \pts ->
+          maximumMay
             [ rectArea p q
             | p : ps <- tails pts
             , q <- ps
@@ -47,9 +51,10 @@ day09a =
     }
 
 -- | x coords to the y coordinates they cointain
-regions :: [V2 Int] -> IVM.IntervalMap Int (IVS.IntervalSet Int)
-regions pts = IVM.filter (not . IVS.null) $ IVM.fromList $ zip (drop 1 xRanges) yRanges
+regions :: [Point] -> IntervalMap Int (IntervalSet Int)
+regions pts = IVM.fromList $ zip (drop 1 xRanges) yRanges
   where
+    xs :: [(Int, Set Int)]
     xs =
       M.toList $
         M.fromListWith
@@ -57,18 +62,20 @@ regions pts = IVM.filter (not . IVS.null) $ IVM.fromList $ zip (drop 1 xRanges) 
           [ (x, S.singleton y)
           | V2 x y <- pts
           ]
-    (xRanges, yRanges) = unzip $ scanl' go (IV.NegInf IV.<..< IV.Finite 0, IVS.empty) xs
+    xRanges :: [Interval Int]
+    yRanges :: [IntervalSet Int]
+    (xRanges, yRanges) = unzip $ scanl' go (NegInf <..< Finite 0, IVS.empty) xs
       where
-        go (i0, curr) (x, ys) = (IV.upperBound i0 IV.<=..< IV.Finite x, curr')
+        go (i0, curr) (x, ys) = (IV.upperBound i0 <=..< Finite x, curr')
           where
             curr' = (curr `IVS.union` ivs) `IVS.difference` (curr `IVS.intersection` ivs)
             ivs =
               IVS.fromList
-                [ IV.Finite a IV.<=..< IV.Finite b
+                [ Finite a <=..< Finite b
                 | [a, b] <- chunksOf 2 (S.toList ys)
                 ]
 
-day09b :: [V2 Int] :~> Int
+day09b :: [Point] :~> Int
 day09b =
   MkSol
     { sParse = sParse day09a
@@ -79,8 +86,8 @@ day09b =
               [ rectArea p q
               | p@(V2 px py) : ps <- tails pts
               , q@(V2 qx qy) <- ps
-              , let xRange = IV.Finite (min px qx) IV.<=..< IV.Finite (max px qx)
-                    yRange = IV.Finite (min py qy) IV.<=..< IV.Finite (max py qy)
+              , let xRange = Finite (min px qx) <=..< Finite (max px qx)
+                    yRange = Finite (min py qy) <=..< Finite (max py qy)
                     region = IVM.singleton xRange (IVS.singleton yRange)
                     outOfBounds = IVM.intersectionWith IVS.difference region allowedRegion
               , all IVS.null outOfBounds
