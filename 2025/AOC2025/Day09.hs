@@ -16,16 +16,16 @@ import AOC.Common (listV2)
 import AOC.Common.Point (Point, V2 (..))
 import AOC.Solver ((:~>) (..))
 import Control.Monad ((<=<))
-import Data.Interval (Extended (..), (<..<), (<=..<), Interval)
+import Data.Interval (Extended (..), Interval, (<..<), (<=..<))
 import qualified Data.Interval as IV
 import Data.IntervalMap.Lazy (IntervalMap)
 import qualified Data.IntervalMap.Lazy as IVM
 import Data.IntervalSet (IntervalSet)
-import Data.Set (Set)
 import qualified Data.IntervalSet as IVS
 import Data.List (scanl', tails)
 import Data.List.Split (chunksOf, splitOn)
 import qualified Data.Map as M
+import Data.Set (Set)
 import qualified Data.Set as S
 import Safe (maximumMay)
 import Text.Read (readMaybe)
