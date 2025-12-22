@@ -1,20 +1,20 @@
 >> Day 10a
 benchmarking...
-time                 271.1 ms   (265.7 ms .. 283.5 ms)
-                     0.999 R²   (0.999 R² .. 1.000 R²)
-mean                 274.8 ms   (271.1 ms .. 280.7 ms)
-std dev              6.121 ms   (2.155 ms .. 8.735 ms)
+time                 263.9 ms   (256.8 ms .. 270.8 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 267.5 ms   (265.9 ms .. 269.1 ms)
+std dev              2.190 ms   (1.211 ms .. 2.918 ms)
 variance introduced by outliers: 16% (moderately inflated)
 
 * parsing and formatting times excluded
 
 >> Day 10b
 benchmarking...
-time                 54.70 s    (52.55 s .. 56.08 s)
-                     1.000 R²   (0.999 R² .. 1.000 R²)
-mean                 54.56 s    (54.25 s .. 54.92 s)
-std dev              388.8 ms   (151.6 ms .. 538.7 ms)
-variance introduced by outliers: 19% (moderately inflated)
+time                 114.6 ms   (113.9 ms .. 115.5 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 114.6 ms   (114.3 ms .. 114.9 ms)
+std dev              488.8 μs   (391.1 μs .. 604.7 μs)
+variance introduced by outliers: 11% (moderately inflated)
 
 * parsing and formatting times excluded
 

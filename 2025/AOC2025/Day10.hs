@@ -74,26 +74,27 @@ day10b =
   MkSol
     { sParse = sParse day10a
     , sShow = show
-    , sSolve = fmap sum . traverse go
+    , sSolve = fmap sum . traverse (\(_, buttons, targ) -> solveButtons buttons targ)
     }
-  where
-    go (_, buttons, targ) = withSizedButtons buttons targ \b t ->
-      let reduced = runST do
-            mat <- traverse SV.thaw $ toAugMat b (fromIntegral <$> t)
-            stepFullGauss' mat
-            reduceBack' mat
-            traverse (fmap reduceGCD . SV.freeze) mat
-          maxSearch = fromIntegral $ maximum t
-       in withFrees reduced $ \constrs ->
-            minimumMay $
-              [ obj
-              | x <- enumFeasible maxSearch $ snd <$> constrs
-              , let xVec = x `SV.snoc` 1
-              , obj :| _ <- for constrs \(c, v) -> do
-                  let res = sum $ SV.zipWith (*) xVec v
-                  (res', 0) <- pure $ res `divMod` c
-                  pure res'
-              ]
+
+solveButtons :: [[Int]] -> [Int] -> Maybe Integer
+solveButtons buttons targ = withSizedButtons buttons targ \b t ->
+  let reduced = runST do
+        mat <- traverse SV.thaw $ toAugMat b (fromIntegral <$> t)
+        stepFullGauss mat
+        reduceBack mat
+        traverse (fmap reduceGCD . SV.freeze) mat
+      maxSearch = fromIntegral $ maximum t
+   in withFrees reduced $ \constrs ->
+        minimumMay $
+          [ obj
+          | x <- enumFeasible maxSearch $ snd <$> constrs
+          , let xVec = x `SV.snoc` 1
+          , obj :| _ <- for constrs \(c, v) -> do
+              let res = sum $ SV.zipWith (*) xVec v
+              (res', 0) <- pure $ res `divMod` c
+              pure res'
+          ]
 
 -- | n = number of lights (rows), m = number of buttons (cols)
 withSizedButtons ::
@@ -124,13 +125,13 @@ nextFin = strengthen . shift
 
 -- | Assumes everything left of the index is already upper triangular/row
 -- echelon.
-stepGauss' ::
+stepGauss ::
   forall n m a s.
   (KnownNat n, KnownNat m, Integral a) =>
   SV.Vector n (SMV.MVector (m + 1) s a) ->
   (Finite n, Finite m) ->
   ST s (Maybe (Finite n, Finite m))
-stepGauss' mat (i, j) = do
+stepGauss mat (i, j) = do
   pivot <-
     runMaybeT $
       asum $
@@ -156,13 +157,13 @@ stepGauss' mat (i, j) = do
                 pFac * y - elimFac * x
       pure ((,) <$> nextFin i <*> nextFin j)
 
-stepFullGauss' ::
+stepFullGauss ::
   (KnownNat n, KnownNat m, Integral a) =>
   SV.Vector n (SMV.MVector (m + 1) s a) ->
   ST s ()
-stepFullGauss' mat = go (0, 0)
+stepFullGauss mat = go (0, 0)
   where
-    go = traverse_ go <=< stepGauss' mat
+    go = traverse_ go <=< stepGauss mat
 
 reduceGCD :: (Foldable t, Functor t, Integral b) => t b -> t b
 reduceGCD xs
@@ -172,12 +173,12 @@ reduceGCD xs
     xs' = filter (/= 0) $ toList xs
 
 -- | Zero out all elements that are not pivots or free variables
-reduceBack' ::
+reduceBack ::
   forall n m a s.
   (KnownNat n, KnownNat m, Integral a) =>
   SV.Vector n (SMV.MVector (m + 1) s a) ->
   ST s ()
-reduceBack' mat = do
+reduceBack mat = do
   for_ (tails (reverse finites)) \case
     [] -> pure ()
     i : js -> do
@@ -197,7 +198,7 @@ reduceBack' mat = do
                 flip (SMV.modify (mat `SV.index` j)) l \y ->
                   pFac * y - elimFac * x
 
--- | Assumes 'reduceBack': all items are zero except for pivots and free
+-- | Assumes 'reduceBack: all items are zero except for pivots and free
 -- variables
 --
 -- For each equation (c, cs), xs . cs must be non-negative and a multiple of
@@ -246,14 +247,14 @@ linearBounds v = SV.imap go coeffs
     coeffs = SV.take @q v
     constTerm = SV.last v
     poss = S.fromList [i | (i, c) <- toList (SV.indexed coeffs), c > 0]
-    hasOtherPos i = not (S.null (S.delete i poss))
     go i coeff
-      | hasOtherPos i = Finite 0 <=..< PosInf
+      | hasOtherPos = Finite 0 <=..< PosInf
       | coeff > 0 = Finite (max 0 (ceilDiv (-constTerm) coeff)) <=..< PosInf
       | coeff < 0 = if ub < 0 then IV.empty else Finite 0 <=..<= Finite ub
       | constTerm < 0 = IV.empty
       | otherwise = Finite 0 <=..< PosInf
       where
+        hasOtherPos = not (S.null (S.delete i poss))
         ub = constTerm `div` (-coeff)
 
 ceilDiv :: Integral a => a -> a -> a
