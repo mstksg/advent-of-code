@@ -1,119 +1,60 @@
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
+For part 1, we just need to check if the mutual `xor`-ing of each index
+(represented as an `IntSet` of "on" indices) yields the result or not. A nice
+little trick, `filterM (\_ -> [False, True])` is a `[a] -> [[a]]` powerset
+function that gives all inclusion/exclusion combinations.
 
--- |
--- Module      : AOC2025.Day10
--- License     : BSD3
---
--- Stability   : experimental
--- Portability : non-portable
---
--- Day 10.  See "AOC.Solver" for the types used in this module!
-module AOC2025.Day10 (
-  day10a,
-  day10b,
-)
-where
-
-import AOC.Solver ((:~>) (..))
-import Control.Monad (filterM, guard, unless, (<=<))
-import Control.Monad.ST (ST, runST)
-import Control.Monad.Trans.Maybe (MaybeT (..))
-import Data.Finite (Finite, finites, shift, strengthen, weaken)
-import Data.Foldable (asum, for_, toList, traverse_)
-import Data.Functor ((<&>))
-import Data.IntSet (IntSet)
-import qualified Data.IntSet as IS
-import Data.Interval (Boundary (..), Extended (..), Interval, (<=..<), (<=..<=))
-import qualified Data.Interval as IV
-import Data.List (tails)
-import Data.List.NonEmpty (NonEmpty (..))
-import Data.List.Split (splitOn)
-import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Proxy (Proxy (..))
-import Data.Set (Set)
-import qualified Data.Set as S
-import Data.Traversable (for)
-import Data.Type.Ord (OrderingI (..))
-import qualified Data.Vector.Mutable.Sized as SMV
-import qualified Data.Vector.Sized as SV
-import GHC.TypeNats (KnownNat, cmpNat, type (+), type (-))
-import Safe (initMay, lastMay, minimumMay)
-import Text.Read (readMaybe)
-
-day10a :: [([Bool], [[Int]], [Int])] :~> Int
-day10a =
-  MkSol
-    { sParse = traverse parseMe . lines
-    , sShow = show
-    , sSolve = fmap sum . traverse (\(targ, buttons, _) -> go targ buttons)
-    }
+```haskell
+go :: [Bool] -> [[Int]] -> Int
+go targ buttons =
+  minimum
+    [ length onButts
+    | onButts <- filterM (const [False, True]) buttons
+    , foldr (symmetricDifference . IS.fromList) IS.empty onButts == targSet
+    ]
   where
-    parseMe :: String -> Maybe ([Bool], [[Int]], [Int])
-    parseMe ('[' : xs) = do
-      (a, ']' : bs) <- pure $ span (/= ']') xs
-      let lit = map (== '#') a
-          ps = words bs
-      buttons <- traverse (traverse readMaybe . splitOn "," <=< initMay . drop 1) =<< initMay ps
-      targets <- traverse readMaybe . splitOn "," =<< initMay . drop 1 =<< lastMay ps
-      pure (lit, buttons, targets)
-    parseMe _ = Nothing
-    go :: [Bool] -> [[Int]] -> Maybe Int
-    go targ buttons =
-      minimumMay
-        [ length onButts
-        | onButts <- filterM (const [False, True]) buttons
-        , foldr (symmetricDifference . IS.fromList) IS.empty onButts == targSet
-        ]
-      where
-        targSet = IS.fromList [i | (i, True) <- zip [0 ..] targ]
+    targSet = IS.fromList [i | (i, True) <- zip [0 ..] targ]
 
 symmetricDifference :: IntSet -> IntSet -> IntSet
 symmetricDifference x y = (x <> y) `IS.difference` (x `IS.intersection` y)
+```
 
-day10b :: [([Bool], [[Int]], [Int])] :~> Integer
-day10b =
-  MkSol
-    { sParse = sParse day10a
-    , sShow = show
-    , sSolve = fmap sum . traverse (\(_, buttons, targ) -> solveButtons buttons targ)
-    }
+For part 2...hoo boy. I really wanted to do this in a way that:
 
-solveButtons :: [[Int]] -> [Int] -> Maybe Integer
-solveButtons buttons targ = withSizedButtons buttons targ \b t ->
-  let reduced = runST do
-        mat <- traverse SV.thaw $ toAugMat b t
-        stepFullGauss mat
-        reduceBack mat
-        traverse (fmap reduceGCD . SV.freeze) mat
-      maxSearch = maximum t
-   in withFrees reduced $ \constrs ->
-        minimumMay $
-          [ obj
-          | x <- enumFeasible maxSearch $ snd <$> constrs
-          , let xVec = x `SV.snoc` 1
-          , obj :| _ <- for constrs \(c, v) -> do
-              let res = sum $ SV.zipWith (*) xVec v
-              (res', 0) <- pure $ res `divMod` c
-              pure res'
-          ]
+1.  Required no external linear programming libraries
+2.  Stayed completely in `Integer`, without going into floats or arbitrary
+    precision rationals
 
+In the end I found a way that was made nice using [sized
+vectors](https://hackage.haskell.org/package/vector-sized) and [safe indices](https://hackage.haskell.org/package/finite-typelits)
+to help manage everything.
+
+I have gone on record saying that the advantage of sized vectors and safe
+indexing is not the safety, but rather the guidance that they provide:
+imagine if your IDE autocomplete could also tell you what indices in scope were
+valid for your vectors! That being said, because the benefit is in the writing
+process, it doesn't quite show as much in the finished product.
+
+Anyway let's pull our buttons and targets into the world of type-level sizes:
+
+```haskell
 -- | n = number of lights (rows), m = number of buttons (cols)
 withSizedButtons ::
   [[Int]] ->
   [Int] ->
-  ( forall n m.
-    (KnownNat n, KnownNat m) =>
-    SV.Vector m (Set (Finite n)) ->
-    SV.Vector n Integer ->
-    r
-  ) ->
+  (forall n m. (KnownNat n, KnownNat m) => SV.Vector m (Set (Finite n)) -> SV.Vector n Integer -> r) ->
   r
 withSizedButtons buttons target f =
   SV.withSizedList buttons \buttons' ->
     SV.withSizedList target $
       f (S.fromList . map fromIntegral <$> buttons') . fmap fromIntegral
+```
 
+This basically moves our `[[Int]]` and `[Int]` into the type-safe world,
+bringing in `m` (the number of buttons) and `n` (the number of lights) and
+`Set (Finite n)`, the set of lights that each button presses. From that we can
+make our type-safe augmented matrix:
+
+```haskell
 -- | n = number of lights (rows), m = number of buttons (cols)
 toAugMat ::
   (KnownNat n, KnownNat m, Num a) =>
@@ -126,10 +67,15 @@ toAugMat buttons target = SV.generate \i -> SV.generate \j ->
     Just j'
       | i `S.member` (buttons `SV.index` j') -> 1
       | otherwise -> 0
+```
 
-nextFin :: KnownNat n => Finite n -> Maybe (Finite n)
-nextFin = strengthen . shift
+`strengthen :: Finite (n + 1) -> Maybe (Finite n)` returns `Nothing` if we are
+the last index, and `Just` with the `Finite n` if we aren't. For our augmented
+matrix with `m + 1` columns, that means the last column will be our target.
 
+Next we can do Guassian elimination on the mutable rows:
+
+```haskell
 -- | Assumes everything left of the index is already upper triangular/row
 -- echelon.
 stepGauss ::
@@ -171,14 +117,14 @@ stepFullGauss ::
 stepFullGauss mat = go (0, 0)
   where
     go = traverse_ go <=< stepGauss mat
+```
 
-reduceGCD :: (Foldable t, Functor t, Integral b) => t b -> t b
-reduceGCD xs
-  | null xs' = xs
-  | otherwise = (`div` foldr1 gcd xs') <$> xs
-  where
-    xs' = filter (/= 0) $ toList xs
+We have an under-determined system, and so if we have M buttons and N lights,
+that means we have `Q = M - N` free variables that we can tweak. My goal is to
+rephrase everything into a system equation on those `Q` free variables, so
+first we eliminate all contributions that aren't free variables or pivots:
 
+```haskell
 -- | Zero out all elements that are not pivots or free variables
 reduceBack ::
   forall n m a s.
@@ -203,7 +149,22 @@ reduceBack mat = for_ (tails (reverse finites)) \case
             SMV.read (mat `SV.index` i) l >>= \x ->
               flip (SMV.modify (mat `SV.index` j)) l \y ->
                 pFac * y - elimFac * x
+```
 
+Now we can generate our final equations only on `q`. Assume `x_4`, `x_5` free,
+we would turn an equation like `7 x_1 + 3 x_4 - 2 x_5 = 20` into a row
+represented by `7 x_1 = -3 x_4 + 2 x_5 + 20`, represented as the row `(7, [-3 2
+20])`. Our choice of free variables is constrainted so that `[x3 2 20] . [x_4 x_5 1]`
+is non-negative and a multiple of 7. Finally we can also add up all of `x_0 +
+x_1 + ..` etc. to get our objective function, which is _also_ constrained to be
+non-negative and a multiple of whatever the mutual LCM of all of the pivots is.
+
+Since the constraints and the objective function are basically the same thing,
+we can return them all in a non-empty list and treat the first item as the
+"final objective" function which is the answer: how many times do you press
+each button? (times the returned multiple)
+
+```haskell
 -- | Assumes 'reduceBack: all items are zero except for pivots and free
 -- variables
 --
@@ -214,11 +175,7 @@ withFrees ::
   forall n m a r.
   (KnownNat m, Integral a) =>
   SV.Vector n (SV.Vector (m + 1) a) ->
-  ( forall q.
-    KnownNat q =>
-    NonEmpty (a, SV.Vector (q + 1) a) ->
-    r
-  ) ->
+  (forall q. KnownNat q => NonEmpty (a, SV.Vector (q + 1) a) -> r) ->
   r
 withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (Finite m)) ->
   let ineqs :: [(a, SV.Vector (q + 1) a)]
@@ -243,7 +200,14 @@ withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (F
     pivots = mapMaybe (SV.findIndex (/= 0) . SV.take @m) (toList augMat)
     freeVars :: [Finite m]
     freeVars = S.toList $ S.fromAscList finites `S.difference` S.fromList pivots
+```
 
+Now we can see that each constraint vector gives us an interval over each
+variable, based on the inequality that it is non-negative. We can use the
+[data-interval](https://hackage.haskell.org/package/data-inteveral) library to
+help manage them.
+
+```haskell
 -- | Bounds for each of the non-negative variables so that the equation can be
 -- non-negative.
 linearBounds ::
@@ -266,6 +230,20 @@ linearBounds v = SV.imap go coeffs
 ceilDiv :: Integral a => a -> a -> a
 ceilDiv n d = (n + d - 1) `div` d
 
+```
+
+And my final strategy is to do this:
+
+1.  Use `linearBounds` to find the range of the first free variable
+2.  Enumerate over each item in that bound:
+    a.  `substitueFirstFree` to substitute the picked value as that first value
+    b.  Repeat the entire thing sub-recursively, since that substitution
+        greatly constrains the other variables
+
+Eventually we have a big loop on the first variable, a small loop on the second
+variable, and pretty much only a very few options on the third, ideally.
+
+```haskell
 -- | Resolve the first free variable into a fixed portion and delete it
 substituteFirstFree ::
   (KnownNat q, Num a) =>
@@ -306,17 +284,27 @@ enumFeasible maxSearch constraints = case cmpNat (Proxy @q) (Proxy @0) of
         bounds = foldr1 (SV.zipWith IV.intersection) (linearBounds <$> constraints)
         firstBound :: Interval a
         firstBound = SV.head @u bounds
+```
 
-enumIntervalClamped :: Integral a => a -> Interval a -> [a]
-enumIntervalClamped maxSearch iv = fromMaybe [] do
-  lo <- case IV.lowerBound' iv of
-    (NegInf, _) -> Just 0
-    (Finite a, Closed) -> Just (max 0 a)
-    (Finite a, Open) -> Just (max 0 (a + 1))
-    (PosInf, _) -> Nothing
-  hi <- case IV.upperBound' iv of
-    (PosInf, _) -> Just maxSearch
-    (Finite b, Closed) -> Just (min maxSearch b)
-    (Finite b, Open) -> Just (min maxSearch (b - 1))
-    (NegInf, _) -> Nothing
-  pure [lo .. hi]
+The whole thing wrapped up:
+
+```haskell
+solveButtons :: [[Int]] -> [Int] -> Maybe Integer
+solveButtons buttons targ = withSizedButtons buttons targ \b t ->
+  let reduced = runST do
+        mat <- traverse SV.thaw $ toAugMat b t
+        stepFullGauss mat
+        reduceBack mat
+        traverse (fmap reduceGCD . SV.freeze) mat
+      maxSearch = maximum t
+   in withFrees reduced $ \constrs ->
+        minimumMay $
+          [ obj
+          | x <- enumFeasible maxSearch $ snd <$> constrs
+          , let xVec = x `SV.snoc` 1
+          , obj :| _ <- for constrs \(c, v) -> do
+              let res = sum $ SV.zipWith (*) xVec v
+              (res', 0) <- pure $ res `divMod` c
+              pure res'
+          ]
+```
