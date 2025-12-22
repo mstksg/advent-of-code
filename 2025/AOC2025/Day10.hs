@@ -15,40 +15,27 @@ module AOC2025.Day10 (
 )
 where
 
-import AOC.Common
 import AOC.Solver ((:~>) (..))
-import Control.Monad (filterM, foldM, guard, (<=<))
-import Control.Monad.Trans.State
-import Data.Bifunctor
-import Data.Bitraversable
+import Control.Monad (filterM, guard, unless, (<=<))
+import Control.Monad.ST (ST, runST)
+import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.Finite (Finite, finites, shift, strengthen, weaken)
-import Data.Foldable
-import Data.Foldable1 hiding (foldr1, head, maximum)
+import Data.Foldable (asum, for_, toList, traverse_)
 import Data.Functor ((<&>))
-import Data.Interval (Boundary (..), Extended (..), Interval, (<..<), (<=..<), (<=..<=))
+import Data.Interval (Boundary (..), Extended (..), Interval, (<=..<), (<=..<=))
 import qualified Data.Interval as IV
-import Data.IntervalMap.Lazy (IntervalMap)
-import qualified Data.IntervalMap.Lazy as IVM
-import Data.IntervalSet (IntervalSet)
-import qualified Data.IntervalSet as IVS
 import Data.List (tails)
 import Data.List.NonEmpty (NonEmpty (..))
-import qualified Data.List.NonEmpty as NE
 import Data.List.Split (splitOn)
-import Data.Map (Map)
-import qualified Data.Map as M
-import Data.Maybe
-import Data.Proxy
+import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Proxy (Proxy (..))
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Traversable
-import Data.Tuple (swap)
-import Data.Type.Ord
+import Data.Traversable (for)
+import Data.Type.Ord (OrderingI (..))
+import qualified Data.Vector.Mutable.Sized as SMV
 import qualified Data.Vector.Sized as SV
-import Debug.Trace
-import GHC.TypeNats
-import GHC.TypeNats (KnownNat, type (+))
-import qualified Linear as L
+import GHC.TypeNats (KnownNat, cmpNat, type (+), type (-))
 import Safe (initMay, lastMay, minimumMay)
 import Text.Read (readMaybe)
 
@@ -91,15 +78,18 @@ day10b =
     }
   where
     go (_, buttons, targ) = withSizedButtons buttons targ \b t ->
-      let rowEchelon = execState stepFullGauss $ toAugMat b (fromIntegral <$> t)
-          reduced = execState reduceBack rowEchelon
+      let reduced = runST do
+            mat <- traverse SV.thaw $ toAugMat b (fromIntegral <$> t)
+            stepFullGauss' mat
+            reduceBack' mat
+            traverse (fmap reduceGCD . SV.freeze) mat
           maxSearch = fromIntegral $ maximum t
-       in withFrees reduced $ \constrs' obj' ->
+       in withFrees reduced $ \constrs ->
             minimumMay $
-              [ xObj
-              | x <- enumFeasible maxSearch . fmap snd $ obj' :| constrs'
+              [ obj
+              | x <- enumFeasible maxSearch $ snd <$> constrs
               , let xVec = x `SV.snoc` 1
-              , xObj :| _ <- for (obj' :| constrs') \(c, v) -> do
+              , obj :| _ <- for constrs \(c, v) -> do
                   let res = sum $ SV.zipWith (*) xVec v
                   (res', 0) <- pure $ res `divMod` c
                   pure res'
@@ -133,91 +123,106 @@ nextFin :: KnownNat n => Finite n -> Maybe (Finite n)
 nextFin = strengthen . shift
 
 -- | Assumes everything left of the index is already upper triangular/row
--- echelon. Returns whether or not we found a pivot here
-stepGauss ::
-  forall n m a.
-  (KnownNat n, KnownNat m, Num a, Eq a) =>
+-- echelon.
+stepGauss' ::
+  forall n m a s.
+  (KnownNat n, KnownNat m, Integral a) =>
+  SV.Vector n (SMV.MVector (m + 1) s a) ->
   (Finite n, Finite m) ->
-  State (SV.Vector n (SV.Vector (m + 1) a)) (Maybe (Finite n, Finite m), Bool)
-stepGauss (i, j) = state \mat ->
-  let origRow = mat `SV.index` i
-      pivotIx = SV.findIndex (\(k, row) -> k >= i && (row `SV.index` weaken j) /= 0) $ SV.indexed mat
-   in case pivotIx of
-        Nothing -> (((i,) <$> nextFin j, False), mat)
-        Just p ->
-          let pivotRow = mat `SV.index` p
-              mat' = mat SV.// [(i, pivotRow), (p, origRow)]
-              pVal = pivotRow `SV.index` weaken j
-              mat'' =
-                SV.indexed mat' <&> \(k, row) ->
-                  let elimVal = row `SV.index` weaken j
-                   in if k <= i
-                        then row
-                        else SV.zipWith (\x y -> pVal * y - elimVal * x) pivotRow row
-           in (((,) <$> nextFin i <*> nextFin j, True), mat'')
+  ST s (Maybe (Finite n, Finite m))
+stepGauss' mat (i, j) = do
+  pivot <-
+    runMaybeT $
+      asum $
+        [ MaybeT $ SMV.read (mat `SV.index` k) (weaken j) <&> \pVal -> (k, pVal) <$ guard (pVal /= 0)
+        | k <- [i ..]
+        ]
+  case pivot of
+    Nothing -> pure ((i,) <$> nextFin j)
+    Just (pIx, pVal) -> do
+      unless (pIx == i) do
+        pivotRow <- SMV.clone $ mat `SV.index` pIx
+        SMV.copy (mat `SV.index` pIx) (mat `SV.index` i)
+        SMV.copy (mat `SV.index` i) pivotRow
+      for_ (drop 1 [i ..]) \k -> do
+        elimVal <- SMV.read (mat `SV.index` k) (weaken j)
+        unless (elimVal == 0) do
+          let common = pVal `lcm` elimVal
+              pFac = common `div` elimVal
+              elimFac = common `div` pVal
+          for_ finites \l ->
+            SMV.read (mat `SV.index` i) l >>= \x ->
+              flip (SMV.modify (mat `SV.index` k)) l \y ->
+                pFac * y - elimFac * x
+      pure ((,) <$> nextFin i <*> nextFin j)
+
+stepFullGauss' ::
+  (KnownNat n, KnownNat m, Integral a) =>
+  SV.Vector n (SMV.MVector (m + 1) s a) ->
+  ST s ()
+stepFullGauss' mat = go (0, 0)
+  where
+    go = traverse_ go <=< stepGauss' mat
 
 reduceGCD :: (Foldable t, Functor t, Integral b) => t b -> t b
 reduceGCD xs
   | null xs' = xs
-  | otherwise = (* firstSign) . (`div` foldr1 gcd xs') <$> xs
+  | otherwise = (`div` foldr1 gcd xs') <$> xs
   where
     xs' = filter (/= 0) $ toList xs
-    firstSign = signum $ head xs'
 
-stepFullGauss ::
+-- | Zero out all elements that are not pivots or free variables
+reduceBack' ::
+  forall n m a s.
   (KnownNat n, KnownNat m, Integral a) =>
-  State (SV.Vector n (SV.Vector (m + 1) a)) (SV.Vector m (Maybe (Finite n)))
-stepFullGauss = genVec . M.fromList . map swap <$> go (0, 0)
-  where
-    go ij = do
-      (nextIJ, foundPivot) <- stepGauss ij
-      let addMe
-            | foundPivot = (ij :)
-            | otherwise = id
-      addMe . fromMaybe [] <$> traverse go nextIJ
-    genVec mp = SV.generate (`M.lookup` mp)
-
--- | Zero out all elements that are not pivots or free variables, and make
--- pivots non-negative
-reduceBack ::
-  forall n m a. (KnownNat n, KnownNat m, Integral a) => State (SV.Vector n (SV.Vector (m + 1) a)) ()
-reduceBack = do
-  modify $ fmap reduceGCD
+  SV.Vector n (SMV.MVector (m + 1) s a) ->
+  ST s ()
+reduceBack' mat = do
   for_ (tails (reverse finites)) \case
     [] -> pure ()
     i : js -> do
-      eliminator <- gets (`SV.index` i)
-      for_ (SV.findIndex (/= 0) (SV.take @m eliminator)) \pivot -> do
-        let pVal = eliminator `SV.index` weaken pivot
+      pivot <-
+        runMaybeT . asum $
+          [ MaybeT $ SMV.read (mat `SV.index` i) k <&> \pVal -> (k, pVal) <$ guard (pVal /= 0) | k <- finites
+          ]
+      for_ pivot \(pIx, pVal) -> do
         for_ js \j -> do
-          row <- gets (`SV.index` j)
-          let elimVal = row `SV.index` weaken pivot
-          modify $ \mat ->
-            mat SV.// [(j, reduceGCD $ SV.zipWith (\x y -> pVal * y - elimVal * x) eliminator row)]
+          elimVal <- SMV.read (mat `SV.index` j) pIx
+          unless (elimVal == 0) $ do
+            let common = pVal `lcm` elimVal
+                pFac = common `div` elimVal
+                elimFac = common `div` pVal
+            for_ finites \l ->
+              SMV.read (mat `SV.index` i) l >>= \x ->
+                flip (SMV.modify (mat `SV.index` j)) l \y ->
+                  pFac * y - elimFac * x
 
 -- | Assumes 'reduceBack': all items are zero except for pivots and free
 -- variables
+--
+-- For each equation (c, cs), xs . cs must be non-negative and a multiple of
+-- c. The first item returned is uniquely the objective function, though all
+-- constraints also apply to it as well.
 withFrees ::
   forall n m a r.
   (KnownNat m, Integral a) =>
   SV.Vector n (SV.Vector (m + 1) a) ->
   ( forall q.
     KnownNat q =>
-    [(a, SV.Vector (q + 1) a)] ->
-    (a, SV.Vector (q + 1) a) ->
+    NonEmpty (a, SV.Vector (q + 1) a) ->
     r
   ) ->
   r
 withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (Finite m)) ->
   let ineqs :: [(a, SV.Vector (q + 1) a)]
       ineqs =
-        [ (pivot, v')
+        [ (abs pivot, (* signum pivot) <$> v')
         | v <- toList augMat
-        , pivot <- take 1 . filter (/= 0) $ toList v
         , let v' = SV.generate \j ->
                 case strengthen j of
                   Nothing -> SV.last v
                   Just j' -> negate $ v `SV.index` weaken (freeVarsVec `SV.index` j')
+        , pivot <- take 1 . filter (/= 0) $ toList v
         ]
       bigLCM = foldr1 lcm $ fst <$> ineqs
       go (pVal, coeffs) acc = acc + ((* multiple) <$> coeffs)
@@ -225,7 +230,7 @@ withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (F
           multiple = bigLCM `div` pVal
       objective :: SV.Vector (q + 1) a
       objective = foldr go (SV.generate $ maybe 0 (const bigLCM) . strengthen) ineqs
-   in f ineqs (bigLCM, objective)
+   in f $ (bigLCM, objective) :| ineqs
   where
     pivots :: [Finite m]
     pivots = mapMaybe (SV.findIndex (/= 0) . SV.take @m) (toList augMat)
@@ -233,7 +238,7 @@ withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (F
     freeVars = S.toList $ S.fromAscList finites `S.difference` S.fromList pivots
 
 -- | Bounds for each of the non-negative variables so that the equation can be
--- non-negative. Usually
+-- non-negative.
 linearBounds ::
   forall q a. (KnownNat q, Integral a) => SV.Vector (q + 1) a -> SV.Vector q (Interval a)
 linearBounds v = SV.imap go coeffs
@@ -245,11 +250,11 @@ linearBounds v = SV.imap go coeffs
     go i coeff
       | hasOtherPos i = Finite 0 <=..< PosInf
       | coeff > 0 = Finite (max 0 (ceilDiv (-constTerm) coeff)) <=..< PosInf
-      | coeff < 0 =
-          let ub = constTerm `div` (-coeff)
-           in if ub < 0 then IV.empty else Finite 0 <=..<= Finite ub
+      | coeff < 0 = if ub < 0 then IV.empty else Finite 0 <=..<= Finite ub
       | constTerm < 0 = IV.empty
       | otherwise = Finite 0 <=..< PosInf
+      where
+        ub = constTerm `div` (-coeff)
 
 ceilDiv :: Integral a => a -> a -> a
 ceilDiv n d = (n + d - 1) `div` d
@@ -266,7 +271,9 @@ substituteFirstFree x v = SV.generate \j ->
       Nothing -> (v `SV.index` 0) * x
       Just _ -> 0
 
--- | Enumerate all points in the feasible region in depth first search
+-- | Enumerate all points in the feasible region in depth first search, by
+-- fixing the first point and enumerating over the possible next points,
+-- recursively.
 enumFeasible ::
   forall q a.
   (KnownNat q, Integral a, Show a) =>
@@ -294,18 +301,15 @@ enumFeasible maxSearch constraints = case cmpNat (Proxy @q) (Proxy @0) of
         firstBound = SV.head @u bounds
 
 enumIntervalClamped :: Integral a => a -> Interval a -> [a]
-enumIntervalClamped maxSearch iv =
-  case (lowerI, upperI) of
-    (Just lo, Just hi) | lo <= hi -> [lo .. hi]
-    _ -> []
-  where
-    lowerI = case IV.lowerBound' iv of
-      (NegInf, _) -> Just 0
-      (Finite a, Closed) -> Just (max 0 a)
-      (Finite a, Open) -> Just (max 0 (a + 1))
-      (PosInf, _) -> Nothing
-    upperI = case IV.upperBound' iv of
-      (PosInf, _) -> Just maxSearch
-      (Finite b, Closed) -> Just (min maxSearch b)
-      (Finite b, Open) -> Just (min maxSearch (b - 1))
-      (NegInf, _) -> Nothing
+enumIntervalClamped maxSearch iv = fromMaybe [] do
+  lo <- case IV.lowerBound' iv of
+    (NegInf, _) -> Just 0
+    (Finite a, Closed) -> Just (max 0 a)
+    (Finite a, Open) -> Just (max 0 (a + 1))
+    (PosInf, _) -> Nothing
+  hi <- case IV.upperBound' iv of
+    (PosInf, _) -> Just maxSearch
+    (Finite b, Closed) -> Just (min maxSearch b)
+    (Finite b, Open) -> Just (min maxSearch (b - 1))
+    (NegInf, _) -> Nothing
+  pure [lo .. hi]
