@@ -19,11 +19,24 @@ import AOC.Common
 import AOC.Solver ((:~>) (..))
 import Control.Monad (filterM, foldM, guard, (<=<))
 import Control.Monad.Trans.State
+import Data.Bifunctor
 import Data.Finite (Finite, finites, shift, strengthen, weaken)
 import Data.Foldable
-import Data.Foldable1 hiding (head, foldr1, maximum)
+import Data.Foldable1 hiding (foldr1, head, maximum)
 import Data.Functor ((<&>))
+import Data.Bitraversable
+import Data.Proxy
+import GHC.TypeNats
+import Data.Interval (Boundary (..), Extended (..), Interval, (<..<), (<=..<), (<=..<=))
+import qualified Data.Interval as IV
+import Data.IntervalMap.Lazy (IntervalMap)
+import qualified Data.IntervalMap.Lazy as IVM
+import Data.IntervalSet (IntervalSet)
+import qualified Data.List.NonEmpty as NE
+import Data.List.NonEmpty (NonEmpty(..))
+import qualified Data.IntervalSet as IVS
 import Data.List (tails)
+import Data.Type.Ord
 import Data.List.Split (splitOn)
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -31,7 +44,6 @@ import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Tuple (swap)
-import Data.Bifunctor
 import qualified Data.Vector.Sized as SV
 import Debug.Trace
 import GHC.TypeNats (KnownNat, type (+))
@@ -74,17 +86,36 @@ day10b =
   MkSol
     { sParse = sParse day10a
     , sShow = show
-    , sSolve = fmap sum . traverse go
+    , sSolve = fmap (sum . map snd) . traceShowId . traverse (bitraverse pure go) . zip [1..]
     }
   where
     go (_, buttons, targ) = withSizedButtons buttons targ \b t ->
       let (pivots, rowEchelon) = runState stepFullGauss $ toAugMat b (fromIntegral <$> t)
           reduced = execState reduceBack rowEchelon
           !(!constrs, !obj) = toEqns reduced
-          !candidates = allCandidates (fromIntegral $ maximum t) constrs
-      in minimumMay $ map (\coeffs -> dotMap (M.insert Nothing 1 $ M.mapKeysMonotonic Just coeffs) obj) candidates
-          -- backsolved = backsolve (fromIntegral $ maximum t) rowEchelon pivots
-       -- in fmap fst . minimumMay $ (\x -> (sum x, x)) <$> backsolved
+          -- !_ = traceShowId $ any ((== 1) . M.size . M.filterWithKey (\k _ -> isJust k)) constrs
+          !_ = singleConstraints constrs
+          candidates = allCandidates (fromIntegral $ maximum t) constrs
+          maxSearch = fromIntegral $ maximum t
+       in withFrees reduced $ \constrs' obj' ->
+            let constrBounds = linearBounds <$> constrs'
+                objBounds = linearBounds obj'
+                !allBounds = foldr1 (SV.zipWith IV.intersection) (objBounds : constrBounds)
+                !feasibles = enumFeasible maxSearch $ fromJust $ NE.nonEmpty constrs'
+                -- !feasibles = enumFeasible maxSearch $ obj' :| constrs'
+             -- in traceShow (obj' : constrs') $
+             --        traceShow (length feasibles) $
+              in
+                      minimumMay $
+                        [ SV.sum $ SV.zipWith (*) xVec obj'
+                          | x <- feasibles
+                        , let xVec = x `SV.snoc` 1
+                        , all ((>= 0) . sum . SV.zipWith (*) xVec) (obj' : constrs')
+                        ]
+                    --   map (\coeffs -> dotMap (M.insert Nothing 1 $ M.mapKeysMonotonic Just coeffs) obj) candidates
+
+-- backsolved = backsolve (fromIntegral $ maximum t) rowEchelon pivots
+-- in fmap fst . minimumMay $ (\x -> (sum x, x)) <$> backsolved
 
 -- [(Nothing,-18),(Just (finite 8),1),(Just (finite 9),1)]
 -- [(Nothing,11),(Just (finite 8),1),(Just (finite 9),-1)]
@@ -118,7 +149,6 @@ day10b =
 -- fromList [(Nothing,162),(Just (finite 8),-2),(Just (finite 9),-3)]
 --
 -- 162 - 2 x_8 - 3 x_9
-
 
 -- the hard case:
 -- ([False,True,False,True,True,False,True,True,False,True],[[1,4,6,7],[0,1,3,5,7,9],[3,9],[0,1,2,3,5,8],[2,3,4,6,8,9],[1,3,4,5,6,7,9],[0,1,2,5,6,7],[1,7],[2,3,4,9],[0],[1,2,4,7],[0,2,4,6,7,8],[1,2,3,5,8]],[159,212,79,188,77,173,55,192,53,157])
@@ -301,7 +331,8 @@ type OnFree m = Map (Maybe (Finite m)) Integer
 -- assumes 'reduceBack' -- all items are zero except for pivots and free
 -- variables
 toEqns ::
-  forall n m. (KnownNat n, KnownNat m) =>
+  forall n m.
+  (KnownNat n, KnownNat m) =>
   SV.Vector n (SV.Vector (m + 1) Integer) ->
   ([OnFree m], OnFree m)
 toEqns augMat = (snd <$> ineqs, objective)
@@ -313,33 +344,271 @@ toEqns augMat = (snd <$> ineqs, objective)
     ineqs :: [(Integer, OnFree m)]
     ineqs =
       [ (pivot, M.fromList $ (Nothing, targ) : (bimap Just negate <$> rest))
-        | v <- SV.toList augMat
+      | v <- SV.toList augMat
       , let coeffs = SV.take @m v
             targ = SV.last v
-      , (_, pivot):rest <- [filter ((/= 0) . snd) (toList (SV.indexed coeffs))]
+      , (_, pivot) : rest <- [filter ((/= 0) . snd) (toList (SV.indexed coeffs))]
       ]
     bigLCM = foldr1 gcd $ fst <$> ineqs
     objective :: OnFree m
-    objective = foldr1 (M.unionWith (+))
-        [ (* multiple) <$> coeffs
+    objective =
+      M.mapWithKey (\case Nothing -> id; Just _ -> (+ 1)) $
+        foldr1
+          (M.unionWith (+))
+          [ (* multiple) <$> coeffs
           | (pVal, coeffs) <- ineqs
-        , let multiple = bigLCM `div` pVal
+          , let multiple = bigLCM `div` pVal
+          ]
+
+-- | Assumes 'reduceBack': all items are zero except for pivots and free
+-- variables
+withFrees ::
+  forall n m a r.
+  (KnownNat n, KnownNat m, Integral a) =>
+  SV.Vector n (SV.Vector (m + 1) a) ->
+  (forall q. KnownNat q => [SV.Vector (q + 1) a] -> SV.Vector (q + 1) a -> r) ->
+  r
+withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (Finite m)) ->
+  let ineqs :: [(a, SV.Vector (q + 1) a)]
+      ineqs =
+        [ (pivot, v')
+        | v <- toList augMat
+        , pivot <- take 1 . filter (/= 0) $ toList v
+        , let v' = SV.generate \j ->
+                case strengthen j of
+                  Nothing -> SV.last v
+                  Just j' -> negate $ v `SV.index` weaken (freeVarsVec `SV.index` j')
         ]
+      bigLCM = foldr1 gcd $ fst <$> ineqs
+      go (pVal, coeffs) acc = acc + ((* multiple) <$> coeffs)
+        where
+          multiple = bigLCM `div` pVal
+      objective :: SV.Vector (q + 1) a
+      objective = foldr go (SV.generate $ maybe 0 (const 1) . strengthen) ineqs
+   in f (snd <$> ineqs) objective
+  where
+    pivots :: [Finite m]
+    pivots = mapMaybe (SV.findIndex (/= 0) . SV.take @m) (toList augMat)
+    freeVars :: [Finite m]
+    freeVars = S.toList $ S.fromAscList finites `S.difference` S.fromList pivots
+
+-- | Bounds for each of the non-negative variables so that the equation can be
+-- non-negative. Usually
+linearBounds :: forall q a. (KnownNat q, Integral a) => SV.Vector (q + 1) a -> SV.Vector q (Interval a)
+linearBounds v = SV.imap go coeffs where
+  coeffs    = SV.take @q v
+  constTerm = SV.last v
+  poss      = S.fromList [ i | (i,c) <- toList (SV.indexed coeffs), c > 0 ]
+  hasOtherPos i = not (S.null (S.delete i poss))
+  go i coeff
+    | hasOtherPos i = Finite 0 <=..< PosInf
+    | coeff > 0     = Finite (max 0 (ceilDiv (-constTerm) coeff)) <=..< PosInf
+    | coeff < 0     = let ub = constTerm `div` (-coeff) 
+                      in if ub < 0 then IV.empty else Finite 0 <=..<= Finite ub
+    | constTerm < 0 = IV.empty
+    | otherwise     = Finite 0 <=..< PosInf
+
+ceilDiv :: Integral a => a -> a -> a
+ceilDiv n d = (n + d - 1) `div` d
+
+-- | Resolve the first free variable into a fixed portion and delete it
+substituteFirstFree ::
+  (KnownNat q, Num a, Show a) =>
+  a ->
+  SV.Vector (q + 2) a ->
+  SV.Vector (q + 1) a
+substituteFirstFree x v = SV.generate \j ->
+  (v `SV.index` shift j)
+    + case strengthen j of
+      Nothing -> (v `SV.index` 0) * x
+      Just _ -> 0
+
+-- | Enumerate all points in the feasible region in depth first search
+enumFeasible ::
+  forall q a. (KnownNat q, Integral a, Show a)
+    => a 
+    -> NonEmpty (SV.Vector (q + 1) a)
+    -> [SV.Vector q a]
+enumFeasible maxSearch constraints = case cmpNat (Proxy @q) (Proxy @0) of
+   LTI -> []
+   EQI -> [SV.empty]
+   GTI -> case cmpNat (Proxy @1) (Proxy @q) of
+        LTI -> go
+        EQI -> go
+        GTI -> []
+  where
+    go :: (1 <= q) => [SV.Vector q a]
+    go = enumIntervalClamped maxSearch firstBound >>= \x ->
+      let newConstraints :: NonEmpty (SV.Vector q a)
+          newConstraints = substituteFirstFree @(q-1) x <$> constraints
+       in SV.cons x <$> enumFeasible maxSearch newConstraints
+      where
+        bounds :: SV.Vector q (Interval a)
+        bounds = foldr1 (SV.zipWith IV.intersection) (linearBounds <$> constraints)
+        firstBound :: Interval a
+        firstBound = SV.head @(q - 1) bounds
+      --  in _ <$> enumIntervalClamped maxSearch firstBound
+
+-- linearBounds :: forall q a. (KnownNat q, Integral a) => SV.Vector (q + 1) a -> SV.Vector q (Interval a)
+-- linearBounds v = SV.imap go coeffs where
+--   coeffs = SV.take @q v
+--   constTerm = SV.last v
+--   impossible = all (== 0) coeffs && constTerm < 0
+--   go _ c
+--     | impossible = IV.empty
+--     | c == 0 = Finite 0 <=..< PosInf
+--     | c > 0 && constTerm < 0 = Finite ((-constTerm) `ceilDiv` c) <=..< PosInf
+--     | c > 0 = Finite 0 <=..< PosInf
+--     | ub < 0 = IV.empty
+--     | otherwise = Finite 0 <=..<= Finite ub
+--     where ub = constTerm `div` (-c)
+
+-- linearBounds :: forall q a. (KnownNat q, Integral a) => SV.Vector (q + 1) a -> SV.Vector q (Interval a)
+-- linearBounds v = SV.imap go coeffs where
+--   coeffs = SV.take @q v
+--   constTerm = SV.last v
+--   posCount = SV.foldl' (\n a -> if a > 0 then n + 1 else n) 0 coeffs
+--   allNonPos = posCount == 0
+--   globalBad = allNonPos && constTerm < 0
+--   go i ai
+--     | globalBad = IV.empty
+--     | otherHasPos = Finite 0 <=..< PosInf
+--     | ai > 0, constTerm >= 0 = Finite 0 <=..< PosInf
+--     | ai > 0 = Finite (ceilDiv (-constTerm) ai) <=..< PosInf
+--     | ai == 0, constTerm >= 0 = Finite 0 <=..< PosInf
+--     | ai == 0 = IV.empty
+--     | constTerm < 0 = IV.empty
+--     | otherwise = Finite 0 <=..<= Finite (constTerm `div` (-ai))
+--     where
+--       otherHasPos
+--         | ai > 0 = posCount > 1
+--         | otherwise = posCount > 0
+
+-- stepBacksolve coeffs targ known = case SV.findIndex (/= 0) coeffs of
+-- freeVars :: [Finite m]
+-- freeVars = ordNub $
+-- ([OnFree m], OnFree m)
 
 dotMap :: (Ord k, Num a) => Map k a -> Map k a -> a
 dotMap x y = sum $ M.unionWith (*) x y
 
+singleConstraints :: [OnFree m] -> Map (Finite m) (IntervalSet Integer)
+singleConstraints =
+  M.unionsWith IVS.intersection
+    . map (go . M.toList)
+  where
+    go = \case
+      -- 0 <= c + v x_i  AND x_i >= 0 always
+      [(Nothing, c), (Just i, v)] ->
+        M.singleton i $
+          IVS.singleton nonNegative
+            `IVS.intersection` case (compare c 0, compare v 0) of
+              -- c < 0
+              (LT, LT) -> IVS.singleton (NegInf <=..< Finite (upperBound c v + 1)) -- x <= floor((-c)/v)
+              (LT, EQ) -> IVS.empty -- 0 <= c is false
+              (LT, GT) -> IVS.singleton (Finite (lowerBound c v) <=..< PosInf) -- x >= ceil((-c)/v)
+
+              -- c = 0
+              (EQ, LT) -> IVS.singleton (NegInf <=..< Finite 1) -- x <= 0
+              (EQ, EQ) -> IVS.singleton (NegInf <=..< PosInf) -- tautology; will intersect to nonNegative
+              (EQ, GT) -> IVS.singleton (Finite 0 <=..< PosInf) -- x >= 0
+
+              -- c > 0
+              (GT, LT) -> IVS.singleton (NegInf <=..< Finite (upperBound c v + 1)) -- x <= floor((-c)/v) (note: bound may be negative)
+              (GT, EQ) -> IVS.singleton (NegInf <=..< PosInf) -- tautology; will intersect to nonNegative
+              (GT, GT) -> IVS.singleton (Finite (lowerBound c v) <=..< PosInf) -- x >= ceil((-c)/v)
+
+      -- If it's just a bare var entry, you only learn x_i >= 0.
+      [(Just i, _)] ->
+        M.singleton i (IVS.singleton nonNegative)
+      _ -> M.empty
+
+    -- half-open interval [0, +inf)
+    nonNegative :: Interval Integer
+    nonNegative = Finite 0 <=..< PosInf
+
+    -- Solve 0 <= c + v*x
+    -- v > 0: x >= ceil((-c)/v)
+    lowerBound :: Integer -> Integer -> Integer
+    lowerBound c v = ceilDiv (-c) v
+
+    -- v < 0: x <= floor((-c)/v)
+    upperBound :: Integer -> Integer -> Integer
+    upperBound c v = (-c) `div` v
+
+    -- ceil(a/b) for b>0
+    ceilDiv :: Integer -> Integer -> Integer
+    ceilDiv a b = negate ((negate a) `div` b)
+
+-- singleConstraints :: [OnFree m] -> Map (Finite m) (IntervalSet Integer)
+-- singleConstraints = M.unionsWith IVS.intersection . map (go . M.toList)
+--   where
+--     go = \case
+--       [(Nothing, c), (Just i, v)] -> _
+--       [(Just i, _)] -> M.singleton i $ IVS.singleton nonNegative
+--       _ -> M.empty
+--     nonNegative = Finite 0 <=..< PosInf
+
+-- allCandidates :: forall m. Integer -> [OnFree m] -> [Map (Finite m) Integer]
+-- allCandidates maxSearch constrs = filter isGood . sequence . M.fromSet (const [0 .. maxSearch]) $ allVars
+--   where
+--     allVars = foldMap (S.fromList . catMaybes . M.keys) constrs
+--     isGood :: Map (Finite m) Integer -> Bool
+--     isGood = (`all` constrs) . isGooder
+--     isGooder :: Map (Finite m) Integer -> OnFree m -> Bool
+--     isGooder xs = (>= 0) . dotMap (M.insert Nothing 1 (M.mapKeysMonotonic Just xs))
+
+-- broadConstraints :: OnFree m -> Map (Finite m) (Maybe Int, Maybe Int)
+-- broadConstraints mp = _
+
 allCandidates :: forall m. Integer -> [OnFree m] -> [Map (Finite m) Integer]
-allCandidates maxSearch constrs = filter isGood . sequence . M.fromSet (const [0 .. maxSearch]) $ allVars
+allCandidates maxSearch constrs =
+  filter isGood
+    . sequence
+    $ M.fromSet (\i -> domainFor i) allVars
   where
     allVars = foldMap (S.fromList . catMaybes . M.keys) constrs
+
+    -- single-variable-derived domains
+    sc :: Map (Finite m) (IntervalSet Integer)
+    sc = singleConstraints constrs
+
+    -- Per-variable candidate values:
+    --   - if we have singleConstraints for the var, enumerate them (clamped to [0..maxSearch])
+    --   - otherwise fall back to [0..maxSearch]
+    domainFor :: Finite m -> [Integer]
+    domainFor i =
+      case M.lookup i sc of
+        Nothing -> [0 .. maxSearch]
+        Just ivs -> enumIntervalSetClamped maxSearch ivs
+
     isGood :: Map (Finite m) Integer -> Bool
     isGood = (`all` constrs) . isGooder
+
     isGooder :: Map (Finite m) Integer -> OnFree m -> Bool
     isGooder xs = (>= 0) . dotMap (M.insert Nothing 1 (M.mapKeysMonotonic Just xs))
 
-candRanges :: forall m. [OnFree m] -> Map (Finite m) (IV.Interval)
+-- Enumerate all integers contained in an IntervalSet, but clamp everything to [0..maxSearch]
+enumIntervalSetClamped :: Integer -> IntervalSet Integer -> [Integer]
+enumIntervalSetClamped maxSearch =
+  concatMap (enumIntervalClamped maxSearch) . IVS.toList
 
+enumIntervalClamped :: Integral a => a -> Interval a -> [a]
+enumIntervalClamped maxSearch iv =
+  case (lowerI, upperI) of
+    (Just lo, Just hi) | lo <= hi -> [lo .. hi]
+    _ -> []
+  where
+    lowerI = case IV.lowerBound' iv of
+        (NegInf, _) -> Just 0
+        (Finite a, Closed) -> Just (max 0 a)
+        (Finite a, Open) -> Just (max 0 (a + 1))
+        (PosInf, _) -> Nothing
+    upperI = case IV.upperBound' iv of
+        (PosInf, _) -> Just maxSearch
+        (Finite b, Closed) -> Just (min maxSearch b)
+        (Finite b, Open) -> Just (min maxSearch (b - 1))
+        (NegInf, _) -> Nothing
 
 --    0  1  2  3  4  5  6  7  8  9 10 11 12
 -- 0: 1  1  0  1  0  1  1  1  0  0  1  0  1  212
