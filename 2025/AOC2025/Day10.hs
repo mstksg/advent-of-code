@@ -49,6 +49,7 @@ import Debug.Trace
 import GHC.TypeNats (KnownNat, type (+))
 import qualified Linear as L
 import Safe (initMay, lastMay, minimumMay)
+import Data.Traversable
 import Text.Read (readMaybe)
 
 day10a :: [([Bool], [[Int]], [Int])] :~> Int
@@ -90,7 +91,7 @@ day10b =
     }
   where
     go (_, buttons, targ) = withSizedButtons buttons targ \b t ->
-      let (pivots, rowEchelon) = runState stepFullGauss $ toAugMat b (fromIntegral <$> t)
+      let (pivots, rowEchelon) = runState stepFullGauss $ traceShowId $ toAugMat b (fromIntegral <$> t)
           reduced = execState reduceBack rowEchelon
           !(!constrs, !obj) = toEqns reduced
           -- !_ = traceShowId $ any ((== 1) . M.size . M.filterWithKey (\k _ -> isJust k)) constrs
@@ -98,19 +99,31 @@ day10b =
           candidates = allCandidates (fromIntegral $ maximum t) constrs
           maxSearch = fromIntegral $ maximum t
        in withFrees reduced $ \constrs' obj' ->
-            let constrBounds = linearBounds <$> constrs'
-                objBounds = linearBounds obj'
+            let constrBounds = linearBounds . snd <$> constrs'
+                objBounds = linearBounds (snd obj')
                 !allBounds = foldr1 (SV.zipWith IV.intersection) (objBounds : constrBounds)
-                !feasibles = enumFeasible maxSearch $ fromJust $ NE.nonEmpty constrs'
-                -- !feasibles = enumFeasible maxSearch $ obj' :| constrs'
-             -- in traceShow (obj' : constrs') $
-             --        traceShow (length feasibles) $
-              in
+                -- !feasibles = enumFeasible maxSearch $ fromJust $ NE.nonEmpty (snd <$> constrs')
+                !feasibles = enumFeasible maxSearch . fmap snd $ obj' :| constrs'
+             in traceShow rowEchelon $ traceShow reduced $ traceShow constrs' $
+                  traceShow obj' $
                       minimumMay $
-                        [ SV.sum $ SV.zipWith (*) xVec obj'
+                        [ xObj
+                        -- [ traceShow (x, xObj) xObj
                           | x <- feasibles
                         , let xVec = x `SV.snoc` 1
-                        , all ((>= 0) . sum . SV.zipWith (*) xVec) (obj' : constrs')
+                        -- OK we are so close! we don't want to do _all_ of
+                        -- them by bigLCM, just each of them by whatever the
+                        -- original pivot was!
+                        , xObj :| xConstrs <- for (obj' :| constrs') \(c, v) -> do
+                            let res = sum $ SV.zipWith (*) xVec v
+                            (res', 0) <- pure $ res `divMod` c
+                            pure res'
+                        -- , all ((>= 0) . sum . SV.zipWith (*) xVec) (obj' : constrs')
+                        -- , flip all ((>= 0) . sum . SV.zipWith (*) xVec) (obj' : constrs')
+                        -- , let res = SV.sum $ SV.zipWith (*) xVec obj'
+                        -- , (res', 0) <- pure $ res `divMod` bigLCM
+                        -- , (sum (SV.zipWith (*) x (SV.take obj')) `mod` bigLCM)
+                        --     == (negate (SV.last obj') `mod` bigLCM)
                         ]
                     --   map (\coeffs -> dotMap (M.insert Nothing 1 $ M.mapKeysMonotonic Just coeffs) obj) candidates
 
@@ -364,10 +377,14 @@ toEqns augMat = (snd <$> ineqs, objective)
 -- variables
 withFrees ::
   forall n m a r.
-  (KnownNat n, KnownNat m, Integral a) =>
+  (KnownNat n, KnownNat m, Integral a, Show a) =>
   SV.Vector n (SV.Vector (m + 1) a) ->
-  (forall q. KnownNat q => [SV.Vector (q + 1) a] -> SV.Vector (q + 1) a -> r) ->
-  r
+  (forall q. KnownNat q =>
+        [(a, SV.Vector (q + 1) a)]
+        -> (a, SV.Vector (q + 1) a)
+        -> r
+  )
+        -> r
 withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (Finite m)) ->
   let ineqs :: [(a, SV.Vector (q + 1) a)]
       ineqs =
@@ -379,18 +396,75 @@ withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (F
                   Nothing -> SV.last v
                   Just j' -> negate $ v `SV.index` weaken (freeVarsVec `SV.index` j')
         ]
-      bigLCM = foldr1 gcd $ fst <$> ineqs
+      bigLCM = foldr1 lcm $ fst <$> ineqs
       go (pVal, coeffs) acc = acc + ((* multiple) <$> coeffs)
         where
           multiple = bigLCM `div` pVal
       objective :: SV.Vector (q + 1) a
-      objective = foldr go (SV.generate $ maybe 0 (const 1) . strengthen) ineqs
-   in f (snd <$> ineqs) objective
+      objective = foldr go (SV.generate $ maybe 0 (const bigLCM) . strengthen) ineqs
+   in f ineqs (bigLCM, objective)
   where
     pivots :: [Finite m]
     pivots = mapMaybe (SV.findIndex (/= 0) . SV.take @m) (toList augMat)
     freeVars :: [Finite m]
     freeVars = S.toList $ S.fromAscList finites `S.difference` S.fromList pivots
+
+-- withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (Finite m)) ->
+--   let rows = [(p, v) | v <- toList augMat, p <- take 1 . filter (/= 0) $ toList v]
+--       bigLCM = foldr lcm 1 (map fst rows)
+--       freeCoeffs v = [v `SV.index` weaken (freeVarsVec `SV.index` j) | j <- finites]
+--       offsets = head [os | os <- sequence (replicate (length freeVars) [0 .. bigLCM - 1]), all (\(p, v) -> (SV.last v - sum (zipWith (*) os (freeCoeffs v))) `rem` p == 0) rows]
+--       ineqs =
+--         [ SV.generate @(q+1) \j -> case strengthen j of
+--             Nothing -> (SV.last v - sum (zipWith (*) offsets (freeCoeffs v))) `div` pivot
+--             Just j' -> (negate (freeCoeffs v !! fromEnum j') * bigLCM) `div` pivot
+--         | (pivot, v) <- rows
+--         ]
+--       go coeffs acc = acc + coeffs
+--       objective = foldr go (SV.generate @(q + 1) $ maybe (sum offsets) (const bigLCM) . strengthen) ineqs
+--    in f ineqs objective
+--   where
+--     pivots = mapMaybe (SV.findIndex (/= 0) . SV.take @m) (toList augMat)
+--     freeVars = S.toList $ S.fromAscList finites `S.difference` S.fromList pivots
+-- withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (Finite m)) ->
+--   let rows = [(p, v) | v <- toList augMat, p <- take 1 . filter (/= 0) $ toList v]
+--       getCol j = [v `SV.index` weaken (freeVarsVec `SV.index` j) | (_, v) <- rows]
+--       scales = [foldr lcm 1 [p `div` gcd c p | ((p, _), c) <- zip rows (getCol j)] | j <- finites]
+--       freeCoeffs v = [v `SV.index` weaken f | f <- toList freeVarsVec]
+--       offsets = head [os | os <- sequence [ [0 .. s - 1] | s <- scales ], all (\(p, v) -> (SV.last v - sum (zipWith (*) os (freeCoeffs v))) `rem` p == 0) rows]
+--       ineqs =
+--         [ SV.generate @(q + 1) \j -> case strengthen j of
+--             Nothing -> (SV.last v - sum (zipWith (*) offsets (freeCoeffs v))) `div` pivot
+--             Just j' -> (negate (freeCoeffs v !! fromEnum j') * (scales !! fromEnum j')) `div` pivot
+--         | (pivot, v) <- rows
+--         ]
+--       go coeffs acc = acc + coeffs
+--       objective = foldr go (SV.generate @(q + 1) \j -> case strengthen j of Nothing -> sum offsets; Just j' -> scales !! fromEnum j') ineqs
+--    in f ineqs objective
+--   where
+--     pivots = mapMaybe (SV.findIndex (/= 0) . SV.take @m) (toList augMat)
+--     freeVars = S.toList $ S.fromAscList finites `S.difference` S.fromList pivots
+-- withFrees augMat f = SV.withSizedList freeVars $ \(freeVarsVec :: SV.Vector q (Finite m)) ->
+--   let rows = [(p, v) | v <- toList augMat, p <- take 1 . filter (/= 0) $ toList v]
+--       scales = 
+--         [ foldr (\((p, _), c) acc -> lcm acc (p `div` gcd c p)) 1 (zip rows col)
+--         | i <- finites
+--         , let col = [v `SV.index` weaken (freeVarsVec `SV.index` i) | (_, v) <- rows]
+--         ]
+--       freeCoeffs v = [v `SV.index` weaken f | f <- toList freeVarsVec]
+--       offsets = head [os | os <- sequence [ [0 .. s - 1] | s <- scales ], all (\(p, v) -> (SV.last v - sum (zipWith (*) os (freeCoeffs v))) `rem` p == 0) rows]
+--       ineqs =
+--         [ SV.generate @(q + 1) \j -> case strengthen j of
+--             Nothing -> (SV.last v - sum (zipWith (*) offsets (freeCoeffs v))) `div` pivot
+--             Just j' -> (negate (freeCoeffs v !! fromEnum j') * (scales !! fromEnum j')) `div` pivot
+--         | (pivot, v) <- rows
+--         ]
+--       go coeffs acc = acc + coeffs
+--       objective = foldr go (SV.generate @(q + 1) \j -> case strengthen j of Nothing -> sum offsets; Just j' -> scales !! fromEnum j') ineqs
+--    in f ineqs objective
+--   where
+--     pivots = mapMaybe (SV.findIndex (/= 0) . SV.take @m) (toList augMat)
+--     freeVars = S.toList $ S.fromAscList finites `S.difference` S.fromList pivots
 
 -- | Bounds for each of the non-negative variables so that the equation can be
 -- non-negative. Usually
