@@ -12,7 +12,7 @@ module AOC2023.Day03 (
 )
 where
 
-import AOC.Common (listTup)
+import AOC.Common (listTup, readAll)
 import AOC.Common.Point (Point, contiguousRegions, fullNeighbs, fullNeighbsSet, parseAsciiMap)
 import AOC.Solver ((:~>) (..))
 import Control.Lens (each, traverseOf)
@@ -52,7 +52,7 @@ day03a =
                 . M.restrictKeys numPoints
                 . NES.toSet
                 <$> S.toList validNumChunks
-         in sum <$> traverse readMaybe numStrings
+         in sum <$> readAll numStrings
     }
 
 day03b :: (Set Point, Map Point Char) :~> Int

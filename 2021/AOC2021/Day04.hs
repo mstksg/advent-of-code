@@ -14,7 +14,7 @@ module AOC2021.Day04 (
   wins,
 ) where
 
-import AOC.Common (loopEither)
+import AOC.Common (loopEither, readAll)
 import AOC.Solver ((:~>) (..))
 import Data.Bifunctor (first)
 import Data.Finite (Finite, combineProduct, finites)
@@ -33,7 +33,6 @@ import Data.Ord (comparing)
 import Data.Traversable (for)
 import Data.Tuple (swap)
 import Safe.Foldable (maximumByMay)
-import Text.Read (readMaybe)
 
 type Board = IntMap Int
 
@@ -80,11 +79,11 @@ wins = IS.fromList . map (fromIntegral . combineProduct) <$> (verts ++ map (map 
 parseCards :: [String] -> Maybe ([Int], [Board])
 parseCards str = do
   pics : rest <- Just str
-  picNums <- traverse readMaybe $ splitOn "," pics
+  picNums <- readAll $ splitOn "," pics
   boards <-
     for rest $
       fmap (IM.fromList . flip zip [0 ..])
-        . traverse readMaybe
+        . readAll
         . words
         . unwords
         . lines

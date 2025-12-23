@@ -11,12 +11,11 @@ module AOC2021.Day01 (
   day01b,
 ) where
 
-import AOC.Common (countTrue, laggedPairs)
+import AOC.Common (countTrue, laggedPairs, readAll)
 import AOC.Solver ((:~>) (..))
-import Text.Read (readMaybe)
 
 parseInput :: String -> Maybe [Int]
-parseInput = traverse readMaybe . lines
+parseInput = readAll . lines
 
 countIncreases :: Int -> [Int] -> Int
 countIncreases n = countTrue (uncurry (<)) . laggedPairs n

@@ -26,7 +26,7 @@ day03 n =
     { sParse = noFail lines
     , sShow = show
     , sSolve =
-        fmap sum . traverse (readMaybe @Int <=< listToMaybe . evalStateT go)
+        fmap sum . traverse (readMaybe <=< listToMaybe . evalStateT go)
     }
   where
     go :: StateT String [] String

@@ -11,7 +11,7 @@ module AOC2021.Day07 (
   day07b,
 ) where
 
-import AOC.Common (freqs, triangleNumber)
+import AOC.Common (freqs, readAll, triangleNumber)
 import AOC.Common.Search (binaryFindMin)
 import AOC.Solver ((:~>) (..))
 import Control.Monad (guard)
@@ -19,7 +19,6 @@ import Data.List.Split (splitOn)
 import qualified Data.Map as M
 import Data.Semigroup (Sum (..))
 import qualified Data.Vector as V
-import Text.Read (readMaybe)
 
 day07 ::
   -- | loss function
@@ -27,7 +26,7 @@ day07 ::
   [Int] :~> Int
 day07 f =
   MkSol
-    { sParse = traverse readMaybe . splitOn ","
+    { sParse = readAll . splitOn ","
     , sShow = show
     , sSolve = \xs -> do
         let xsMap = freqs xs

@@ -11,10 +11,10 @@ module AOC2016.Day03 (
   day03b,
 ) where
 
+import AOC.Common (readAll)
 import AOC.Solver ((:~>) (..))
 import Data.List (sortBy, transpose)
 import Data.List.Split (chunksOf)
-import Text.Read (readMaybe)
 
 isTriangle :: [Int] -> Bool
 isTriangle (sortBy (flip compare) -> (x : xs)) = sum xs > x
@@ -23,15 +23,15 @@ isTriangle _ = False
 day03a :: [[Int]] :~> Int
 day03a =
   MkSol
-    { sParse = traverse (traverse readMaybe . words) . lines
+    { sParse = traverse (readAll . words) . lines
     , sShow = show
     , sSolve = Just . length . filter isTriangle
     }
 
-day03b :: [[Int]] :~> _
+day03b :: [[Int]] :~> Int
 day03b =
   MkSol
-    { sParse = traverse (traverse readMaybe . words) . lines
+    { sParse = traverse (readAll . words) . lines
     , sShow = show
     , sSolve =
         Just

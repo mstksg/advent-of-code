@@ -12,13 +12,12 @@ module AOC2025.Day02 (
 )
 where
 
-import AOC.Common (listTup)
+import AOC.Common (listTup, readAll)
 import AOC.Solver (noFail, type (:~>) (..))
 import Control.Monad ((<=<))
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
 import Data.List.Split (splitOn)
-import Text.Read (readMaybe)
 
 -- | repDigits 3 567 = 567567567
 repDigits :: Int -> Int -> Int
@@ -33,7 +32,7 @@ day02 :: [Int] -> [(Int, Int)] :~> Int
 day02 ns =
   MkSol
     { sParse =
-        traverse (listTup <=< traverse readMaybe . splitOn "-") . splitOn ","
+        traverse (listTup <=< readAll . splitOn "-") . splitOn ","
     , sShow = show
     , sSolve =
         noFail $

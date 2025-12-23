@@ -12,14 +12,13 @@ module AOC2020.Day09 (
 )
 where
 
-import AOC.Common (firstJust, slidingWindows)
+import AOC.Common (firstJust, readAll, slidingWindows)
 import AOC.Solver (dyno_, (:~>) (..))
 import Control.Monad (guard)
 import Data.Foldable (toList)
 import Data.List (scanl', tails)
 import Data.Sequence (Seq (..))
 import qualified Data.Vector as V
-import Text.Read (readMaybe)
 
 isBad :: Seq Int -> Maybe Int
 isBad xs0 = do
@@ -36,7 +35,7 @@ oddOneOut w = firstJust isBad . slidingWindows (w + 1)
 day09a :: [Int] :~> Int
 day09a =
   MkSol
-    { sParse = traverse readMaybe . lines
+    { sParse = readAll . lines
     , sShow = show
     , sSolve = oddOneOut (dyno_ "window" 25)
     }
@@ -55,7 +54,7 @@ findBounds ns goal = go 0 1
 day09b :: [Int] :~> (Int, Int)
 day09b =
   MkSol
-    { sParse = traverse readMaybe . lines
+    { sParse = readAll . lines
     , sShow = \(x, y) -> show (x + y)
     , sSolve = \ns -> do
         goal <- oddOneOut (dyno_ "window" 25) ns

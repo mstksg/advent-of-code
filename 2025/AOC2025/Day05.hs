@@ -12,22 +12,21 @@ module AOC2025.Day05 (
 )
 where
 
-import AOC.Common (countTrue, listTup)
+import AOC.Common (countTrue, listTup, readAll)
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad ((<=<))
 import Data.ExtendedReal (Extended (..))
 import qualified Data.Interval as I
 import qualified Data.IntervalSet as IVS
 import Data.List.Split (splitOn)
-import Text.Read (readMaybe)
 
 day05a :: ([(Int, Int)], [Int]) :~> Int
 day05a =
   MkSol
     { sParse = \xs -> do
         [a, b] <- pure $ splitOn "\n\n" xs
-        as <- traverse (listTup <=< traverse readMaybe . splitOn "-") $ lines a
-        bs <- traverse readMaybe $ lines b
+        as <- traverse (listTup <=< readAll . splitOn "-") $ lines a
+        bs <- readAll $ lines b
         pure (as, bs)
     , sShow = show
     , sSolve =

@@ -12,7 +12,7 @@ module AOC2025.Day09 (
 )
 where
 
-import AOC.Common (listV2)
+import AOC.Common (listV2, readAll)
 import AOC.Common.Point (Point, V2 (..))
 import AOC.Solver ((:~>) (..))
 import Control.Monad ((<=<))
@@ -28,7 +28,6 @@ import qualified Data.Map as M
 import Data.Set (Set)
 import qualified Data.Set as S
 import Safe (maximumMay)
-import Text.Read (readMaybe)
 
 rectArea :: Point -> Point -> Int
 rectArea x y = product do
@@ -39,7 +38,7 @@ rectArea x y = product do
 day09a :: [Point] :~> Int
 day09a =
   MkSol
-    { sParse = traverse (listV2 <=< traverse readMaybe . splitOn ",") . lines
+    { sParse = traverse (listV2 <=< readAll . splitOn ",") . lines
     , sShow = show
     , sSolve =
         \pts ->

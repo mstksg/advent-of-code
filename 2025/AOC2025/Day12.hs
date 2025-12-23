@@ -11,7 +11,7 @@ module AOC2025.Day12 (
 )
 where
 
-import AOC.Common (countTrue, listV2)
+import AOC.Common (countTrue, listV2, readAll)
 import AOC.Common.Point (Point, parseAsciiSet)
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad ((<=<))
@@ -21,10 +21,9 @@ import Data.List.Split (splitOn)
 import Data.Set (Set)
 import qualified Data.Set as S
 import Safe (initMay, lastMay)
-import Text.Read (readMaybe)
 
 pVec :: String -> Maybe Point
-pVec = listV2 <=< traverse readMaybe . splitOn "x" <=< initMay
+pVec = listV2 <=< readAll . splitOn "x" <=< initMay
 
 day12a :: ([Set Point], [(Point, [Int])]) :~> Int
 day12a =
@@ -32,7 +31,7 @@ day12a =
     { sParse = \xs -> do
         let chunkies = splitOn [""] $ lines xs
         blockies <- map (parseAsciiSet (== '#') . unlines . drop 1) <$> initMay chunkies
-        thingies <- traverse (bitraverse pVec (traverse readMaybe) <=< uncons . words) =<< lastMay chunkies
+        thingies <- traverse (bitraverse pVec readAll <=< uncons . words) =<< lastMay chunkies
         pure (blockies, thingies)
     , sShow = show
     , sSolve = noFail \(blocks, areas) -> countTrue (go (map S.size blocks)) areas

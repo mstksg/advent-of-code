@@ -14,7 +14,7 @@ module AOC2025.Day08 (
 )
 where
 
-import AOC.Common (listV3)
+import AOC.Common (listV3, readAll)
 import AOC.Solver (dyno_, (:~>) (..))
 import Control.Monad (replicateM, (<=<))
 import Control.Monad.Trans.State (StateT (..), evalStateT, execStateT, gets)
@@ -26,13 +26,12 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Linear as L
 import Linear.V3 (V3 (..))
-import Text.Read (readMaybe)
 
 day08a :: [V3 Int] :~> _
 day08a =
   MkSol
     { sParse =
-        traverse (listV3 <=< traverse readMaybe . splitOn ",") . lines
+        traverse (listV3 <=< readAll . splitOn ",") . lines
     , sShow = show
     , sSolve = \pts -> do
         let go = replicateM (dyno_ "pairs" 1000) chomp

@@ -12,12 +12,12 @@ module AOC2023.Day09 (
 )
 where
 
+import AOC.Common (readAll)
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad ((<=<))
 import Data.List (unfoldr)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Text.Read (readMaybe)
 
 stepSeriesBack :: NonEmpty Int -> Int
 stepSeriesBack = sum . unfoldr go
@@ -28,7 +28,7 @@ day09a :: [NonEmpty Int] :~> Int
 day09a =
   MkSol
     { sParse =
-        traverse (NE.nonEmpty <=< traverse readMaybe . words)
+        traverse (NE.nonEmpty <=< readAll . words)
           . lines
     , sShow = show
     , sSolve =
@@ -40,7 +40,7 @@ day09b :: [NonEmpty Int] :~> Int
 day09b =
   MkSol
     { sParse =
-        traverse (NE.nonEmpty <=< traverse readMaybe . words)
+        traverse (NE.nonEmpty <=< readAll . words)
           . lines
     , sShow = show
     , sSolve =

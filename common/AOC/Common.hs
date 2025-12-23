@@ -104,6 +104,7 @@ module AOC.Common (
   rotSquare,
   splitHalf,
   splitHalfExact,
+  readAll,
 
   -- * Simple type util
   deleteFinite,
@@ -235,6 +236,7 @@ import Linear (
  )
 import qualified Numeric.Lens as L
 import Safe
+import Text.Read (readMaybe)
 
 -- | trace but only after something has evaluated to WHNF
 trace' :: String -> a -> a
@@ -1239,6 +1241,9 @@ splitHalfExact xs = go xs xs
     go (y : ys) (_ : _ : zs) = first (y :) <$> go ys zs
     go ys [] = Just ([], ys)
     go _ (_ : _) = Nothing
+
+readAll :: (Read a, Traversable t) => t String -> Maybe (t a)
+readAll = traverse readMaybe
 
 -- | Like 'traceShowId' but with an extra message
 traceShowIdMsg :: Show a => String -> a -> a

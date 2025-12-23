@@ -12,7 +12,7 @@ module AOC2023.Day06 (
 )
 where
 
-import AOC.Common (listTup)
+import AOC.Common (listTup, readAll)
 import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad ((<=<))
 import Data.Char (isDigit)
@@ -40,7 +40,7 @@ day06a =
     { sParse =
         traverse listTup
           . transpose
-          <=< traverse (traverse readMaybe . drop 1 . words)
+          <=< traverse (readAll . drop 1 . words)
             . lines
     , sShow = show
     , sSolve = noFail $ product . map (uncurry getWays)

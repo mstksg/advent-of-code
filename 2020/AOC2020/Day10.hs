@@ -14,13 +14,12 @@ module AOC2020.Day10 (
 )
 where
 
-import AOC.Common (freqs, lookupFreq)
+import AOC.Common (freqs, lookupFreq, readAll)
 import AOC.Solver ((:~>) (..))
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
-import Text.Read (readMaybe)
 
 toChain :: [Int] -> IntSet
 toChain xs = xsset `IS.union` IS.fromList [0, top + 3]
@@ -31,7 +30,7 @@ toChain xs = xsset `IS.union` IS.fromList [0, top + 3]
 day10a :: [Int] :~> (Int, Int)
 day10a =
   MkSol
-    { sParse = traverse readMaybe . lines
+    { sParse = readAll . lines
     , sShow = \(x, y) -> show (x * y)
     , sSolve = \(IS.toList . toChain -> xs) ->
         Just
@@ -76,7 +75,7 @@ pathsToGoal is = res
 day10b :: [Int] :~> Int
 day10b =
   MkSol
-    { sParse = traverse readMaybe . lines
+    { sParse = readAll . lines
     , sShow = show
     , sSolve = Just . findOrZero 0 . pathsToGoal . toChain
     -- , sSolve = Just . gapMethod . IS.toList . toChain

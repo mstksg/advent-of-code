@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- |
 -- Module      : AOC2021.Day17
 -- License     : BSD3
@@ -9,44 +6,24 @@
 -- Portability : non-portable
 --
 -- Day 17.  See "AOC.Solver" for the types used in this module!
---
--- After completing the challenge, it is recommended to:
---
--- *   Replace "AOC.Prelude" imports to specific modules (with explicit
---     imports) for readability.
--- *   Remove the @-Wno-unused-imports@ and @-Wno-unused-top-binds@
---     pragmas.
--- *   Replace the partial type signatures underscores in the solution
---     types @_ :~> _@ with the actual types of inputs and outputs of the
---     solution.  You can delete the type signatures completely and GHC
---     will recommend what should go in place of the underscores.
 module AOC2021.Day17 (
   day17a,
   day17b,
 ) where
 
-import AOC.Prelude
-
-import Data.Complex
-import qualified Data.Graph.Inductive as G
-import qualified Data.IntMap as IM
-import qualified Data.IntSet as IS
-import qualified Data.List.NonEmpty as NE
-import qualified Data.List.PointedList as PL
-import qualified Data.List.PointedList.Circular as PLC
-import qualified Data.Map as M
-import qualified Data.OrdPSQ as PSQ
-import qualified Data.Sequence as Seq
-import qualified Data.Set as S
-import qualified Data.Text as T
-import qualified Data.Vector as V
-import qualified Linear as L
-import qualified Text.Megaparsec as P
-import qualified Text.Megaparsec.Char as P
-import qualified Text.Megaparsec.Char.Lexer as PP
+import AOC.Common (clearOut, countTrue, readAll)
+import AOC.Common.Point (Point, inBoundingBox)
+import AOC.Solver (noFail, (:~>) (..))
+import Control.Lens (view)
+import Control.Monad ((<=<))
+import Data.Char (isDigit)
+import Data.Complex (Complex (..))
+import Data.List (sort)
+import Linear.V2 (V2 (..), _y)
+import Safe (maximumMay)
 
 parseBox :: String -> Maybe (V2 Point)
-parseBox = getBounds <=< traverse readMaybe . words . clearOut valid
+parseBox = getBounds <=< readAll . words . clearOut valid
   where
     valid k = not (isDigit k || k == '-')
     getBounds = \case
@@ -85,7 +62,7 @@ day17a =
   MkSol
     { sParse = parseBox
     , sShow = show
-    , sSolve = \(bbox@(V2 (V2 _ y1) (V2 x2 _))) ->
+    , sSolve = \bbox@(V2 (V2 _ y1) (V2 x2 _)) ->
         let V2 (V2 vx1 vy1) (V2 vx2 vy2) = velBounds bbox
          in maximumMay
               [ mx
@@ -114,13 +91,12 @@ day17b =
   MkSol
     { sParse = sParse day17a
     , sShow = show
-    , sSolve = \(bbox@(V2 (V2 _ y1) (V2 x2 _))) ->
+    , sSolve = noFail \bbox@(V2 (V2 _ y1) (V2 x2 _)) ->
         let V2 (V2 vx1 vy1) (V2 vx2 vy2) = velBounds bbox
-         in Just $
-              countTrue
-                (any (inBoundingBox bbox))
-                [ stepUntilTooDeep x2 y1 (V2 x y)
-                | x <- [vx1 .. vx2]
-                , y <- [vy1 .. vy2]
-                ]
+         in countTrue
+              (any (inBoundingBox bbox))
+              [ stepUntilTooDeep x2 y1 (V2 x y)
+              | x <- [vx1 .. vx2]
+              , y <- [vy1 .. vy2]
+              ]
     }

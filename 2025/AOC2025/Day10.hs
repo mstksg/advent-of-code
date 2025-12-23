@@ -15,6 +15,7 @@ module AOC2025.Day10 (
 )
 where
 
+import AOC.Common (readAll)
 import AOC.Solver ((:~>) (..))
 import Control.Monad (filterM, guard, unless, (<=<))
 import Control.Monad.ST (ST, runST)
@@ -39,7 +40,6 @@ import qualified Data.Vector.Mutable.Sized as SMV
 import qualified Data.Vector.Sized as SV
 import GHC.TypeNats (KnownNat, cmpNat, type (+), type (-))
 import Safe (initMay, lastMay, minimumMay)
-import Text.Read (readMaybe)
 
 day10a :: [([Bool], [[Int]], [Int])] :~> Int
 day10a =
@@ -54,8 +54,8 @@ day10a =
       (a, ']' : bs) <- pure $ span (/= ']') xs
       let lit = map (== '#') a
           ps = words bs
-      buttons <- traverse (traverse readMaybe . splitOn "," <=< initMay . drop 1) =<< initMay ps
-      targets <- traverse readMaybe . splitOn "," =<< initMay . drop 1 =<< lastMay ps
+      buttons <- traverse (readAll . splitOn "," <=< initMay . drop 1) =<< initMay ps
+      targets <- readAll . splitOn "," =<< initMay . drop 1 =<< lastMay ps
       pure (lit, buttons, targets)
     parseMe _ = Nothing
     go :: [Bool] -> [[Int]] -> Maybe Int
