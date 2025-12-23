@@ -12,6 +12,7 @@ module AOC2020.Day15 (
 )
 where
 
+import AOC.Common (readAll)
 import AOC.Solver ((:~>) (..))
 import Control.Monad.Loops (whileM_)
 import Control.Monad.ST (runST)
@@ -20,12 +21,11 @@ import Data.Foldable (for_)
 import Data.List.Split (splitOn)
 import qualified Data.Vector.Unboxed.Mutable as MV
 import GHC.Int (Int32)
-import Text.Read (readMaybe)
 
 day15a :: [Int] :~> Int
 day15a =
   MkSol
-    { sParse = traverse readMaybe . splitOn ","
+    { sParse = readAll . splitOn ","
     , sShow = show
     , sSolve = Just . looper 2020
     }

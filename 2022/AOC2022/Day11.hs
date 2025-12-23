@@ -60,7 +60,7 @@ data MonkeyData = MD
 parseMonkey :: String -> Maybe MonkeyData
 parseMonkey blob = do
   [_, a, b, c, d, e] <- pure $ lines blob
-  mdItems <- traverse readMaybe $ words (clearOut (not . isDigit) a)
+  mdItems <- readAll $ words (clearOut (not . isDigit) a)
   [_, x, y] <- pure $ words . drop 1 $ dropWhile (/= '=') b
   let mdTrans = (if x == "*" then Mul else Add, readMaybe y)
   mdCond <- readMaybe $ clearOut (not . isDigit) c
@@ -115,12 +115,9 @@ day11a =
   MkSol
     { sParse = traverse parseMonkey . splitOn "\n\n"
     , sShow = show
-    , sSolve = \mds ->
-        Just
-          let initMap = IM.fromList . zipWith (\i md -> (i, Seq.fromList $ mdItems md)) [0 ..] $ mds
-           in flip evalState initMap . replicateM 20 $ state $ swap . stepRound mds
-          -- in  product . IM.unionsWith (+) . flip evalState initMap . replicateM 20 $ state $ swap . stepRound mds
-          -- stepRound mds initMap
+    , sSolve = noFail \mds ->
+        let initMap = IM.fromList . zipWith (\i md -> (i, Seq.fromList $ mdItems md)) [0 ..] $ mds
+         in flip evalState initMap . replicateM 20 $ state $ swap . stepRound mds
     }
 
 day11b :: _ :~> _

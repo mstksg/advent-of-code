@@ -12,7 +12,7 @@ module AOC2022.Day05 (
 )
 where
 
-import AOC.Common (clearOut, listTup, listV3)
+import AOC.Common (clearOut, listTup, listV3, readAll)
 import AOC.Solver ((:~>) (..))
 import Control.DeepSeq (NFData)
 import Control.Monad ((<=<))
@@ -25,7 +25,6 @@ import Data.List.Split (splitOn)
 import GHC.Generics (Generic)
 import Linear.V3 (V3 (..))
 import Safe.Exact (takeExactMay)
-import Text.Read (readMaybe)
 
 data Instr = Instr {amount :: !Int, source :: !Int, dest :: !Int}
   deriving stock (Eq, Show, Generic)
@@ -49,7 +48,7 @@ parseInput =
       traverse $
         fmap (\(V3 amount source dest) -> Instr{..})
           . listV3
-          <=< traverse readMaybe
+          <=< readAll
             . words
             . clearOut (not . isDigit)
 

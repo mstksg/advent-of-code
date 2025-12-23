@@ -12,7 +12,7 @@ module AOC2022.Day18 (
 )
 where
 
-import AOC.Common (countTrue, floodFill, listV3, perturbations)
+import AOC.Common (countTrue, floodFill, listV3, perturbations, readAll)
 import AOC.Common.Point (boundingBox')
 import AOC.Solver ((:~>) (..))
 import Control.Monad ((<=<))
@@ -20,13 +20,12 @@ import Data.Functor ((<&>))
 import Data.List.Split (splitOn)
 import qualified Data.Set as S
 import Linear (V2 (..), V3 (..))
-import Text.Read (readMaybe)
 
 cardinalNeighbs3 :: V3 Int -> [V3 Int]
 cardinalNeighbs3 = perturbations \i -> [i - 1, i + 1]
 
 parseLine :: String -> Maybe (V3 Int)
-parseLine = traverse readMaybe <=< listV3 . splitOn ","
+parseLine = readAll <=< listV3 . splitOn ","
 
 day18a :: [V3 Int] :~> Int
 day18a =

@@ -13,7 +13,7 @@ module AOC2018.Day06 (
   day06b,
 ) where
 
-import AOC.Common (clearOut, freqs)
+import AOC.Common (clearOut, freqs, readAll)
 import AOC.Common.Point (Point, boundingBox, mannDist)
 import AOC.Solver (dyno_, (:~>) (..))
 import Control.Monad (guard, (<=<))
@@ -25,7 +25,6 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Linear (V2 (..))
-import Text.Read (readMaybe)
 import Witherable (catMaybes, mapMaybe)
 
 type Box = V2 Point
@@ -97,7 +96,7 @@ day06b =
 parseLine :: String -> Maybe Point
 parseLine =
   (packUp =<<)
-    . traverse readMaybe
+    . readAll
     . words
     . clearOut (not . isDigit)
   where

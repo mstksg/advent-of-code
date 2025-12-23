@@ -12,19 +12,18 @@ module AOC2022.Day04 (
 )
 where
 
-import AOC.Common (countTrue, listTup, listV2)
-import AOC.Solver ((:~>) (..))
+import AOC.Common (countTrue, listTup, listV2, readAll)
+import AOC.Solver (noFail, (:~>) (..))
 import Control.Monad ((<=<))
 import qualified Data.ExtendedReal as E
 import Data.IntegerInterval (IntegerInterval, (<=..<=))
 import qualified Data.IntegerInterval as I
 import Data.List.Split (splitOn)
 import Linear.V2 (V2 (..))
-import Text.Read (readMaybe)
 
 parseIntervals :: String -> Maybe (V2 IntegerInterval)
 parseIntervals =
-  traverse (fmap mkInterval . listTup <=< traverse readMaybe . splitOn "-")
+  traverse (fmap mkInterval . listTup <=< readAll . splitOn "-")
     <=< listV2 . splitOn ","
   where
     mkInterval (x, y) = E.Finite x <=..<= E.Finite y
@@ -36,7 +35,7 @@ day04 f =
   MkSol
     { sParse = traverse parseIntervals . lines
     , sShow = show
-    , sSolve = Just . countTrue f
+    , sSolve = noFail $ countTrue f
     }
 
 day04a :: [V2 IntegerInterval] :~> Int

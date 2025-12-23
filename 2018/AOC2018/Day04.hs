@@ -13,7 +13,7 @@ module AOC2018.Day04 (
   day04b,
 ) where
 
-import AOC.Common (clearOut, freqs, maximumVal, maximumValBy)
+import AOC.Common (clearOut, freqs, maximumVal, maximumValBy, readAll)
 import AOC.Solver ((:~>) (..))
 import AOC.Util (eitherToMaybe)
 import Control.Applicative (many)
@@ -105,7 +105,7 @@ day04b =
 
 parseLine :: String -> Maybe (Time, Action)
 parseLine str = do
-  [y, mo, d, h, mi] <- traverse readMaybe timeStamp
+  [y, mo, d, h, mi] <- readAll timeStamp
   t <- T y mo d <$> packFinite h <*> packFinite mi
   a <- case rest of
     "falls" : "asleep" : _ -> Just ASleep

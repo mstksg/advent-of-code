@@ -12,11 +12,10 @@ module AOC2022.Day20 (
 )
 where
 
-import AOC.Common ((!!!))
+import AOC.Common (readAll, (!!!))
 import AOC.Solver ((:~>) (..))
 import Data.Sequence (Seq (..))
 import qualified Data.Sequence as Seq
-import Text.Read (readMaybe)
 
 mix :: Seq (Int, Int) -> Seq (Int, Int)
 mix = go 0
@@ -39,7 +38,7 @@ grove xs = do
 day20a :: [Int] :~> Int
 day20a =
   MkSol
-    { sParse = traverse readMaybe . lines
+    { sParse = readAll . lines
     , sShow = show
     , sSolve = grove . fmap snd . mix . Seq.fromList . zip [0 ..]
     }
@@ -50,7 +49,7 @@ magic = 811589153
 day20b :: [Int] :~> Int
 day20b =
   MkSol
-    { sParse = traverse readMaybe . lines
+    { sParse = readAll . lines
     , sShow = show
     , sSolve =
         grove

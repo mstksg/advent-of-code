@@ -11,14 +11,13 @@ module AOC2019.Day12 (
   day12b,
 ) where
 
-import AOC.Common (clearOut, (!!!))
+import AOC.Common (clearOut, readAll, (!!!))
 import AOC.Solver (dyno_, (:~>) (..))
 import Data.Char (isDigit)
 import Data.List (findIndex)
 import qualified Data.List.NonEmpty as NE
 import Data.Semigroup (Sum (..))
 import Linear (V3 (..), V4 (..))
-import Text.Read (readMaybe)
 
 type Point = V3 Int
 
@@ -27,7 +26,7 @@ data Phase a = Phase {pPos :: !a, pVel :: !a}
 
 parsePos :: String -> Maybe (Phase Point)
 parsePos str = do
-  [x, y, z] <- traverse readMaybe . words . clearOut p $ str
+  [x, y, z] <- readAll . words . clearOut p $ str
   pure $ Phase{pPos = V3 x y z, pVel = 0}
   where
     p '-' = False

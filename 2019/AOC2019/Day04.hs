@@ -11,14 +11,14 @@ module AOC2019.Day04 (
   day04b,
 ) where
 
-import AOC.Solver ((:~>) (..))
+import AOC.Common (countTrue, readAll)
+import AOC.Solver (noFail, (:~>) (..))
 import Data.List (group)
 import Data.List.Split (splitOn)
-import Text.Read (readMaybe)
 
 range :: String -> Maybe [Int]
 range str = do
-  [x, y] <- traverse readMaybe . splitOn "-" $ str
+  [x, y] <- readAll . splitOn "-" $ str
   pure [x .. y]
 
 consecs :: [a] -> [(a, a)]
@@ -40,10 +40,7 @@ day04a =
   MkSol
     { sParse = range
     , sShow = show
-    , sSolve =
-        Just
-          . length
-          . filter (\x -> all ($ show x) [monotonic, doubles])
+    , sSolve = noFail $ countTrue \x -> all ($ show x) [monotonic, doubles]
     }
 
 day04b :: [Int] :~> Int
@@ -51,8 +48,5 @@ day04b =
   MkSol
     { sParse = range
     , sShow = show
-    , sSolve =
-        Just
-          . length
-          . filter (\x -> all ($ show x) [monotonic, strictDoubles])
+    , sSolve = noFail $ countTrue \x -> all ($ show x) [monotonic, strictDoubles]
     }

@@ -11,8 +11,8 @@ module AOC2019.Day01 (
   day01b,
 ) where
 
-import AOC.Solver ((:~>) (..))
-import Text.Read (readMaybe)
+import AOC.Common (readAll)
+import AOC.Solver (noFail, (:~>) (..))
 
 fuel :: Int -> Int
 fuel = subtract 2 . (`div` 3)
@@ -20,15 +20,15 @@ fuel = subtract 2 . (`div` 3)
 day01a :: [Int] :~> Int
 day01a =
   MkSol
-    { sParse = traverse readMaybe . lines
+    { sParse = readAll . lines
     , sShow = show
-    , sSolve = Just . sum . map fuel
+    , sSolve = noFail $ sum . map fuel
     }
 
 day01b :: [Int] :~> Int
 day01b =
   MkSol
-    { sParse = traverse readMaybe . lines
+    { sParse = readAll . lines
     , sShow = show
-    , sSolve = Just . sum . map (sum . drop 1 . takeWhile (>= 0) . iterate fuel)
+    , sSolve = noFail $ sum . map (sum . drop 1 . takeWhile (>= 0) . iterate fuel)
     }

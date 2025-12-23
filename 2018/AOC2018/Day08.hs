@@ -13,6 +13,7 @@ module AOC2018.Day08 (
   day08b,
 ) where
 
+import AOC.Common (readAll)
 import AOC.Common.Parser (TokStream, parseTokStream_)
 import AOC.Solver ((:~>) (..))
 import Control.Lens (ix, (^?))
@@ -20,7 +21,6 @@ import Control.Monad (replicateM)
 import Data.Maybe (mapMaybe)
 import Data.Void (Void)
 import qualified Text.Megaparsec as P
-import Text.Read (readMaybe)
 
 type Parser = P.Parsec Void (TokStream Int)
 
@@ -35,7 +35,7 @@ sum1 = do
 day08a :: [Int] :~> Int
 day08a =
   MkSol
-    { sParse = traverse readMaybe . words
+    { sParse = readAll . words
     , sShow = show
     , sSolve = parseTokStream_ sum1
     }
@@ -54,7 +54,7 @@ sum2 = do
 day08b :: [Int] :~> Int
 day08b =
   MkSol
-    { sParse = traverse readMaybe . words
+    { sParse = readAll . words
     , sShow = show
     , sSolve = parseTokStream_ sum2
     }

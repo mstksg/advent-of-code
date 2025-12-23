@@ -63,7 +63,6 @@ import Data.Void
 import GHC.Generics
 import GHC.Natural
 import Linear
-import Text.Read (readMaybe)
 
 type VM = Pipe Int Int Void
 
@@ -249,7 +248,7 @@ untilHalt = runExceptP_
 parseMem :: String -> Maybe Memory
 parseMem =
   fmap (Mem 0 0 . M.fromList . zip [0 ..])
-    . traverse readMaybe
+    . readAll
     . splitOn ","
 
 untilFalse :: Monad m => m Bool -> m ()

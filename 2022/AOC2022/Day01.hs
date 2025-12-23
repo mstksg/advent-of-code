@@ -12,17 +12,17 @@ module AOC2022.Day01 (
 )
 where
 
+import AOC.Common (readAll)
 import AOC.Solver ((:~>) (..))
 import Data.List (sort)
 import Data.List.Split (splitOn)
 import Safe.Exact (takeExactMay)
 import Safe.Foldable (maximumMay)
-import Text.Read (readMaybe)
 
 day01a :: [[Int]] :~> Int
 day01a =
   MkSol
-    { sParse = traverse (traverse readMaybe . lines) . splitOn "\n\n"
+    { sParse = traverse (readAll . lines) . splitOn "\n\n"
     , sShow = show
     , sSolve = maximumMay . map sum
     }
