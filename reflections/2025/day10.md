@@ -76,6 +76,10 @@ matrix with `m + 1` columns, that means the last column will be our target.
 Next we can do Guassian elimination on the mutable rows:
 
 ```haskell
+-- | Bump up to the next index if it isn't the largest one
+nextFin :: KnownNat n => Finite n -> Maybe (Finite n)
+nextFin = strengthen . shift
+
 -- | Assumes everything left of the index is already upper triangular/row
 -- echelon.
 stepGauss ::
@@ -154,15 +158,16 @@ reduceBack mat = for_ (tails (reverse finites)) \case
 Now we can generate our final equations only on `q`. Assume `x_4`, `x_5` free,
 we would turn an equation like `7 x_1 + 3 x_4 - 2 x_5 = 20` into a row
 represented by `7 x_1 = -3 x_4 + 2 x_5 + 20`, represented as the row `(7, [-3 2
-20])`. Our choice of free variables is constrainted so that `[x3 2 20] . [x_4 x_5 1]`
+20])`. Our choice of free variables is constrainted so that `[-3 2 20] . [x_4 x_5 1]`
 is non-negative and a multiple of 7. Finally we can also add up all of `x_0 +
 x_1 + ..` etc. to get our objective function, which is _also_ constrained to be
 non-negative and a multiple of whatever the mutual LCM of all of the pivots is.
 
-Since the constraints and the objective function are basically the same thing,
-we can return them all in a non-empty list and treat the first item as the
-"final objective" function which is the answer: how many times do you press
-each button? (times the returned multiple)
+So, our constraints (like `(7, [-3 2 20])`) and our objective function are
+actually treated _identically_ in the end. Both we need to give non-negative
+multiples of some number. So we can just return them all in a
+non-empty list and the user treats them all the same way. The only thing
+special about the objective function row is that it's the answer we submit.
 
 ```haskell
 -- | Assumes 'reduceBack: all items are zero except for pivots and free
