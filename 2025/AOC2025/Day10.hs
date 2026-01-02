@@ -210,6 +210,8 @@ reduceBack mat = for_ (tails (reverse finites)) \case
 -- For each equation (c, cs), xs . cs must be non-negative and a multiple of
 -- c. The first item returned is uniquely the objective function, though all
 -- constraints also apply to it as well.
+--
+-- q should actually always be m - n but it's simpler if we don't rely on it.
 withFrees ::
   forall n m a r.
   (KnownNat m, Integral a) =>

@@ -73,7 +73,7 @@ toAugMat buttons target = SV.generate \i -> SV.generate \j ->
 the last index, and `Just` with the `Finite n` if we aren't. For our augmented
 matrix with `m + 1` columns, that means the last column will be our target.
 
-Next we can do Guassian elimination on the mutable rows:
+Next we can do Gaussian elimination on the mutable rows:
 
 ```haskell
 -- | Bump up to the next index if it isn't the largest one
@@ -176,6 +176,8 @@ special about the objective function row is that it's the answer we submit.
 -- For each equation (c, cs), xs . cs must be non-negative and a multiple of
 -- c. The first item returned is uniquely the objective function, though all
 -- constraints also apply to it as well.
+
+-- q should actually always be m - n but it's simpler if we don't rely on it.
 withFrees ::
   forall n m a r.
   (KnownNat m, Integral a) =>
