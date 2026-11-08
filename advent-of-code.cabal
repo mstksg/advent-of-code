@@ -48,7 +48,7 @@ library aoc-core
     , advent-of-code-api    >=0.2.11
     , aeson
     , ansi-terminal
-    , base                  >=4.7     && <5
+    , base                  >=4.7    && <5
     , bytestring
     , constraints
     , constraints-extras
@@ -214,7 +214,6 @@ common solver-deps
     , deepseq
     , distributive
     , dlist
-    , ghc-typelits-knownnat
     , extended-reals
     , fgl
     , fin
@@ -224,6 +223,7 @@ common solver-deps
     , free
     , free-algebras
     , generic-lens
+    , ghc-typelits-knownnat
     , ghc-typelits-natnormalise
     , graphviz
     , grid
@@ -233,7 +233,6 @@ common solver-deps
     , linear
     , logict
     , megaparsec
-    , memory
     , microlens-th
     , monad-loops
     , monoid-extras
@@ -247,6 +246,7 @@ common solver-deps
     , primitive
     , profunctors
     , psqueues
+    , ram
     , recursion-schemes
     , refined
     , safe

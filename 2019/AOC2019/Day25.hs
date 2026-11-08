@@ -95,9 +95,9 @@ dirCmd = \case
 explore :: Memory -> Maybe ShipMap
 explore m = do
   (mp, startName) <-
-    go Nothing $
-      toAsciiVM $
-        untilHalt (stepN @IErr 100000 m)
+    go Nothing
+      $ toAsciiVM
+      $ untilHalt (stepN @IErr 100000 m)
   checkpoint <- M.lookup "Security Checkpoint" mp
   pressureDir <-
     firstJust (\(d, p) -> d <$ guard (p == "Pressure-Sensitive Floor")) $
@@ -172,7 +172,7 @@ checkpointRoute sm@SM{..} = do
         stepBot
         (BS smStart S.empty)
         ((== 0) . bHeuristic)
-  pure $ concatMap (uncurry toRoute) $ (zip `ap` tail) stateRoute
+  concat <$> traverse (uncurry toRoute) ((zip `ap` drop 1) stateRoute)
   where
     allItems = foldOf (#smMap . folded . #rItems) sm
     bHeuristic BS{..} =
@@ -188,11 +188,11 @@ checkpointRoute sm@SM{..} = do
         , nextRoom <- toList rDoors
         , nextRoom /= "Pressure-Sensitive Floor"
         ]
-    toRoute bs0 bs1 = S.toList getItems ++ [dirCmd dir]
-      where
-        R{..} = smMap M.! bsLoc bs0
-        Just dir = firstJust (\(d, n) -> d <$ guard (n == bsLoc bs1)) . NEM.toList $ rDoors
-        getItems = S.map ("take " <>) $ rItems `S.difference` bsItems bs0
+    toRoute bs0 bs1 = do
+      R{..} <- M.lookup (bsLoc bs0) smMap
+      dir <- firstJust (\(d, n) -> d <$ guard (n == bsLoc bs1)) . NEM.toList $ rDoors
+      let getItems = S.map ("take " <>) $ rItems `S.difference` bsItems bs0
+      pure $ S.toList getItems ++ [dirCmd dir]
 
 getToCheckpoint ::
   Memory ->
@@ -241,7 +241,9 @@ searchCheckpoint bot sm = do
             | otherwise -> error $ "no parse: " ++ T.unpack n
       where
         drops = S.map ("drop " <>) (allItems `S.difference` xs)
-        i0 : inps = S.toList drops ++ [dirCmd (smPressure sm)]
+        (i0, inps) = case S.toList drops of
+          [] -> (dirCmd (smPressure sm), [])
+          d : ds -> (d, ds ++ [dirCmd (smPressure sm)])
     parseResp = do
       skipMany (noneOf ['='])
       NE.some parseRoomDesc
@@ -253,7 +255,9 @@ _bruteForceCheckpoint ::
   Maybe (Set Text, Text)
 _bruteForceCheckpoint bot sm = flip firstJust (S.powerSet allItems) $ \is ->
   let drops = S.map ("drop " <>) is
-      i0 : inps = S.toList drops ++ [dirCmd (smPressure sm)]
+      (i0, inps) = case S.toList drops of
+        [] -> (dirCmd (smPressure sm), [])
+        d : ds -> (d, ds ++ [dirCmd (smPressure sm)])
       heldItems = allItems `S.difference` is
    in case feedPipe inps (bot i0) of
         Left e -> error $ show e

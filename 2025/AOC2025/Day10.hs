@@ -140,11 +140,10 @@ stepGauss ::
   ST s (Maybe (Finite n, Finite m))
 stepGauss mat (i, j) = do
   pivot <-
-    runMaybeT $
-      asum $
-        [ MaybeT $ SMV.read (mat `SV.index` k) (weaken j) <&> \pVal -> (k, pVal) <$ guard (pVal /= 0)
-        | k <- [i ..]
-        ]
+    runMaybeT . asum $
+      [ MaybeT $ SMV.read (mat `SV.index` k) (weaken j) <&> \pVal -> (k, pVal) <$ guard (pVal /= 0)
+      | k <- [i ..]
+      ]
   case pivot of
     Nothing -> pure ((i,) <$> nextFin j)
     Just (pIx, pVal) -> do

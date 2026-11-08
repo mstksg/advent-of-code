@@ -73,9 +73,8 @@ solve n bmap =
             (\d p -> mod <$> (p + dirPoint d) <*> (maxes + 1))
             (toList bmap)
     validPos =
-      S.insert goal . S.insert origin . S.fromList $
-        sequence $
-          enumFromTo <$> 0 <*> maxes
+      S.insert goal . S.insert origin . S.fromList . sequence $
+        enumFromTo <$> 0 <*> maxes
     expander (MS t p) = M.fromAscList [(MS (t + 1) p', 1) | p' <- S.toList cands]
       where
         bs = bHist `Seq.index` ((t + 1) `mod` cyclePeriod)

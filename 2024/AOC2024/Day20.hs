@@ -62,9 +62,8 @@ findCheats walls start end len thresh = do
     go :: T2 Int (Map Point Int) -> Point -> (T2 Int (Map Point Int), Int)
     go (T2 i xs) x =
       ( T2 (i + 1) (M.insert x i xs)
-      , M.size $
-          M.filterWithKey (\y j -> i - j - mannDist x y >= thresh) $
-            xs `M.restrictKeys` S.mapMonotonic (+ x) diamond
+      , M.size . M.filterWithKey (\y j -> i - j - mannDist x y >= thresh) $
+          xs `M.restrictKeys` S.mapMonotonic (+ x) diamond
       )
     diamond = floodFill (S.filter ((<= len) . mannNorm) . cardinalNeighbsSet) (S.singleton 0)
 

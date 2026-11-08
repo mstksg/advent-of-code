@@ -198,21 +198,17 @@ xmasRule Rule{..} rest = case rResult of
       EQ -> IV.singleton rVal
     ivalXmas = case rXmas of
       X ->
-        XmasSet $
-          IVM.singleton ival . IVM.singleton xmasRange . IVM.singleton xmasRange $
-            IVS.singleton xmasRange
+        XmasSet . IVM.singleton ival . IVM.singleton xmasRange . IVM.singleton xmasRange $
+          IVS.singleton xmasRange
       M ->
-        XmasSet $
-          IVM.singleton xmasRange . IVM.singleton ival . IVM.singleton xmasRange $
-            IVS.singleton xmasRange
+        XmasSet . IVM.singleton xmasRange . IVM.singleton ival . IVM.singleton xmasRange $
+          IVS.singleton xmasRange
       A ->
-        XmasSet $
-          IVM.singleton xmasRange . IVM.singleton xmasRange . IVM.singleton ival $
-            IVS.singleton xmasRange
+        XmasSet . IVM.singleton xmasRange . IVM.singleton xmasRange . IVM.singleton ival $
+          IVS.singleton xmasRange
       S ->
-        XmasSet $
-          IVM.singleton xmasRange . IVM.singleton xmasRange . IVM.singleton xmasRange $
-            IVS.singleton ival
+        XmasSet . IVM.singleton xmasRange . IVM.singleton xmasRange . IVM.singleton xmasRange $
+          IVS.singleton ival
 
 workflowInterval :: Workflow XmasSet -> XmasSet
 workflowInterval Workflow{..} = foldr xmasRule (unResult wfDefault) wfRules

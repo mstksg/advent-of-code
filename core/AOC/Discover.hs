@@ -130,16 +130,15 @@ specExp s@(CS d p) = do
   mn <- TH.lookupValueName (specName s)
   for mn \n -> do
     ss <- TH.unTypeCode $ specSomeSol n
-    pure $
-      TH.TExp $
-        TH.TupE
-          [ Just . TH.unType $ liftDay d
-          , Just $
-              TH.TupE
-                [ Just . TH.unType $ liftPart p
-                , Just ss
-                ]
-          ]
+    pure . TH.TExp $
+      TH.TupE
+        [ Just . TH.unType $ liftDay d
+        , Just $
+            TH.TupE
+              [ Just . TH.unType $ liftPart p
+              , Just ss
+              ]
+        ]
 
 -- | Looks up the name in scope
 specSomeSol :: TH.Name -> TH.Code TH.Q SomeSolution

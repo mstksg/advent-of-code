@@ -21,8 +21,8 @@
 --     solution.  You can delete the type signatures completely and GHC
 --     will recommend what should go in place of the underscores.
 module AOC2023.Day20 (
--- day20a,
--- day20b
+  -- day20a,
+  -- day20b
 
 )
 where

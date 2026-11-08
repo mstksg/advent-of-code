@@ -40,11 +40,11 @@ day19a =
 
 checkBeam :: Memory -> Point -> Bool
 checkBeam m (V2 x y) =
-  (== 1) . fromJust . join $
-    runPipe $
-      (yield x *> yield y *> empty)
-        .| untilHalt (stepForever @IErr m)
-        .| await
+  (== 1) . fromJust . join
+    $ runPipe
+    $ (yield x *> yield y *> empty)
+      .| untilHalt (stepForever @IErr m)
+      .| await
 
 data Ranges = R
   { xMins :: !(Map Int (Maybe Int))
@@ -83,14 +83,14 @@ day19b =
     , sSolve = \m -> do
         let R{..} = mkRanges m
             goodY y = do
+              Just xmin <- M.lookup y xMins
+              Just xmax <- M.lookup y xMaxs
               guard $ (xmax - xmin + 1) >= 100
               binaryFindMin goodX xmin (xmax - 100 + 1)
               where
-                Just xmin = xMins M.! y
-                Just xmax = xMaxs M.! y
                 goodX x = do
-                  let Just ymin = yMins M.! x
-                      Just ymax = yMaxs M.! x
+                  Just ymin <- M.lookup x yMins
+                  Just ymax <- M.lookup x yMaxs
                   guard $ y >= ymin
                   guard $ (ymax - y + 1) >= 100
                   pure (x, y)

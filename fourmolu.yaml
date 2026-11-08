@@ -13,5 +13,6 @@ record-break-space: true
 reexports: []
 respectful: true
 single-constraint-parens: auto
+trailing-section-operators: true
 unicode: detect
 fixities: []

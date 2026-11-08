@@ -89,9 +89,8 @@ day21b =
     , sShow = show
     , sSolve = \pairs ->
         let mp =
-              M.adjust reRoot "root" $
-                M.insert "humn" VarF $
-                  M.fromList pairs
+              M.adjust reRoot "root" . M.insert "humn" VarF $
+                M.fromList pairs
          in case hylo evalSolveF (mp M.!) "root" of
               Left f -> Just $ f 0 -- make a-b = 0
               Right _ -> Nothing -- constant value, no solve

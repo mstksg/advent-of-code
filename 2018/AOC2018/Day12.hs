@@ -15,7 +15,6 @@ module AOC2018.Day12 (
 
 import AOC.Common (asString, (!!!))
 import AOC.Solver ((:~>) (..))
-import Data.Bifunctor (bimap)
 import Data.Finite (Finite, finites)
 import qualified Data.Map as M
 import Data.Set (Set)
@@ -72,7 +71,7 @@ stepN n w ctx =
 day12a :: (Set Pos, Set Ctx) :~> Int
 day12a =
   MkSol
-    { sParse = Just . bimap makeState makeCtxs . span (/= '\n')
+    { sParse = parse
     , sShow = show
     , sSolve = \(w, ctx) -> Just . sum $ iterate (step ctx) w !!! 20
     }
@@ -80,10 +79,15 @@ day12a =
 day12b :: (Set Pos, Set Ctx) :~> Int
 day12b =
   MkSol
-    { sParse = Just . bimap makeState makeCtxs . span (/= '\n')
+    { sParse = parse
     , sShow = show
     , sSolve = Just . sum . uncurry (stepN 50000000000)
     }
+
+parse :: String -> Maybe (Set Pos, Set Ctx)
+parse s = (makeState stateStr,) <$> makeCtxs ctxStr
+  where
+    (stateStr, ctxStr) = span (/= '\n') s
 
 makeState :: String -> Set Pos
 makeState =
@@ -93,17 +97,12 @@ makeState =
     . zip [0 ..]
     . filter (`elem` asString "#.")
 
-makeCtxs :: String -> Set Ctx
-makeCtxs =
-  M.keysSet
-    . M.filter id
-    . M.fromList
-    . map
-      ( bimap parseLine head
-          . splitAt 5
-          . map (== '#')
-          . filter (`elem` asString "#.")
-      )
-    . lines
+makeCtxs :: String -> Maybe (Set Ctx)
+makeCtxs str = do
+  pairs <- traverse parseCtxLine . filter (not . null) . lines $ str
+  pure . M.keysSet . M.filter id . M.fromList $ pairs
   where
+    parseCtxLine l = case splitAt 5 . map (== '#') . filter (`elem` asString "#.") $ l of
+      (pat, [r]) -> Just (parseLine pat, r)
+      _ -> Nothing
     parseLine = S.fromList . map fst . filter snd . zip finites

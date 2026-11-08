@@ -46,16 +46,12 @@ type Bot = Int -> Pipe Int Int Void Identity ()
 type BotState = Arg Spot Bot
 
 findOxygen :: Memory -> Maybe [BotState]
-findOxygen mem =
+findOxygen mem = do
+  Identity ([], Left initBot) <- pure $ squeezePipe (untilHalt (stepForever @VMErr mem))
   bfs
     stepAround
     (Arg (S 0 Floor) initBot)
     (\(Arg (S _ t) _) -> t == Oxygen)
-  where
-    initBot :: Bot
-    initBot = c
-      where
-        Identity ([], Left c) = squeezePipe (untilHalt (stepForever @VMErr mem))
 
 stepAround :: BotState -> Set BotState
 stepAround (Arg S{..} bot) = S.fromList $ do

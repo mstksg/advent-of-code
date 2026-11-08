@@ -51,9 +51,8 @@ buildSizes = ssnd . foldl' go (T2 [] M.empty)
       CD GoUp -> T2 (drop 1 currDir) mp
       CD (GoDown d) -> T2 (d : currDir) mp
       File sz ->
-        T2 currDir $
-          M.unionWith (+) mp $
-            M.fromList (map (,sz) (tails currDir))
+        T2 currDir . M.unionWith (+) mp $
+          M.fromList (map (,sz) (tails currDir))
 
 day07a :: [Instr] :~> Int
 day07a =
