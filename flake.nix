@@ -66,7 +66,7 @@
                 program = pkgs.lib.getExe bs.generate-benches;
               };
             })
-            pkgs.advent-of-code.benchmarks)
+            (pkgs.lib.filterAttrs (_: bs: builtins.isAttrs bs && bs ? generate-benches) pkgs.advent-of-code.benchmarks))
           //
           {
             format =

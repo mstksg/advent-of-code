@@ -1216,15 +1216,6 @@ instance (Functor v, Foldable v, KnownNat n, forall a. VG.Vector v a) => Metric 
 --     hashWithSalt s = hashWithSalt s . toList
 --     hash = hash . toList
 
-instance FunctorWithIndex k (NEMap k) where
-  imap = NEM.mapWithKey
-
-instance FoldableWithIndex k (NEMap k) where
-  ifoldMap = NEM.foldMapWithKey
-
-instance TraversableWithIndex k (NEMap k) where
-  itraverse = NEM.traverseWithKey
-
 -- | Generalize a 'Maybe' to any 'Alternative'
 maybeAlt :: Alternative m => Maybe a -> m a
 maybeAlt = maybe empty pure
