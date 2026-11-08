@@ -39,7 +39,7 @@ main = do
         (parseOpts <**> O.helper)
         (O.fullDesc <> O.progDesc "Generate haskell daily challenge files" <> O.header "generate_days")
   temp <- template <$> T.readFile "template/DayXX.hs.template"
-  forM_ [1 .. 25] \i -> do
+  forM_ [1 .. 12] \i -> do
     let newFilePath = outRoot oYear </> printf "Day%02d.hs" i
         Just newFile = renderA temp (ctx oYear i)
     alreadyExists <- doesFileExist newFilePath

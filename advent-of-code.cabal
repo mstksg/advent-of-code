@@ -874,3 +874,58 @@ benchmark aoc2025-bench
     , aoc-core
     , aoc2025-lib
     , base           >=4.7 && <5
+
+-- 2026
+
+library aoc2026-lib
+  import:          common-options
+  import:          solver-extensions
+  import:          solver-deps
+  exposed-modules:
+    AOC2026
+    AOC2026.Day01
+    AOC2026.Day02
+    AOC2026.Day03
+    AOC2026.Day04
+    AOC2026.Day05
+    AOC2026.Day06
+    AOC2026.Day07
+    AOC2026.Day08
+    AOC2026.Day09
+    AOC2026.Day10
+    AOC2026.Day11
+    AOC2026.Day12
+
+  hs-source-dirs:  2026
+
+executable aoc2026
+  import:         executable-options
+  main-is:        aoc2026.hs
+  hs-source-dirs: app
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2026-lib
+    , base           >=4.7 && <5
+
+test-suite aoc2026-test
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2026-test.hs
+  hs-source-dirs: test
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2026-lib
+    , base           >=4.7 && <5
+
+benchmark aoc2026-bench
+  import:         executable-options
+  type:           exitcode-stdio-1.0
+  main-is:        aoc2026-bench.hs
+  hs-source-dirs: bench
+  build-depends:
+    , ansi-terminal
+    , aoc-core
+    , aoc2026-lib
+    , base           >=4.7 && <5
