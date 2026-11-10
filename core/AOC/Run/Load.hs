@@ -35,6 +35,7 @@ module AOC.Run.Load (
   TestMeta (..),
   aocUserAgent,
   defaultAoCOpts',
+  readFileMaybe,
 
   -- * Parsers
   parseMeta,
@@ -129,6 +130,13 @@ makeChallengeDirs CP{..} =
 defaultAoCOpts' :: Integer -> String -> AoCOpts
 defaultAoCOpts' y s = (defaultAoCOpts aocUserAgent y s){_aInferRankOnSubmission = True}
 
+-- | Read a file's contents, returning 'Nothing' if it does not exist.
+readFileMaybe :: FilePath -> IO (Maybe String)
+readFileMaybe =
+  (traverse (evaluate . force) . eitherToMaybe =<<)
+    . tryJust (guard . isDoesNotExistError)
+    . readFile
+
 -- | Load data associated with a challenge from a given specification.
 -- Will fetch answers online and cache if required (and if giten a session
 -- token).
@@ -176,11 +184,6 @@ challengeData sess yr spec@CS{..} = do
       }
   where
     ps@CP{..} = challengePaths yr spec
-    readFileMaybe :: FilePath -> IO (Maybe String)
-    readFileMaybe =
-      (traverse (evaluate . force) . eitherToMaybe =<<)
-        . tryJust (guard . isDoesNotExistError)
-        . readFile
     fetchInput :: ExceptT [String] IO String
     fetchInput = do
       s <-

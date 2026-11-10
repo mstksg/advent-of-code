@@ -5,5 +5,5 @@ multi-repl: True
 source-repository-package
   type: git
   location: https://github.com/mstksg/advent-of-code-api
-  tag: deec6306fbac323336ff4923e63bbee11f96aabd
-  --sha256: 174xygy4s63l283fn35bmhci1jfxdih6q3lpib6jidps7wh4b5m3
+  tag: 375edf985c74c01a9d1d894a05b01d5a431c87c8
+  --sha256: 13iczxss1fqqfm9xqwwzd4pmcd69hzl4v2pdjp09v7j5fx7psspi

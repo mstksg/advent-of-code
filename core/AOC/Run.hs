@@ -44,6 +44,12 @@ module AOC.Run (
   mainSubmit,
   defaultMSO,
 
+  -- ** Check accepted answers
+  MainCheckOpts (..),
+  CheckResult (..),
+  mainCheck,
+  defaultMCO,
+
   -- * Util
   withColor,
 )
@@ -125,6 +131,26 @@ data MainSubmitOpts = MSO
   }
   deriving stock (Show)
 
+-- | Options for 'mainCheck'
+data MainCheckOpts = MCO
+  { _mcoSpec :: !TestSpec
+  , _mcoWrite :: !Bool
+  -- ^ Write newly-discovered or corrected answers to disk?  (Default: False)
+  , _mcoMissingOnly :: !Bool
+  -- ^ Skip the request entirely for days where every part already has a
+  -- local answer on file?  (Default: False)
+  }
+  deriving stock (Show)
+
+-- | The result of checking one part's locally-recorded answer against the
+-- one Advent of Code has on record as accepted.
+data CheckResult
+  = CheckMatch
+  | CheckFilled String
+  | -- | Local answer, then accepted answer.
+    CheckMismatch String String
+  deriving stock (Show)
+
 data ChallengeBundle = CB
   { _cbYear :: Integer
   , _cbChallengeMap :: ChallengeMap
@@ -158,6 +184,15 @@ defaultMSO cs =
     , _msoTest = True
     , _msoForce = False
     , _msoLock = True
+    }
+
+-- | Default options for 'mainCheck'.
+defaultMCO :: TestSpec -> MainCheckOpts
+defaultMCO ts =
+  MCO
+    { _mcoSpec = ts
+    , _mcoWrite = False
+    , _mcoMissingOnly = False
     }
 
 toChallengeSet :: ChallengeMap -> TestSpec -> Either String (ChallengeSet SomeSolution)
@@ -331,6 +366,62 @@ mainSubmit CB{..} Cfg{..} MSO{..} = do
         , "Raw: %s"
         , "%s"
         ]
+
+-- | Check locally-recorded answers against the ones Advent of Code has on
+-- record as accepted, optionally filling in missing ones or correcting
+-- wrong ones.
+mainCheck ::
+  (MonadIO m, MonadError [String] m) =>
+  ChallengeBundle ->
+  Config ->
+  MainCheckOpts ->
+  m (Map ChallengeSpec CheckResult)
+mainCheck CB{..} Cfg{..} MCO{..} = do
+  sess <-
+    maybeToEither
+      ["ERROR: Session key required to check accepted answers"]
+      _cfgSession
+  let opts = defaultAoCOpts' _cbYear sess
+  days <-
+    liftEither . first (: []) $ do
+      toRun <- toChallengeSet _cbChallengeMap _mcoSpec
+      pure $ M.keys (M.fromList [(d, ()) | CS d _ <- M.keys toRun])
+  fmap (M.fromList . concat) . forM days $ \d -> do
+    let parts = maybe [] M.keys (M.lookup d _cbChallengeMap)
+    allLocal <-
+      liftIO . fmap and . forM parts $ \p ->
+        isJust <$> readFileMaybe (_cpAnswer (challengePaths _cbYear (CS d p)))
+    if _mcoMissingOnly && allLocal
+      then pure []
+      else do
+        accepted <-
+          liftEither . first showAoCError
+            =<< liftIO (runAoC opts (AoCAcceptedAnswer d))
+        liftIO . forM (M.toList accepted) $ \(p, acceptedAns) -> do
+          let cs = CS d p
+              CP{..} = challengePaths _cbYear cs
+              acceptedStr = T.unpack acceptedAns
+          localAns <- readFileMaybe _cpAnswer
+          let (res, toWrite) = case localAns of
+                Nothing -> (CheckFilled acceptedStr, Just acceptedStr)
+                Just local
+                  | strip local == strip acceptedStr -> (CheckMatch, Nothing)
+                  | otherwise -> (CheckMismatch local acceptedStr, Just acceptedStr)
+          when _mcoWrite $ mapM_ (writeFile _cpAnswer) toWrite
+          printCheckResult cs res
+          pure (cs, res)
+
+printCheckResult :: ChallengeSpec -> CheckResult -> IO ()
+printCheckResult (CS d p) res = do
+  withColor ANSI.Dull color $
+    printf "[%c] %02d%c " mark (dayInt d) (partChar p)
+  putStrLn msg
+  where
+    (mark, color, msg) = case res of
+      CheckMatch -> ('✓', ANSI.Green, "confirmed")
+      CheckFilled a -> ('+', ANSI.Blue, printf "filled in: %s" a)
+      CheckMismatch l a ->
+        ('✗', ANSI.Red, printf "MISMATCH: local is %s, accepted is %s" l a)
 
 displayStatus :: SubmitRes -> (ANSI.Color, Bool, String)
 displayStatus = \case

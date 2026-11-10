@@ -33,6 +33,7 @@ data Mode
   = MRun MainRunOpts
   | MView MainViewOpts
   | MSubmit MainSubmitOpts
+  | MCheck MainCheckOpts
   | MList
 
 data Opts = O
@@ -59,6 +60,7 @@ mainFor cb@CB{..} = do
     MRun mro -> void $ mainRun cb cfg mro
     MView mvo -> void $ mainView cb cfg mvo
     MSubmit mso -> void $ mainSubmit cb cfg mso
+    MCheck mco -> void $ mainCheck cb cfg mco
     MList -> liftIO . putStrLn $ concat ["[", availableDays, "]"]
   forOf_ _Left out $ \e -> do
     withColor ANSI.Vivid ANSI.Red $
@@ -152,6 +154,10 @@ parseOpts inputCache = do
           info (MView <$> parseView <**> helper) (progDesc "View a prompt for a given challenge")
       , command "submit" $
           info (MSubmit <$> parseSubmit <**> helper) (progDesc "Test and submit answers for challenges")
+      , command "check" $
+          info
+            (MCheck <$> parseCheck <**> helper)
+            (progDesc "Check locally-recorded answers against the accepted ones on Advent of Code")
       , command "test" $
           info (MRun <$> parseTest <**> helper) (progDesc "Alias for run --test")
       , command "bench" $
@@ -232,6 +238,22 @@ parseOpts inputCache = do
           , help "Do not lock in answer, even if correct submission was received"
           ]
       pure MSO{..}
+    parseCheck :: Parser MainCheckOpts
+    parseCheck = do
+      _mcoSpec <- parseTestSpec
+      _mcoWrite <-
+        switch . mconcat $
+          [ long "write"
+          , short 'w'
+          , help "Fill in missing answers and correct wrong ones on disk"
+          ]
+      _mcoMissingOnly <-
+        switch . mconcat $
+          [ long "missing-only"
+          , short 'm'
+          , help "Skip days where every part already has a local answer on file"
+          ]
+      pure MCO{..}
     parseTest :: Parser MainRunOpts
     parseTest = parseRun & mapped . mroTest .~ True
     parseBench :: Parser MainRunOpts
