@@ -14,7 +14,6 @@ module AOC2018.Day15 (
 ) where
 
 import AOC.Common (
-  floodFill,
   minimumVal,
   minimumValBy,
  )
@@ -23,9 +22,8 @@ import AOC.Common.Point (
   asciiGrid,
   boundingBox,
   cardinalNeighbs,
-  mannDist,
  )
-import AOC.Common.Search (aStar, exponentialFindMin)
+import AOC.Common.Search (bfsDistancesUntil, exponentialFindMin)
 import AOC.Solver ((:~>) (..))
 import Control.Lens (ifoldMapOf, makeLenses, (-~), (.~))
 import Control.Monad (guard)
@@ -37,7 +35,7 @@ import Data.List (intercalate)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Ord (comparing)
-import Data.Semigroup (First (..), Min (..))
+import Data.Semigroup (First (..))
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Set.NonEmpty as NES
@@ -62,22 +60,6 @@ type Entities = Map ScanPoint Entity
 neighbs :: ScanPoint -> Set ScanPoint
 neighbs = S.fromList . coerce cardinalNeighbs
 
-type Path = [ScanPoint]
-
--- | Yes, it's actual literal A*.
-actualLiteralAStar ::
-  World ->
-  ScanPoint ->
-  ScanPoint ->
-  Maybe Path
-actualLiteralAStar w p0 dest =
-  snd
-    <$> aStar
-      (mannDist (_getSP dest) . _getSP)
-      (M.fromSet (const 1) . (`S.intersection` w) . neighbs)
-      p0
-      (== dest)
-
 stepTo ::
   -- | legal points
   Set ScanPoint ->
@@ -85,12 +67,17 @@ stepTo ::
   ScanPoint ->
   ScanPoint
 stepTo w x dest =
-  maybe (error "stepTo") (snd . getMin)
-    . foldMap (\n -> Min . (,n) . length <$> actualLiteralAStar w' n dest)
-    . (`S.intersection` w')
-    $ neighbs x
+  maybe (error "stepTo") fst
+    . minimumVal
+    $ M.restrictKeys distsFromDest nbrs
   where
     w' = S.delete x w
+    nbrs = neighbs x `S.intersection` w'
+    distsFromDest =
+      bfsDistancesUntil
+        ((`S.intersection` w') . neighbs)
+        dest
+        (\seen -> nbrs `S.isSubsetOf` M.keysSet seen)
 
 stepEntity ::
   World ->
@@ -99,25 +86,20 @@ stepEntity ::
   Entity ->
   Maybe ScanPoint
 stepEntity w es sp e
-  | sp `M.member` candidates = Just sp -- we already here
+  | alreadyAdjacent = Just sp -- we already here
   | otherwise = stepTo w' sp <$> destination
   where
-    candidates =
-      M.fromSet
-        ( maybe (error "paintBucket") length
-            . actualLiteralAStar fullRange sp
-        )
-        . (`S.intersection` fullRange)
-        . foldMap neighbs
-        . M.keysSet
-        . M.filter ((/= _eType e) . _eType)
-        $ es
-    destination = fst <$> minimumVal candidates
+    enemyPositions = M.keysSet $ M.filter ((/= _eType e) . _eType) es
+    alreadyAdjacent = not $ S.disjoint (neighbs sp) enemyPositions
     w' = w `S.difference` M.keysSet es
-    fullRange =
-      floodFill
+    targetSquares = foldMap neighbs enemyPositions
+    dists =
+      bfsDistancesUntil
         ((`S.intersection` w') . neighbs)
-        (S.singleton sp)
+        sp
+        (not . S.disjoint targetSquares . M.keysSet)
+    candidates = M.restrictKeys dists targetSquares
+    destination = fst <$> minimumVal candidates
 
 makeAttack ::
   World ->

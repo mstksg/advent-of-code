@@ -2,6 +2,8 @@ module AOC.Common.Search (
   aStar,
   bfs,
   bfsActions,
+  bfsDistances,
+  bfsDistancesUntil,
   binarySearch,
   exponentialSearch,
   binaryMinSearch,
@@ -157,6 +159,44 @@ bfsActions ex x0 dest = reconstruct <$> go (addBack x0 Nothing (BAS M.empty Seq.
     processNeighbor curr bs0@BAS{..} (act, neighb)
       | neighb `M.member` _basClosed = bs0
       | otherwise = addBack neighb (Just (act, curr)) bs0
+
+-- | Breadth-first search, giving the distance to every reachable node in
+-- one pass instead of a separate search per target.
+bfsDistances ::
+  Ord n =>
+  -- | neighborhood
+  (n -> Set n) ->
+  -- | start
+  n ->
+  -- | distance to every reachable node
+  Map n Int
+bfsDistances ex x0 = bfsDistancesUntil ex x0 (const False)
+
+-- | Like 'bfsDistances', but stops as soon as the predicate holds over
+-- everything found so far.  The predicate is only checked once a whole
+-- BFS layer has finished, so it never cuts off midway through a set of
+-- nodes tied at the same distance.
+bfsDistancesUntil ::
+  forall n.
+  Ord n =>
+  -- | neighborhood
+  (n -> Set n) ->
+  -- | start
+  n ->
+  -- | stop once this holds over what's been found so far
+  (Map n Int -> Bool) ->
+  -- | distance to every node found before stopping
+  Map n Int
+bfsDistancesUntil ex x0 done = go 0 (S.singleton x0) (M.singleton x0 0)
+  where
+    go :: Int -> Set n -> Map n Int -> Map n Int
+    go d frontier seen
+      | S.null frontier || done seen = seen
+      | otherwise = go (d + 1) frontier' seen'
+      where
+        cand = foldMap ex frontier `S.difference` M.keysSet seen
+        seen' = M.union seen (M.fromSet (const (d + 1)) cand)
+        frontier' = cand
 
 binarySearch ::
   (Int -> Ordering) -> -- LT: Too small, GT: Too big
