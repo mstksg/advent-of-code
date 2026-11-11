@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeApplications #-}
+
 -- |
 -- Module      : AOC2022.Day16
 -- License     : BSD3
@@ -13,100 +15,95 @@ module AOC2022.Day16 (
 where
 
 import AOC.Common (clearOut)
-import AOC.Common.Search (bfs)
+import AOC.Common.Search (aStar)
 import AOC.Solver ((:~>) (..))
+import Control.Applicative ((<|>))
+import Control.DeepSeq (NFData)
+import Control.Monad (guard)
+import Data.Bifunctor (first)
 import Data.Char (isDigit, isUpper)
 import Data.Foldable (toList)
-import Data.Functor.Foldable (hylo)
-import Data.IntSet (IntSet)
-import qualified Data.IntSet as IS
 import Data.List (uncons)
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe (mapMaybe)
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Text (Text)
-import qualified Data.Text as T
+import GHC.Generics (Generic)
 import Linear (V1 (..), V2 (..))
-import Safe (maximumMay)
 import Text.Read (readMaybe)
 
-parseLine :: String -> Maybe (Text, (Int, Set Text))
+parseLine :: String -> Maybe (String, (Int, Set String))
 parseLine xs = do
   (a, bs) <- uncons $ words $ clearOut (not . isUpper) (drop 1 xs)
   r <- readMaybe $ clearOut (not . isDigit) xs
-  pure (T.pack a, (r, S.fromList (map T.pack bs)))
+  pure (a, (r, S.fromList bs))
 
-data SearchState = SearchState
-  { ssCur :: !Text
-  , ssTimeLeft :: !Int
-  , ssOpened :: !IntSet
-  , ssScore :: !Int
+data PuzzState f = PuzzState
+  { time :: !Int
+  , pos :: !(f String)
+  , opened :: !(Set String)
   }
-  deriving stock (Show)
+  deriving stock (Generic)
 
-data StepF b = StepF SearchState [b]
-  deriving stock (Functor)
+instance NFData (f String) => NFData (PuzzState f)
 
-bestPerOpened :: Int -> Map Text (Int, Set Text) -> Map IntSet Int
-bestPerOpened budget mp =
-  M.fromListWith max [(ssOpened s, ssScore s) | s <- visited]
+deriving stock instance Show (f String) => Show (PuzzState f)
+
+deriving stock instance Eq (f String) => Eq (PuzzState f)
+
+deriving stock instance Ord (f String) => Ord (PuzzState f)
+
+searchPuzzle ::
+  forall f.
+  (Applicative f, Traversable f, Ord (f String)) =>
+  Int ->
+  Map String (Int, Set String) ->
+  Maybe (Int, [PuzzState f])
+searchPuzzle maxTime mp =
+  first reCost
+    <$> aStar
+      (oneTickCost . opened)
+      expand
+      (PuzzState 1 (pure "AA") S.empty)
+      (\(PuzzState t _ o) -> t >= maxTime || S.size o >= S.size pipesWithFlow)
   where
-    valves = M.keys $ M.filter ((> 0) . fst) mp
-    neighbors n = foldMap snd (M.lookup n mp)
-    dists =
-      flip M.fromSet (S.insert "AA" (S.fromList valves)) $ \v ->
-        M.fromList [(u, length path) | u <- valves, Just path <- [bfs neighbors v (== u)]]
-    flowOf v = fst (mp M.! v)
-    visited =
-      hylo
-        (\(StepF s bs) -> s : concat bs)
-        (\s -> StepF s (nexts s))
-        SearchState{ssCur = "AA", ssTimeLeft = budget, ssOpened = IS.empty, ssScore = 0}
-    nexts :: SearchState -> [SearchState]
-    nexts s@(SearchState cur timeLeft opened _) =
-      [ SearchState
-          { ssCur = v
-          , ssTimeLeft = timeLeft'
-          , ssOpened = IS.insert i opened
-          , ssScore = ssScore s + timeLeft' * flowOf v
-          }
-      | (i, v) <- zip [0 ..] valves
-      , i `IS.notMember` opened
-      , let timeLeft' = timeLeft - (here M.! v) - 1
-      , timeLeft' > 0
-      ]
+    pipesWithFlow = M.keysSet $ M.filter ((> 0) . fst) mp
+    reCost x = (oneTickCost S.empty * maxTime) - x
+    oneTickCost :: Set String -> Int
+    oneTickCost opened = sum . map fst . toList $ mp `M.withoutKeys` opened
+    expand :: PuzzState f -> Map (PuzzState f) Int
+    expand (PuzzState t ps o) =
+      M.fromList
+        [ (PuzzState (t + 1) newPos (S.unions newSeen), oneTickCost o)
+        | newPosSeen <- traverse go ps -- it's always traverse
+        , let newPos = fst <$> newPosSeen
+              newSeen = snd <$> newPosSeen
+        ]
       where
-        here = dists M.! cur
-
-sumIfDisjoint :: [(IntSet, Int)] -> Maybe Int
-sumIfDisjoint xs = foldr step (const (Just 0)) xs IS.empty
-  where
-    step (opened, score) rest seen
-      | IS.disjoint seen opened = (score +) <$> rest (seen <> opened)
-      | otherwise = Nothing
+        go :: String -> [(String, Set String)]
+        go p = stayHereAndOpen <|> moveToAnother
+          where
+            moveToAnother = do
+              p' <- toList $ snd (mp M.! p)
+              pure (p', o)
+            stayHereAndOpen = do
+              guard $ p `S.member` pipesWithFlow && p `S.notMember` o
+              pure (p, S.insert p o)
 
 day16 ::
   forall f.
-  (Applicative f, Traversable f) =>
+  (Applicative f, Traversable f, Ord (f String)) =>
   Int ->
-  Map Text (Int, Set Text) :~> Int
-day16 budget =
+  Map String (Int, Set String) :~> Int
+day16 t =
   MkSol
     { sParse = fmap M.fromList . traverse parseLine . lines
     , sShow = show
-    , sSolve =
-        maximumMay
-          . mapMaybe (sumIfDisjoint . toList)
-          . sequence
-          . pure @f
-          . M.toList
-          . bestPerOpened budget
+    , sSolve = fmap fst . searchPuzzle @f t
     }
 
-day16a :: Map Text (Int, Set Text) :~> Int
+day16a :: Map String (Int, Set String) :~> Int
 day16a = day16 @V1 30
 
-day16b :: Map Text (Int, Set Text) :~> Int
+day16b :: Map String (Int, Set String) :~> Int
 day16b = day16 @V2 26
